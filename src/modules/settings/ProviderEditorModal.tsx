@@ -42,7 +42,6 @@ export function ProviderEditorModal({
   onSaved,
 }: ProviderEditorModalProps): JSX.Element | null {
   const [providerType, setProviderType] = useState(DEEPSEEK_DEFAULTS.provider)
-  const [label, setLabel] = useState('')
   const [baseUrl, setBaseUrl] = useState(DEEPSEEK_DEFAULTS.baseUrl)
   const [model, setModel] = useState(DEEPSEEK_DEFAULTS.model)
   const [apiKey, setApiKey] = useState('')
@@ -59,12 +58,10 @@ export function ProviderEditorModal({
     setApiKey('')
     if (isEdit && provider) {
       setProviderType(provider.provider)
-      setLabel(provider.label)
       setBaseUrl(provider.baseUrl)
       setModel(provider.model)
     } else {
       setProviderType(DEEPSEEK_DEFAULTS.provider)
-      setLabel('')
       setBaseUrl(DEEPSEEK_DEFAULTS.baseUrl)
       setModel(DEEPSEEK_DEFAULTS.model)
     }
@@ -91,7 +88,7 @@ export function ProviderEditorModal({
       const { id } = await settingsApi.saveProvider({
         id: isEdit ? provider?.id : undefined,
         provider: providerType.trim(),
-        label: label.trim(),
+        label: providerType.trim(),
         baseUrl: baseUrl.trim(),
         model: model.trim(),
         apiKey: apiKey.trim() || undefined,
@@ -106,7 +103,7 @@ export function ProviderEditorModal({
     } finally {
       setBusy(false)
     }
-  }, [mode, isEdit, provider, providerType, label, baseUrl, model, apiKey, onSaved])
+  }, [mode, isEdit, provider, providerType, baseUrl, model, apiKey, onSaved])
 
   if (!open) return null
 
@@ -147,14 +144,6 @@ export function ProviderEditorModal({
             onChange={(e) => setProviderType(e.target.value)}
             placeholder="deepseek / openai / anthropic / qwen"
             autoFocus
-          />
-        </label>
-        <label className="field">
-          <span>显示名称</span>
-          <input
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="如：DeepSeek 主力"
           />
         </label>
         <label className="field">
