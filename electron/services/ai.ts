@@ -1,0 +1,638 @@
+/**
+ * AI service (S5.3/S5.4/S5.5/S5.6 / 07-ai.md §6). Business orchestration:
+ *
+ *  generateModern(paragraphId) — AI-01: per-paragraph modern interpretation.
+ *     cache → DeepSeek (JSON mode, temp 0.3) → validate → write
+ *     paragraphs.content_modern/explanation + ai_cache. Returns DTO.
+ *  ask(query, opts) — AI-02: RAG Q&A. guard pre-check → FTS5 top-k → prompt →
+ *     DeepSeek (temp 0.5) → parse trailing cites JSON → guard post-sanitize →
+ *     cache. Returns answer + cites with paragraphId (jumpable).
+ *  generateCards(paragraphIds) — AI-06: extract card drafts. DeepSeek (JSON
+ *     mode, temp 0.4) per paragraph → createCards() into LRN cards table
+ *     (source='ai_batch'). Returns batch result.
+ *  invalidate(scopeId, kind) — manual regenerate entry point.
+ *  status() — whether a key is configured (no plaintext).
+ *
+ * Concurrency: same scope_id+kind generation is de-duped via an in-process
+ * inflight Map so two simultaneous calls share one Promise (and one billable
+ * request), per 07-ai.md §8.3.
+ *
+ * The plaintext API key is obtained via getActiveApiKey() (SET module), lives
+ * only in the local `cfg` const for the duration of one call, and is never
+ * logged or returned. Key-absence throws aiError('AI_KEY_NOT_CONFIGURED').
+ */
+import { getDb } from '../db/connection'
+import { AppError } from '../lib/error'
+import { getActiveApiKey } from './settings'
+import { searchParagraphs, type SearchHit } from './search'
+import { createCards, type CardDraft } from './learning'
+import { deepseek } from '../ai/deepseek'
+import type { ProviderConfig } from '../ai/types'
+import {
+  buildModernPrompt,
+  buildQaPrompt,
+  buildCardsPrompt,
+  type ModernJson,
+  type ModernSentence,
+  type QaContext,
+  type QaTrailingJson,
+  type CardsJson,
+} from '../ai/prompts'
+import { shouldBlock, sanitizeOutput } from '../ai/guard'
+import { hitsToContext } from '../ai/rag'
+import {
+  computePromptHash,
+  findCache,
+  writeCache,
+  invalidateCache,
+  type AiCacheKind,
+} from '../ai/cache'
+import { aiError } from '../ai/errors'
+
+// ============================================================================
+// DTOs (self-contained; renderer mirrors in src/modules/ai/types.ts)
+// ============================================================================
+
+export interface ModernResultDTO {
+  paragraphId: string
+  fromCache: boolean
+  sentences: ModernSentence[]
+  summary: string
+  model: string
+  tokens: number
+}
+
+export interface QaCiteDTO {
+  n: number
+  paragraphId: string
+  snippet: string
+}
+
+export interface QaAnswerDTO {
+  answer: string
+  cites: QaCiteDTO[]
+  fromCache: boolean
+  model: string
+  tokens: number
+  /** true when the post-guard scrubbed dosage expressions from the answer. */
+  scrubbed: boolean
+}
+
+export interface CardsBatchResultDTO {
+  created: number
+  skipped: number
+  errors: string[]
+  ids: string[]
+}
+
+export interface AiStatusDTO {
+  configured: boolean
+  provider: string | null
+  model: string | null
+}
+
+export interface AiProgressPayload {
+  jobId: string
+  phase: string
+  current: number
+  total: number
+}
+
+// ============================================================================
+// Provider config
+// ============================================================================
+
+/**
+ * Load the active provider config (plaintext key, main-process only).
+ * Throws AI_KEY_NOT_CONFIGURED when no key is set so the renderer can degrade.
+ */
+function loadConfig(): ProviderConfig {
+  const cfg = getActiveApiKey()
+  if (!cfg || !cfg.apiKey) {
+    throw aiError('AI_KEY_NOT_CONFIGURED', '未配置 API Key，请在设置中添加')
+  }
+  return cfg
+}
+
+/** Whether a key is configured — never returns the plaintext. */
+export function status(): AiStatusDTO {
+  const cfg = getActiveApiKey()
+  if (!cfg || !cfg.apiKey) return { configured: false, provider: null, model: null }
+  return { configured: true, provider: cfg.provider, model: cfg.model }
+}
+
+// ============================================================================
+// Concurrency de-dup (07-ai.md §8.3)
+// ============================================================================
+
+const inflight = new Map<string, Promise<unknown>>()
+
+function dedupe<T>(key: string, run: () => Promise<T>): Promise<T> {
+  const existing = inflight.get(key)
+  if (existing) return existing as Promise<T>
+  const p = run().finally(() => inflight.delete(key))
+  inflight.set(key, p)
+  return p as Promise<T>
+}
+
+// ============================================================================
+// Paragraph fetch helper
+// ============================================================================
+
+interface ParagraphRow {
+  id: string
+  chapter_id: string
+  text: string
+}
+
+function getParagraph(paragraphId: string): ParagraphRow {
+  const db = getDb()
+  const row = db
+    .prepare('SELECT id, chapter_id, text FROM paragraphs WHERE id = ? AND deleted_at IS NULL')
+    .get(paragraphId) as ParagraphRow | undefined
+  if (!row) throw new AppError('NOT_FOUND', `段落 ${paragraphId} 不存在`)
+  if (!row.text || !row.text.trim()) {
+    throw new AppError('VALIDATION', '段落内容为空，无法生成解读')
+  }
+  return row
+}
+
+function listChapterParagraphIds(chapterId: string): string[] {
+  const db = getDb()
+  const rows = db
+    .prepare(
+      `SELECT id FROM paragraphs
+       WHERE chapter_id = ? AND deleted_at IS NULL AND is_noise = 0
+       ORDER BY order_index`,
+    )
+    .all(chapterId) as { id: string }[]
+  return rows.map((r) => r.id)
+}
+
+// ============================================================================
+// JSON parsing + validation
+// ============================================================================
+
+/** Parse the model's JSON-mode output, tolerating a leading/trailing code fence. */
+function parseJsonLoose<T>(raw: string): T {
+  let s = (raw ?? '').trim()
+  // Strip ```json ... ``` fences if the model added them despite JSON mode.
+  if (s.startsWith('```')) {
+    s = s.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+  }
+  try {
+    return JSON.parse(s) as T
+  } catch (e) {
+    throw aiError('AI_PARSE_ERROR', `模型输出 JSON 解析失败：${(e as Error).message}`, {
+      head: s.slice(0, 120),
+    })
+  }
+}
+
+/**
+ * Validate the modern-interpretation JSON. sentences must be a non-empty array
+ * with the required string fields. We do NOT strictly enforce sentence-count
+ * parity with the source (07-ai.md §6.2.2 allows ±1 tolerance) because model
+ * sentence-splitting of classical text is inherently fuzzy.
+ */
+function validateModernJson(obj: ModernJson): ModernJson {
+  if (!obj || typeof obj !== 'object') {
+    throw aiError('AI_PARSE_ERROR', '模型输出不是有效 JSON 对象')
+  }
+  if (!Array.isArray(obj.sentences) || obj.sentences.length === 0) {
+    throw aiError('AI_PARSE_ERROR', '模型输出缺少 sentences 数组')
+  }
+  for (const s of obj.sentences) {
+    if (typeof s.original !== 'string' || typeof s.modern !== 'string' || typeof s.commentary !== 'string') {
+      throw aiError('AI_PARSE_ERROR', 'sentences 项缺少 original/modern/commentary 字段')
+    }
+  }
+  if (typeof obj.summary !== 'string') obj.summary = ''
+  return obj
+}
+
+// ============================================================================
+// S5.3 — AI-01 modern interpretation
+// ============================================================================
+
+/**
+ * Generate (or return cached) modern-language interpretation for a paragraph.
+ *
+ * Flow: cache lookup by prompt_hash → on miss, call DeepSeek (JSON mode,
+ * temp 0.3) → validate → write paragraphs.content_modern/explanation AND
+ * ai_cache in one transaction → return DTO.
+ */
+export function generateModern(paragraphId: string): Promise<ModernResultDTO> {
+  const cacheKey = `modern:${paragraphId}`
+  return dedupe(cacheKey, () => generateModernImpl(paragraphId))
+}
+
+function generateModernImpl(paragraphId: string): Promise<ModernResultDTO> {
+  const para = getParagraph(paragraphId)
+  const cfg = loadConfig()
+  const built = buildModernPrompt({ text: para.text })
+  const promptHash = computePromptHash(built.messages, cfg.model, built.temperature)
+
+  // 1. cache hit?
+  const hit = findCache(paragraphId, 'modern', promptHash)
+  if (hit) {
+    const parsed = validateModernJson(parseJsonLoose<ModernJson>(hit.response))
+    return Promise.resolve(toModernDTO(paragraphId, parsed, hit.model, hit.totalTokens, true))
+  }
+
+  // 2. miss → call DeepSeek
+  return (async () => {
+    // Retry-once on parse failure with a lower temperature (07-ai.md §6.2.2).
+    let parsed: ModernJson | undefined
+    let lastResp
+    let temperature = built.temperature
+    for (let attempt = 0; attempt < 2; attempt++) {
+      lastResp = await deepseek.chat(
+        {
+          model: cfg.model,
+          messages: built.messages,
+          temperature,
+          response_format: built.response_format,
+          stream: false,
+        },
+        cfg,
+      )
+      try {
+        parsed = validateModernJson(
+          parseJsonLoose<ModernJson>(lastResp.choices[0]?.message?.content ?? ''),
+        )
+        break
+      } catch (e) {
+        if (attempt === 1) throw e
+        temperature = 0.2 // retry cooler
+      }
+    }
+    if (!parsed || !lastResp) {
+      throw aiError('AI_PARSE_ERROR', '模型未返回有效解读')
+    }
+
+    // 3. write paragraphs + ai_cache atomically.
+    const modernText = parsed.sentences.map((s) => s.modern).join('\n')
+    const explainText = parsed.sentences
+      .map((s, i) => `${i + 1}. ${s.original}\n    ${s.commentary}`)
+      .join('\n')
+
+    const db = getDb()
+    const tx = db.transaction(() => {
+      db.prepare(
+        `UPDATE paragraphs SET content_modern = ?, content_explanation = ?
+         WHERE id = ?`,
+      ).run(modernText, explainText, paragraphId)
+      writeCache({
+        scope: 'paragraph',
+        scopeId: paragraphId,
+        kind: 'modern',
+        paragraphId,
+        promptHash,
+        response: JSON.stringify(parsed),
+        model: cfg.model,
+        promptTokens: lastResp.usage?.prompt_tokens ?? 0,
+        completionTokens: lastResp.usage?.completion_tokens ?? 0,
+        totalTokens: lastResp.usage?.total_tokens ?? 0,
+        meta: { summary: parsed.summary, sentenceCount: parsed.sentences.length },
+      })
+    })
+    tx()
+
+    return toModernDTO(paragraphId, parsed, cfg.model, lastResp.usage?.total_tokens ?? 0, false)
+  })()
+}
+
+function toModernDTO(
+  paragraphId: string,
+  parsed: ModernJson,
+  model: string,
+  tokens: number,
+  fromCache: boolean,
+): ModernResultDTO {
+  return {
+    paragraphId,
+    fromCache,
+    sentences: parsed.sentences.map((s) => ({
+      original: s.original,
+      modern: s.modern,
+      commentary: s.commentary,
+    })),
+    summary: parsed.summary,
+    model,
+    tokens,
+  }
+}
+
+// ============================================================================
+// S5.3 batch — AI-01 whole-chapter modern interpretation (long task)
+// ============================================================================
+
+/**
+ * Generate modern interpretation for every non-noise paragraph in a chapter,
+ * emitting progress after each paragraph. Each paragraph is generated via
+ * generateModern() so the cache short-circuits already-interpreted ones
+ * (re-running on an already-done chapter is near-instant and free).
+ */
+export async function generateModernBatch(
+  chapterId: string,
+  onProgress?: (p: AiProgressPayload) => void,
+): Promise<{ done: number; total: number; errors: string[] }> {
+  const ids = listChapterParagraphIds(chapterId)
+  if (ids.length === 0) {
+    throw new AppError('NOT_FOUND', `章节 ${chapterId} 无可用段落`)
+  }
+  const jobId = `modern-batch-${chapterId}-${Date.now()}`
+  const errors: string[] = []
+  let done = 0
+  for (const paragraphId of ids) {
+    try {
+      await generateModern(paragraphId)
+    } catch (e) {
+      // A single paragraph failure shouldn't abort the whole batch; record and
+      // continue. The renderer's degraded-state handler still surfaces the error.
+      errors.push(`${paragraphId}: ${(e as Error).message}`)
+    }
+    done++
+    onProgress?.({ jobId, phase: 'modern', current: done, total: ids.length })
+  }
+  onProgress?.({ jobId, phase: 'done', current: done, total: ids.length })
+  return { done, total: ids.length, errors }
+}
+
+// ============================================================================
+// S5.4 — AI-02 RAG Q&A
+// ============================================================================
+
+const QA_MAX_QUERY = 2000
+
+export interface AskOpts {
+  bookId?: string | null
+  topK?: number
+}
+
+/**
+ * RAG Q&A. Flow: guard pre-check (no network on blocked) → FTS5 top-k → prompt
+ * → cache lookup → DeepSeek (temp 0.5) → parse trailing cites JSON → guard
+ * post-sanitize → cache. Cites carry paragraphId so the renderer can jump.
+ */
+export function ask(query: string, opts: AskOpts = {}): Promise<QaAnswerDTO> {
+  const q = (query ?? '').trim()
+  if (!q) throw new AppError('VALIDATION', '问题不能为空')
+  if (q.length > QA_MAX_QUERY) {
+    throw new AppError('VALIDATION', `问题过长（>${QA_MAX_QUERY} 字）`)
+  }
+
+  // Layer 2: pre-call guard — refuse diagnosis/prescription/dosage requests.
+  const blocked = shouldBlock(q)
+  if (blocked.blocked) {
+    return Promise.resolve<QaAnswerDTO>({
+      answer: blocked.refusal,
+      cites: [],
+      fromCache: false,
+      model: 'guard',
+      tokens: 0,
+      scrubbed: false,
+    })
+  }
+
+  const topK = Math.max(1, Math.min(opts.topK ?? 5, 10))
+  return dedupe(`qa:${q}:${opts.bookId ?? ''}:${topK}`, () => askImpl(q, opts, topK))
+}
+
+async function askImpl(query: string, opts: AskOpts, topK: number): Promise<QaAnswerDTO> {
+  const cfg = loadConfig()
+
+  // 1. RAG retrieval via SRH (FTS5).
+  const sr: { hits: SearchHit[] } = searchParagraphs(query, {
+    limit: topK,
+    ...(opts.bookId ? { bookIds: [opts.bookId] } : {}),
+  })
+  const contexts: QaContext[] = hitsToContext(sr.hits, topK)
+
+  // No retrieval → still ask, but the model will likely say "无法回答".
+  const built = buildQaPrompt({ query, contexts })
+  const promptHash = computePromptHash(built.messages, cfg.model, built.temperature)
+
+  // 2. cache hit?
+  const scopeId = 'qa'
+  const hit = findCache(scopeId, 'qa', promptHash)
+  if (hit) {
+    const cached = JSON.parse(hit.response) as { answer: string; cites: QaCiteDTO[]; scrubbed: boolean }
+    return {
+      answer: cached.answer,
+      cites: cached.cites,
+      fromCache: true,
+      model: hit.model,
+      tokens: hit.totalTokens,
+      scrubbed: cached.scrubbed,
+    }
+  }
+
+  // 3. call DeepSeek (non-JSON mode; natural language + trailing cites JSON).
+  const resp = await deepseek.chat(
+    {
+      model: cfg.model,
+      messages: built.messages,
+      temperature: built.temperature,
+      stream: false,
+    },
+    cfg,
+  )
+  const raw = resp.choices[0]?.message?.content ?? ''
+
+  // 4. parse trailing cites JSON. Failure is non-fatal (answer still shown).
+  const { answer, citesJson } = splitAnswerAndCites(raw, contexts)
+
+  // 5. Layer 3: post-guard sanitize (scrub dosage expressions).
+  const { text: cleanAnswer, scrubbed } = sanitizeOutput(answer)
+
+  // 6. cache + return.
+  const citeDtos: QaCiteDTO[] = (citesJson?.cites ?? []).map((c) => {
+    const ctx = contexts.find((x) => x.n === c.n)
+    return {
+      n: c.n,
+      paragraphId: c.paragraph_id ?? ctx?.paragraphId ?? '',
+      snippet: c.snippet ?? ctx?.snippet ?? '',
+    }
+  })
+
+  const payload = JSON.stringify({ answer: cleanAnswer, cites: citeDtos, scrubbed })
+  writeCache({
+    scope: 'global',
+    scopeId,
+    kind: 'qa',
+    paragraphId: null,
+    promptHash,
+    response: payload,
+    model: cfg.model,
+    promptTokens: resp.usage?.prompt_tokens ?? 0,
+    completionTokens: resp.usage?.completion_tokens ?? 0,
+    totalTokens: resp.usage?.total_tokens ?? 0,
+    meta: { query, contextCount: contexts.length },
+  })
+
+  return {
+    answer: cleanAnswer,
+    cites: citeDtos,
+    fromCache: false,
+    model: cfg.model,
+    tokens: resp.usage?.total_tokens ?? 0,
+    scrubbed,
+  }
+}
+
+/**
+ * Split the model's natural-language answer from its trailing cites JSON.
+ * The prompt asks for a JSON block on the final line(s); we locate the last
+ * top-level {...} in the text. If parsing fails, returns the whole text as the
+ * answer with empty cites (non-fatal — 07-ai.md §6.2.3).
+ *
+ * Pure — exported for unit testing.
+ */
+export function splitAnswerAndCites(
+  raw: string,
+  _contexts: QaContext[],
+): { answer: string; citesJson: QaTrailingJson | null } {
+  const text = raw ?? ''
+  // Find the LAST top-level {...} block by depth-tracking from the start.
+  // (lastIndexOf('{') would land on a nested inner brace — e.g. inside a
+  // snippet — and miss the outer envelope, so JSON.parse would not see cites.)
+  let depth = 0
+  let blockStart = -1
+  let lastStart = -1
+  let lastEnd = -1
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i]
+    if (ch === '{') {
+      if (depth === 0) blockStart = i
+      depth++
+    } else if (ch === '}') {
+      depth--
+      if (depth === 0 && blockStart !== -1) {
+        lastStart = blockStart
+        lastEnd = i
+      }
+    }
+  }
+  if (lastStart === -1) return { answer: text.trim(), citesJson: null }
+  const jsonStr = text.slice(lastStart, lastEnd + 1)
+  try {
+    const parsed = JSON.parse(jsonStr) as QaTrailingJson
+    if (parsed && Array.isArray(parsed.cites)) {
+      return { answer: text.slice(0, lastStart).trim(), citesJson: parsed }
+    }
+  } catch {
+    // fall through
+  }
+  return { answer: text.trim(), citesJson: null }
+}
+
+// ============================================================================
+// S5.6 — AI-06 card batch generation
+// ============================================================================
+
+/**
+ * Generate card drafts from the given paragraphs and persist them via the LRN
+ * module's createCards() (source='ai_batch'). Returns the batch result.
+ *
+ * One DeepSeek call per paragraph (each gets its own cache entry); results are
+ * accumulated and written in a single createCards transaction.
+ */
+export async function generateCards(paragraphIds: string[]): Promise<CardsBatchResultDTO> {
+  if (!paragraphIds || paragraphIds.length === 0) {
+    throw new AppError('VALIDATION', '请至少选择一个段落')
+  }
+  const cfg = loadConfig()
+  const db = getDb()
+
+  const drafts: CardDraft[] = []
+  for (const paragraphId of paragraphIds) {
+    const para = db
+      .prepare('SELECT id, text FROM paragraphs WHERE id = ? AND deleted_at IS NULL')
+      .get(paragraphId) as { id: string; text: string } | undefined
+    if (!para) throw new AppError('NOT_FOUND', `段落 ${paragraphId} 不存在`)
+    if (!para.text?.trim()) continue
+
+    const draftsForPara = await generateCardsForParagraph(para.id, para.text, cfg)
+    for (const d of draftsForPara) {
+      drafts.push({
+        front: d.front,
+        back: d.back,
+        type: tagToCardType(d.tag),
+        paragraphId: para.id,
+      })
+    }
+  }
+
+  if (drafts.length === 0) {
+    return { created: 0, skipped: 0, errors: ['模型未生成任何卡片'], ids: [] }
+  }
+  return createCards(drafts)
+}
+
+async function generateCardsForParagraph(
+  paragraphId: string,
+  text: string,
+  cfg: ProviderConfig,
+): Promise<{ front: string; back: string; tag: string }[]> {
+  const built = buildCardsPrompt({ text })
+  const promptHash = computePromptHash(built.messages, cfg.model, built.temperature)
+
+  const hit = findCache(paragraphId, 'cards', promptHash)
+  if (hit) {
+    const cached = parseJsonLoose<CardsJson>(hit.response)
+    return cached.cards ?? []
+  }
+
+  const resp = await deepseek.chat(
+    {
+      model: cfg.model,
+      messages: built.messages,
+      temperature: built.temperature,
+      response_format: built.response_format,
+      stream: false,
+    },
+    cfg,
+  )
+  const raw = resp.choices[0]?.message?.content ?? ''
+  let parsed: CardsJson
+  try {
+    parsed = parseJsonLoose<CardsJson>(raw)
+  } catch (e) {
+    throw aiError('AI_PARSE_ERROR', `卡片 JSON 解析失败：${(e as Error).message}`)
+  }
+  const cards = Array.isArray(parsed.cards) ? parsed.cards : []
+
+  writeCache({
+    scope: 'paragraph',
+    scopeId: paragraphId,
+    kind: 'cards',
+    paragraphId,
+    promptHash,
+    response: JSON.stringify({ cards }),
+    model: cfg.model,
+    promptTokens: resp.usage?.prompt_tokens ?? 0,
+    completionTokens: resp.usage?.completion_tokens ?? 0,
+    totalTokens: resp.usage?.total_tokens ?? 0,
+    meta: { count: cards.length },
+  })
+  return cards
+}
+
+/** Map the prompt's free-text tag to the LRN CardType union conservatively. */
+function tagToCardType(tag: string): CardDraft['type'] {
+  const t = (tag ?? '').trim()
+  if (t.includes('术语') || t.includes('性味')) return 'term_to_meaning'
+  if (t.includes('原文')) return 'original_to_interpret'
+  if (t.includes('功效')) return 'title_to_points'
+  return 'original_to_interpret'
+}
+
+// ============================================================================
+// Manual invalidation (regenerate)
+// ============================================================================
+
+export function invalidate(scopeId: string, kind: AiCacheKind): { invalidated: number } {
+  return { invalidated: invalidateCache(scopeId, kind) }
+}

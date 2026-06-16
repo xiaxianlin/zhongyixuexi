@@ -3,7 +3,7 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`，末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-16（Phase 4/6/7 完成，Wave 1 全完；Phase 5 AI 待 Wave 2）
+最后更新：2026-06-16（Phase 5 AI 完成，所有功能模块就绪；剩 Phase 8 打包）
 
 ---
 
@@ -87,14 +87,14 @@ Exit：DeepSeek 解读/问答可用、断网降级、缓存生效。
 
 | # | 状态 | 摘要 | 产出 | 决策/阻塞 |
 |---|---|---|---|---|
-| S5.1 | todo | DeepSeek 客户端(fetch+重试+错误映射) | | |
-| S5.2 | todo | ai_cache 表 + 命中策略 | | |
-| S5.3 | todo | 白话解读生成 → 解读栏填充 + 同步对齐 | | |
-| S5.4 | todo | RAG 智能问答(FTS top-k) | | |
-| S5.5 | todo | 失败降级(AI-07) + 三层红线拦截 | | |
-| S5.6 | todo | 记忆卡批量生成（依赖 S6.1） | | |
+| S5.1 | done | DeepSeek 客户端(fetch+重试+错误映射) | electron/ai/deepseek.ts | 60s 超时+指数退避 3 次+状态码→AppError；Key 从 getActiveApiKey(不日志/不过IPC) |
+| S5.2 | done | ai_cache 表 + 命中策略 | electron/ai/cache.ts、migrations/ai.sql(v9) | prompt_hash=sha256(归一化prompt+model+temp)；scope_id+kind+hash+未失效 命中；段落编辑后 hash 变避免误命中 |
+| S5.3 | done | 白话解读生成 → 解读栏填充 | electron/services/ai.ts(generateModern)、InterpretPanel 生成按钮 | 写 content_modern/explanation；InterpretPanel 生成后 reload chapter 保留位置 |
+| S5.4 | done | RAG 智能问答(FTS top-k) | ai.ts(ask)、electron/ai/rag.ts、QaPanel | searchParagraphs top-k→拼 Prompt→DeepSeek→后置红线→[n] 引用可跳转 |
+| S5.5 | done | 失败降级(AI-07) + 三层红线拦截 | electron/ai/guard.ts、DegradedNotice、useAiStore.run | System Prompt 硬禁+预检关键词(不联网)+后置剂量净化；失败降级不阻断阅读 |
+| S5.6 | done | 记忆卡批量生成 | ai.ts(generateCards) | DeepSeek 抽要点→createCards(source='ai_batch') |
 
-- [ ] Phase 5 exit 达成
+- [x] Phase 5 exit 达成
 
 ---
 
@@ -154,3 +154,4 @@ Exit：双平台安装包可装可用。
 - 2026-06-16：S1.5 完成 — import/library/segment IPC + 书库/目录树/段级校对 UI + 端到端集成检查（import→list→tree→fts→segment 编辑→delete 全 PASS）。**Phase 1 exit 达成。**
 - 2026-06-16：Phase 2(RD)+3(SRH) 完成（dev-rd/dev-srh agent 并行产出 + 主 agent 集成）— 三栏阅读工作台/段级进度/书签/同步滚动/快捷键；FTS5 全文检索+全库高亮+术语词典。migrate v4(dictionary)+v5(reading)；端到端 PASS（含 search 断言）。**Phase 2 & 3 exit 达成。** 关键修复：导出 invokeRaw 共享、useProgress 去除 render 中写 ref、Node 需 22+（.nvmrc，vitest 4 require(ESM)）。
 - 2026-06-16：Phase 4(SET)+6(LRN)+7(NOTE) 完成（dev-set/dev-lrn/dev-note agent 并行 fan-out + 主 agent 集成）— safeStorage Key/备份/设置、SM-2 记忆卡/测验/仪表盘、笔记/双链/导出。migrate v6(settings)+v7(learning)+v8(notes)；152 tests 全绿；smoke schema v8 全表。**Wave 1 全完，Phase 4/6/7 exit 达成。** 剩 Phase 5(AI, Wave 2，依赖 set+srh)。集成期修：3 处类型(sender.id/printToPDF marginsType/digest hex)、backup.test 移 node root、agent 测试 4 处断言修正、adm-zip 移 deps。
+- 2026-06-16：Phase 5(AI) 完成（dev-ai agent + 主 agent 集成）— DeepSeek 客户端/ai_cache/白话解读/RAG 问答/失败降级/三层红线/AI 卡片。migrate v9(ai_cache)；203 tests 全绿；smoke schema v9。**所有功能模块(Phase 0-7)就绪，剩 Phase 8 打包。** 集成期修：splitAnswerAndCites 顶层块提取、normalizePrompt 空白归一、sanitizeOutput 中文剂量正则、eslint argsIgnorePattern^_、InterpretPanel 生成按钮+reload。

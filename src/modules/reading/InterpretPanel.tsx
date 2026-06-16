@@ -2,25 +2,40 @@
  * InterpretPanel — middle column (RD-03). Renders the AI interpretation
  * (content_modern + content_explanation) for each paragraph, locked 1:1 to the
  * original column by paragraph_id. Segments without a cached interpretation
- * render a placeholder "待 AI 解读" (Phase 5 AI module fills these columns).
+ * render a placeholder "待 AI 解读".
  *
- * The scroll container is forwarded to ReadingWorkbench for useSyncScroll; the
- * sync direction is original → interpret by default (the original is the driver),
- * but either column can drive (see useSyncScroll).
+ * The "生成解读" button triggers `ai:generateModern` for the top paragraph
+ * (Phase 5 AI module writes paragraphs.content_modern), then reloads the
+ * chapter content while preserving the reading position.
  */
 import { forwardRef } from 'react'
 import { ParagraphBlock } from './ParagraphBlock'
 import { useReadingStore } from './store'
+import { readingApi } from '@/lib/reading-api'
+import { aiApi } from '@/lib/ai-api'
+import { useAiStore } from '@/stores/ai'
 import type { ParagraphDTO } from './types'
 
 interface InterpretPanelProps {
   paragraphs: ParagraphDTO[]
 }
 
+/** Re-fetch the chapter (picks up AI-written content_modern) keeping position. */
+async function reloadChapterKeepPosition(): Promise<void> {
+  const st = useReadingStore.getState()
+  const { bookId, chapterId, topParagraphId, scrollRatio } = st
+  if (!bookId || !chapterId) return
+  const c = await readingApi.getChapter(bookId, chapterId)
+  if (!c) return
+  st.setChapter(bookId, chapterId, c.chapter.title, c.paragraphs)
+  if (topParagraphId) st.setTopParagraph(topParagraphId, scrollRatio)
+}
+
 export const InterpretPanel = forwardRef<HTMLDivElement, InterpretPanelProps>(
   function InterpretPanel({ paragraphs }, ref) {
     const topParagraphId = useReadingStore((s) => s.topParagraphId)
     const fontSize = useReadingStore((s) => s.layout.fontSize)
+    const run = useAiStore((s) => s.run)
 
     // How many segments actually have interpretation (for the header summary).
     const generated = paragraphs.filter(
@@ -29,6 +44,13 @@ export const InterpretPanel = forwardRef<HTMLDivElement, InterpretPanelProps>(
         (p.content_explanation != null && p.content_explanation !== ''),
     ).length
 
+    const onGenerate = (): void => {
+      if (!topParagraphId) return
+      void run(() => aiApi.generateModern(topParagraphId)).then((r) => {
+        if (r) void reloadChapterKeepPosition()
+      })
+    }
+
     return (
       <section className="ipanel">
         <header className="ipanel__bar">
@@ -36,6 +58,15 @@ export const InterpretPanel = forwardRef<HTMLDivElement, InterpretPanelProps>(
           <span className="ipanel__meta">
             {generated}/{paragraphs.length} 已生成
           </span>
+          {topParagraphId && (
+            <button
+              className="app__navBtn"
+              onClick={onGenerate}
+              title="为当前段生成白话解读（DeepSeek）"
+            >
+              生成解读
+            </button>
+          )}
         </header>
 
         <div

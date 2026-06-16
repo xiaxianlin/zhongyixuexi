@@ -1,0 +1,209 @@
+/* AI module styles. Kept self-contained (no imports from other modules' CSS)
+   so the main agent can mount the components without CSS-order surprises.
+   Class names are prefixed ai- to avoid collisions. */
+
+/* ---- DegradedNotice (top banner) ---- */
+.ai-degraded-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #fef3cd;
+  border-bottom: 1px solid #f5d785;
+  color: #7a5b00;
+  font-size: 13px;
+}
+.ai-degraded-notice__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+.ai-degraded-notice__hint {
+  color: #9a7b1f;
+  font-size: 12px;
+}
+.ai-degraded-notice__dismiss {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  opacity: 0.7;
+}
+.ai-degraded-notice__dismiss:hover {
+  opacity: 1;
+}
+
+/* ---- AiStatusBadge ---- */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  color: inherit;
+}
+.ai-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #999;
+}
+.ai-badge--off {
+  color: #888;
+}
+.ai-badge--off .ai-badge__dot {
+  background: #bbb;
+}
+.ai-badge--on {
+  border-color: #6ec05f;
+  color: #2d7a2d;
+}
+.ai-badge--on .ai-badge__dot {
+  background: #6ec05f;
+}
+.ai-badge--degraded {
+  border-color: #e0a93b;
+  background: #fff8e8;
+  color: #9a6b1f;
+}
+.ai-badge--degraded .ai-badge__dot {
+  background: #e0a93b;
+}
+.ai-badge--unknown .ai-badge__dot {
+  background: #999;
+}
+
+/* ---- QaPanel (side panel) ---- */
+.ai-qa-panel {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  height: 100%;
+  background: #fafaf7;
+  border-left: 1px solid #e3e3dd;
+}
+.ai-qa-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid #e3e3dd;
+}
+.ai-qa-panel__header h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+.ai-qa-panel__close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #888;
+}
+.ai-qa-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+.ai-qa-panel__empty {
+  color: #999;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.ai-qa-panel__error {
+  margin-top: 8px;
+  color: #c0392b;
+  font-size: 12px;
+}
+.ai-qa-panel__input {
+  border-top: 1px solid #e3e3dd;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ai-qa-panel__input textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid #d8d8d2;
+  border-radius: 6px;
+  padding: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  background: #fff;
+}
+.ai-qa-panel__send {
+  align-self: flex-end;
+  padding: 6px 16px;
+  background: #2d5a8c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ai-qa-panel__send:disabled {
+  background: #aac0d8;
+  cursor: not-allowed;
+}
+.ai-qa-panel__disclaimer {
+  margin: 0;
+  padding: 0 16px 8px;
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* ---- Answer view ---- */
+.ai-qa-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ai-qa-answer__text {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.ai-qa-answer__scrubbed {
+  margin: 0;
+  font-size: 11px;
+  color: #b8860b;
+  font-style: italic;
+}
+.ai-qa-answer__cites {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ai-qa-answer__cite {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #2d5a8c;
+  text-decoration: underline;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+}
+.ai-qa-answer__cite:hover {
+  color: #1a3d6c;
+}
+.ai-qa-answer__meta {
+  margin: 0;
+  font-size: 11px;
+  color: #aaa;
+}

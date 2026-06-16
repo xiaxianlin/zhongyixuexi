@@ -1,11 +1,16 @@
+import { useEffect, useState } from 'react'
 import { useUiStore } from '@/stores/ui'
 import { useSessionStore } from '@/stores/session'
+import { useAiStore, attachAiProgressListener } from '@/stores/ai'
 import { LibraryView } from '@/modules/library/LibraryView'
 import { ReadingWorkbench } from '@/modules/reading/ReadingWorkbench'
 import { SearchPanel } from '@/modules/search/SearchPanel'
 import { SettingsView } from '@/modules/settings/SettingsView'
 import { LearningView } from '@/modules/learning/LearningView'
 import { NotesView } from '@/modules/notes/NotesView'
+import { QaPanel } from '@/modules/ai/QaPanel'
+import { DegradedNotice } from '@/modules/ai/DegradedNotice'
+import { AiStatusBadge } from '@/modules/ai/AiStatusBadge'
 
 const NAV: { view: import('@/stores/session').View; label: string }[] = [
   { view: 'library', label: '书库' },
@@ -20,7 +25,17 @@ export default function App() {
   const cycleTheme = useUiStore((s) => s.cycleTheme)
   const view = useSessionStore((s) => s.view)
   const activeBookId = useSessionStore((s) => s.activeBookId)
+  const setActiveParagraph = useSessionStore((s) => s.setActiveParagraph)
   const setView = useSessionStore((s) => s.setView)
+  const refreshAiStatus = useAiStore((s) => s.refreshStatus)
+
+  const [qaOpen, setQaOpen] = useState(false)
+
+  useEffect(() => {
+    const off = attachAiProgressListener()
+    void refreshAiStatus()
+    return off
+  }, [refreshAiStatus])
 
   const reading = view === 'reading' && activeBookId !== null
 
@@ -40,6 +55,14 @@ export default function App() {
           ))}
         </nav>
         <button
+          className={qaOpen ? 'app__navBtn is-active' : 'app__navBtn'}
+          onClick={() => setQaOpen((v) => !v)}
+          title="AI 问答"
+        >
+          问答
+        </button>
+        <AiStatusBadge />
+        <button
           className="app__themeBtn"
           onClick={cycleTheme}
           title="切换主题"
@@ -48,6 +71,8 @@ export default function App() {
           {theme === 'paper' ? '白' : theme === 'ink' ? '墨' : '夜'}
         </button>
       </header>
+
+      <DegradedNotice />
 
       <main className="app__main">
         {reading && activeBookId ? (
@@ -64,6 +89,13 @@ export default function App() {
           <LibraryView />
         )}
       </main>
+
+      <QaPanel
+        open={qaOpen}
+        onClose={() => setQaOpen(false)}
+        bookId={activeBookId}
+        onCite={(pid) => setActiveParagraph(pid)}
+      />
     </div>
   )
 }

@@ -386,6 +386,37 @@ const MIGRATIONS: Migration[] = [
       `)
     },
   },
+  {
+    // v9 — AI module cache (07-ai.md §4.1). Mirrored from migrations/ai.sql.
+    // ai_cache keys AI text results by prompt_hash so repeat prompts hit cache
+    // (no network/billing). paragraph_id CASCADE; scope='global' rows are unbound.
+    version: 9,
+    name: 'ai_cache',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS ai_cache (
+          id TEXT PRIMARY KEY,
+          scope TEXT NOT NULL,
+          scope_id TEXT NOT NULL,
+          kind TEXT NOT NULL,
+          paragraph_id TEXT,
+          prompt_hash TEXT NOT NULL,
+          response TEXT NOT NULL,
+          model TEXT NOT NULL,
+          prompt_tokens INTEGER NOT NULL DEFAULT 0,
+          completion_tokens INTEGER NOT NULL DEFAULT 0,
+          total_tokens INTEGER NOT NULL DEFAULT 0,
+          created_at INTEGER NOT NULL,
+          invalidated INTEGER NOT NULL DEFAULT 0,
+          meta TEXT,
+          FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_ai_cache_hit ON ai_cache(scope_id, kind, prompt_hash, invalidated);
+        CREATE INDEX IF NOT EXISTS idx_ai_cache_scope ON ai_cache(scope, scope_id, kind);
+        CREATE INDEX IF NOT EXISTS idx_ai_cache_paragraph ON ai_cache(paragraph_id) WHERE paragraph_id IS NOT NULL;
+      `)
+    },
+  },
 ]
 
 const META_TABLE = `
