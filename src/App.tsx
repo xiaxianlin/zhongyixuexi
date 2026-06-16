@@ -3,6 +3,17 @@ import { useSessionStore } from '@/stores/session'
 import { LibraryView } from '@/modules/library/LibraryView'
 import { ReadingWorkbench } from '@/modules/reading/ReadingWorkbench'
 import { SearchPanel } from '@/modules/search/SearchPanel'
+import { SettingsView } from '@/modules/settings/SettingsView'
+import { LearningView } from '@/modules/learning/LearningView'
+import { NotesView } from '@/modules/notes/NotesView'
+
+const NAV: { view: import('@/stores/session').View; label: string }[] = [
+  { view: 'library', label: '书库' },
+  { view: 'search', label: '检索' },
+  { view: 'review', label: '复习' },
+  { view: 'notes', label: '笔记' },
+  { view: 'settings', label: '设置' },
+]
 
 export default function App() {
   const theme = useUiStore((s) => s.theme)
@@ -18,18 +29,15 @@ export default function App() {
       <header className="app__header">
         <h1>中医经典学习</h1>
         <nav className="app__nav">
-          <button
-            className={view === 'library' ? 'app__navBtn is-active' : 'app__navBtn'}
-            onClick={() => setView('library')}
-          >
-            书库
-          </button>
-          <button
-            className={view === 'search' ? 'app__navBtn is-active' : 'app__navBtn'}
-            onClick={() => setView('search')}
-          >
-            检索
-          </button>
+          {NAV.map((n) => (
+            <button
+              key={n.view}
+              className={view === n.view ? 'app__navBtn is-active' : 'app__navBtn'}
+              onClick={() => setView(n.view)}
+            >
+              {n.label}
+            </button>
+          ))}
         </nav>
         <button
           className="app__themeBtn"
@@ -46,6 +54,12 @@ export default function App() {
           <ReadingWorkbench bookId={activeBookId} />
         ) : view === 'search' ? (
           <SearchPanel />
+        ) : view === 'review' ? (
+          <LearningView />
+        ) : view === 'notes' ? (
+          <NotesView />
+        ) : view === 'settings' ? (
+          <SettingsView />
         ) : (
           <LibraryView />
         )}

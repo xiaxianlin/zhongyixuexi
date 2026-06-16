@@ -3,7 +3,7 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`，末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-16（Phase 2+3 完成）
+最后更新：2026-06-16（Phase 4/6/7 完成，Wave 1 全完；Phase 5 AI 待 Wave 2）
 
 ---
 
@@ -73,12 +73,12 @@ Exit：可配 Key、切主题、备份换机。
 
 | # | 状态 | 摘要 | 产出 | 决策/阻塞 |
 |---|---|---|---|---|
-| S4.1 | todo | safeStorage 加密 API Key + DeepSeek 预设 | | |
-| S4.2 | todo | 设置面板 + 主题/字号 | | |
-| S4.3 | todo | 数据备份导出/导入(tar+双校验) | | |
-| S4.4 | todo | 迁移 runner 完善 + 书籍文件管理 | | |
+| S4.1 | done | safeStorage 加密 API Key + DeepSeek 预设 | electron/lib/keystore.ts(+机器绑定 AES fallback)、settings.ts | getActiveApiKey 稳定签名供 AI；明文不出主进程 |
+| S4.2 | done | 设置面板 + 主题/字号 | src/modules/settings/SettingsView.tsx | 4 Tab；主题/字号复用 ui store + DB 持久化 |
+| S4.3 | done | 数据备份导出/导入 | electron/services/backup.ts(adm-zip .tcmz) | 用 adm-zip(已有)；双校验 sha256；默认剥离 Key |
+| S4.4 | done | 书籍文件管理 | settings.ts(listBookFiles/scanOrphans/cleanOrphans) | triggerReparse 委托(IMP-07 未实现抛 CONFLICT) |
 
-- [ ] Phase 4 exit 达成
+- [x] Phase 4 exit 达成
 
 ---
 
@@ -103,13 +103,13 @@ Exit：加卡→复习→测验→仪表盘闭环。
 
 | # | 状态 | 摘要 | 产出 | 决策/阻塞 |
 |---|---|---|---|---|
-| S6.1 | todo | cards/review_log 表 + SM-2 纯函数+单测 | | |
-| S6.2 | todo | 翻卡 UI + 评分驱动调度 | | |
-| S6.3 | todo | 每日复习计划(到期查询) | | |
-| S6.4 | todo | 测验 + 错题转卡 | | |
-| S6.5 | todo | 学习仪表盘 | | |
+| S6.1 | done | cards/review_log 表 + SM-2 纯函数+单测 | learning.ts(sm2 schedule)、sm2.test.ts、migrations/learning.sql | 公式实现(q=4 Δ=0，文档表格有误)；4 表 CASCADE |
+| S6.2 | done | 翻卡 UI + 评分驱动调度 | FlashcardView.tsx、stores/learning.ts | 状态机 idle→front→back→graded；键盘 Space/1-4 |
+| S6.3 | done | 每日复习计划(到期查询) | getDueQueue(到期/全部/随机) | due_at<=now 查询 |
+| S6.4 | done | 测验 + 错题转卡 | QuizView.tsx、generateQuiz、turnErrorToCard | 规则生成(判断/选择/匹配)；错题幂等转卡 |
+| S6.5 | done | 学习仪表盘 | Dashboard.tsx、getDashboard/getHeatmap | 掌握度/热力图/streak/薄弱章节 |
 
-- [ ] Phase 6 exit 达成
+- [x] Phase 6 exit 达成
 
 ---
 
@@ -118,12 +118,12 @@ Exit：边读边记、双链可跳、可导出。
 
 | # | 状态 | 摘要 | 产出 | 决策/阻塞 |
 |---|---|---|---|---|
-| S7.1 | todo | notes 表 + Milkdown 编辑器 | | |
-| S7.2 | todo | 双链[[ ]]解析 + note_links + backlinks | | |
-| S7.3 | todo | 标签/笔记本 + 段落绑定 | | |
-| S7.4 | todo | 导出 MD/HTML/PDF | | |
+| S7.1 | done | notes 表 + 编辑器 | notes.sql、NotesView.tsx | 轻量 textarea+预览(非 Milkdown，免依赖)；Markdown 单一存储 |
+| S7.2 | done | 双链[[ ]]解析 + note_links + backlinks | wikiLinks.ts(+测试)、notes.ts | 全量重算；resolveTarget 优先级；失效兜底 term |
+| S7.3 | done | 标签/笔记本 + 段落绑定 | tags/tag_refs/notebooks、notes.paragraph_id SET NULL | 多态标签；绑段降级不丢 |
+| S7.4 | done | 导出 MD/HTML/PDF | notes:export/exportParagraph | PDF 复用 Electron printToPDF(无 puppeteer) |
 
-- [ ] Phase 7 exit 达成
+- [x] Phase 7 exit 达成
 
 ---
 
@@ -153,3 +153,4 @@ Exit：双平台安装包可装可用。
 - 2026-06-16：S1.3/S1.4/S1.6 完成（subagent 并行）— 段落切分+导入编排 / FTS5 trigram 同步触发器 / 书库+目录树+级联删除。
 - 2026-06-16：S1.5 完成 — import/library/segment IPC + 书库/目录树/段级校对 UI + 端到端集成检查（import→list→tree→fts→segment 编辑→delete 全 PASS）。**Phase 1 exit 达成。**
 - 2026-06-16：Phase 2(RD)+3(SRH) 完成（dev-rd/dev-srh agent 并行产出 + 主 agent 集成）— 三栏阅读工作台/段级进度/书签/同步滚动/快捷键；FTS5 全文检索+全库高亮+术语词典。migrate v4(dictionary)+v5(reading)；端到端 PASS（含 search 断言）。**Phase 2 & 3 exit 达成。** 关键修复：导出 invokeRaw 共享、useProgress 去除 render 中写 ref、Node 需 22+（.nvmrc，vitest 4 require(ESM)）。
+- 2026-06-16：Phase 4(SET)+6(LRN)+7(NOTE) 完成（dev-set/dev-lrn/dev-note agent 并行 fan-out + 主 agent 集成）— safeStorage Key/备份/设置、SM-2 记忆卡/测验/仪表盘、笔记/双链/导出。migrate v6(settings)+v7(learning)+v8(notes)；152 tests 全绿；smoke schema v8 全表。**Wave 1 全完，Phase 4/6/7 exit 达成。** 剩 Phase 5(AI, Wave 2，依赖 set+srh)。集成期修：3 处类型(sender.id/printToPDF marginsType/digest hex)、backup.test 移 node root、agent 测试 4 处断言修正、adm-zip 移 deps。

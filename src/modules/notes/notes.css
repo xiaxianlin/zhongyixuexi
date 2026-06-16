@@ -1,0 +1,401 @@
+/* NOTE module styles — three-pane layout (list | editor | context) */
+
+.notes {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ---- Left: list panel ---- */
+
+.notes__list {
+  width: 260px;
+  min-width: 220px;
+  border-right: 1px solid var(--border, #e0d8cc);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg-sidebar, #f9f6f0);
+}
+
+.notes__listToolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+}
+
+.notes__search {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 4px;
+  font-size: 13px;
+  background: var(--bg-input, #fff);
+  color: var(--ink, #5c4033);
+}
+
+.notes__newBtn {
+  padding: 4px 10px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 4px;
+  background: var(--bg-button, #fff);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--ink, #5c4033);
+  white-space: nowrap;
+}
+
+.notes__newBtn:hover {
+  background: var(--bg-button-hover, #f0ebe0);
+}
+
+.notes__listHeader {
+  padding: 6px 10px;
+  font-size: 12px;
+  color: var(--ink-light, #8a7a6a);
+  border-top: 1px solid var(--border-light, #ede8de);
+  margin-top: 4px;
+}
+
+.notes__loading,
+.notes__empty {
+  padding: 16px 10px;
+  font-size: 13px;
+  color: var(--ink-light, #999);
+  text-align: center;
+}
+
+.notes__items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notes__item {
+  position: relative;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-light, #f0ebe0);
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.notes__item:hover {
+  background: var(--bg-item-hover, #f5f0e8);
+}
+
+.notes__item.is-active {
+  background: var(--bg-item-active, #ede4d4);
+}
+
+.notes__item.is-pinned .notes__itemTitle::before {
+  content: '★ ';
+  color: var(--accent, #b8860b);
+}
+
+.notes__itemTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink, #333);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notes__itemPreview {
+  font-size: 11px;
+  color: var(--ink-light, #999);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notes__itemDel {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  font-size: 16px;
+  color: var(--ink-light, #ccc);
+  cursor: pointer;
+  opacity: 0;
+  padding: 2px 6px;
+}
+
+.notes__item:hover .notes__itemDel {
+  opacity: 1;
+}
+
+.notes__itemDel:hover {
+  color: var(--danger, #c33);
+}
+
+/* ---- Notebooks + tags ---- */
+
+.notes__notebooks {
+  padding: 4px 10px;
+  border-bottom: 1px solid var(--border-light, #ede8de);
+}
+
+.notes__notebook {
+  font-size: 13px;
+  padding: 2px 0;
+  color: var(--ink, #5c4033);
+}
+
+.notes__notebookIcon {
+  margin-right: 4px;
+  font-size: 10px;
+}
+
+.notes__notebookChildren {
+  padding-left: 16px;
+}
+
+.notes__notebookChild {
+  font-size: 12px;
+  color: var(--ink-light, #8a7a6a);
+  padding: 1px 0;
+}
+
+.notes__tags {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border-light, #ede8de);
+}
+
+.notes__tagsHeader {
+  font-size: 12px;
+  color: var(--ink-light, #8a7a6a);
+  margin-bottom: 4px;
+}
+
+.notes__tagCloud {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.notes__tag {
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--bg-tag, #ede4d4);
+  color: var(--ink, #5c4033);
+}
+
+/* ---- Center: editor ---- */
+
+.notes__editor {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.notes__editorToolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border, #e0d8cc);
+}
+
+.notes__titleInput {
+  flex: 1;
+  border: none;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink, #333);
+  background: transparent;
+  outline: none;
+}
+
+.notes__titleInput:focus {
+  border-bottom: 1px dotted var(--border, #ccc);
+}
+
+.notes__viewBtn,
+.notes__exportBtns button {
+  padding: 3px 8px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 3px;
+  background: var(--bg-button, #fff);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink, #5c4033);
+}
+
+.notes__viewBtn.is-active {
+  background: var(--bg-button-active, #ede4d4);
+}
+
+.notes__exportBtns {
+  display: flex;
+  gap: 2px;
+}
+
+.notes__saving {
+  font-size: 11px;
+  color: var(--ink-light, #999);
+}
+
+.notes__editorBody {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+.notes__editorBody.is-split .notes__textarea {
+  border-right: 1px solid var(--border, #e0d8cc);
+}
+
+.notes__textarea {
+  flex: 1;
+  border: none;
+  padding: 16px 20px;
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink, #333);
+  background: var(--bg-main, #fff);
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+}
+
+.notes__preview {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+  background: var(--bg-preview, #faf8f4);
+}
+
+.notes__editorEmpty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--ink-light, #999);
+}
+
+.notes__createBtn {
+  padding: 8px 20px;
+  border: 1px solid var(--border, #ccc);
+  border-radius: 4px;
+  background: var(--bg-button, #fff);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--ink, #5c4033);
+}
+
+.notes__boundInfo {
+  padding: 4px 12px;
+  font-size: 11px;
+  color: var(--ink-light, #8a7a6a);
+  border-top: 1px solid var(--border-light, #f0ebe0);
+}
+
+/* ---- Right: context panel ---- */
+
+.notes__context {
+  width: 220px;
+  min-width: 180px;
+  border-left: 1px solid var(--border, #e0d8cc);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--bg-sidebar, #f9f6f0);
+}
+
+.notes__panelTitle {
+  padding: 8px 10px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-light, #8a7a6a);
+  border-bottom: 1px solid var(--border-light, #ede8de);
+}
+
+.notes__panelEmpty {
+  padding: 12px 10px;
+  font-size: 12px;
+  color: var(--ink-light, #bbb);
+}
+
+.notes__backlinkList,
+.notes__outlinkList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notes__backlinkItem,
+.notes__outlinkItem {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-light, #f0ebe0);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.notes__backlinkItem:hover {
+  background: var(--bg-item-hover, #f5f0e8);
+}
+
+.notes__backlinkTitle {
+  color: var(--ink, #5c4033);
+  font-weight: 500;
+}
+
+.notes__backlinkText {
+  color: var(--ink-light, #8a7a6a);
+  margin-top: 2px;
+}
+
+.notes__outlinkType {
+  display: inline-block;
+  padding: 0 4px;
+  margin-right: 4px;
+  font-size: 10px;
+  border-radius: 3px;
+  background: var(--bg-tag, #ede4d4);
+  color: var(--ink, #5c4033);
+}
+
+.notes__outlinkInvalid {
+  color: var(--danger, #c33);
+  text-decoration: line-through;
+}
+
+/* ---- Preview pane ---- */
+
+.note-preview p {
+  margin: 0 0 0.6em;
+}
+
+.note-preview h2,
+.note-preview h3,
+.note-preview h4 {
+  margin: 0.8em 0 0.4em;
+}
+
+.note-preview__wikilink {
+  color: var(--accent, #8b4513);
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  cursor: pointer;
+}
+
+.note-preview__wikilink:hover {
+  background: var(--bg-wikilink-hover, #f0ebe0);
+}
+
+/* mark from FTS search results */
+.notes__itemPreview mark {
+  background: #ffd54f;
+  border-radius: 2px;
+  padding: 0 2px;
+}
