@@ -2,7 +2,7 @@
 
 > 目标：让多个 subagent **同步（并行）开发**各模块，互不冲突；由主 agent 负责调度与集成。这是 Phase 1 验证过的"disjoint 服务层切片 + 主 agent 集成共享文件"模式的制度化。
 >
-> 配套：6 个模块 subagent 定义在 `.claude/agents/dev-{rd,ai,srh,set,lrn,note}.md`。
+> 配套：6 个模块 subagent 定义在 `.claude/agents/dev-{rd,ai,srh,set,lrn,note}.md`；代码审核 QA 在 `.claude/agents/qa-review.md`。
 
 ## 1. 团队组成
 
@@ -15,6 +15,7 @@
 | **dev-set** | subagent | 设置与数据 SET 模块 |
 | **dev-lrn** | subagent | 学习闭环 LRN 模块（SM-2） |
 | **dev-note** | subagent | 笔记 NOTE 模块（双链） |
+| **qa-review** | subagent | 代码审核 QA：对 diff/模块产出做分级审核（Critical/Warning/Suggestion），集成后、提交前把关，**不改代码** |
 
 > 关键约束：**subagent 不能 spawn subagent**。所以调度永远由主 agent 发起——主 agent 在一条消息里并行 `Agent(subagent_type: "dev-rd")`、`"dev-ai"` …，等全部返回后集成。
 
@@ -71,7 +72,8 @@
 5. `src/lib/ipc.ts` **不动**（各模块 wrapper 独立文件）。
 6. 跑 `npm run check` 全绿——解决跨模块类型摩擦（如契约签名对齐）。
 7. 端到端 smoke + 必要时扩展 `electron/main/integration-check.ts`。
-8. 分 slice commit（conventional + slice 编号）+ 更新 `docs/dev/PROGRESS.md`。
+8. **派 qa-review 审核本次 diff**（`git diff` 未提交改动，或 `git show <sha>` 已提交）：QA 输出 Critical/Warning/Suggestion 分级报告。**Critical 阻塞提交**——主 agent / 模块 owner 修复后重审，直到无 Critical。
+9. 分 slice commit（conventional + slice 编号）+ 更新 `docs/dev/PROGRESS.md`。
 
 ## 7. 调度示例（主 agent）
 
@@ -83,6 +85,12 @@ Agent(subagent_type: "dev-lrn", prompt: "实现 LRN-01~03，SM-2 必须有单测
 Agent(subagent_type: "dev-note", prompt: "实现 NOTE-01/02，双链解析必须有单测……")
 ```
 全部返回后 → 执行 §6 集成 → Wave 2 派 `dev-ai`。
+
+**提交前审核**（集成后、commit 前，§6 步骤 8）：
+```
+Agent(subagent_type: "qa-review", prompt: "审核当前工作树未提交改动（git diff）：重点 §5 硬约束、FTS/级联坑、IPC 信封、React ref/setState 规则、未用符号。输出 Critical/Warning/Suggestion 分级报告与 verdict。")
+```
+qa-review 只读不改；Critical 由主 agent / 模块 owner 修复后重审。
 
 ## 8. 并行纪律（写进每个 subagent prompt）
 

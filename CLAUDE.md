@@ -46,7 +46,7 @@ Development proceeds **slice-by-slice**, driven by `docs/dev/PROGRESS.md` (the s
 
 ## Agent team (parallel module development)
 
-Six module-owner subagents live in `.claude/agents/dev-{rd,ai,srh,set,lrn,note}.md` for parallel development. The **main agent orchestrates** (subagents cannot spawn subagents). `docs/dev/agent-team.md` holds the file-ownership matrix, cross-module contracts, parallel waves, and the integration protocol. Pattern: spawn the relevant module agents in one message (they own disjoint files), then integrate the shared files (`electron/ipc/index.ts`, `electron/db/migrate.ts`, `src/App.tsx`) yourself and run `npm run check`. New `.claude/agents/*.md` require a session restart to load.
+Six module-owner subagents live in `.claude/agents/dev-{rd,ai,srh,set,lrn,note}.md` for parallel development, plus a `qa-review` agent (`.claude/agents/qa-review.md`) that grades diffs Critical/Warning/Suggestion. The **main agent orchestrates** (subagents cannot spawn subagents). `docs/dev/agent-team.md` holds the file-ownership matrix, cross-module contracts, parallel waves, and the integration protocol. Pattern: spawn the relevant module agents in one message (they own disjoint files), integrate the shared files (`electron/ipc/index.ts`, `electron/db/migrate.ts`, `src/App.tsx`) yourself, run `npm run check`, then dispatch `qa-review` on the diff before committing. New `.claude/agents/*.md` require a session restart to load.
 
 ## Cross-cutting hard constraints (docs/dev/00-architecture.md §5)
 
