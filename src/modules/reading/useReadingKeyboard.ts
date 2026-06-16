@@ -13,7 +13,6 @@
  */
 import { useEffect } from 'react'
 import { useReadingStore } from './store'
-import { useUiStore } from '@/stores/ui'
 import { useSessionStore } from '@/stores/session'
 
 const isMac = typeof navigator !== 'undefined' && /Mac/.test(navigator.platform)
@@ -48,7 +47,6 @@ export function useReadingKeyboard(nav: KeyboardNav): void {
   const tabs = useReadingStore((s) => s.tabs)
   const bookId = useReadingStore((s) => s.bookId)
   const chapterId = useReadingStore((s) => s.chapterId)
-  const cycleTheme = useUiStore((s) => s.cycleTheme)
   const openChapter = useSessionStore((s) => s.openChapter)
 
   useEffect(() => {
@@ -110,12 +108,6 @@ export function useReadingKeyboard(nav: KeyboardNav): void {
         nav.onJumpPalette()
         return
       }
-      // Cmd/Ctrl+, — cycle theme (in addition to the header button).
-      if (m && e.key === ',') {
-        e.preventDefault()
-        cycleTheme()
-        return
-      }
 
       // Single-letter segment nav — only when NOT typing.
       if (typing) return
@@ -162,7 +154,6 @@ export function useReadingKeyboard(nav: KeyboardNav): void {
     tabs,
     bookId,
     chapterId,
-    cycleTheme,
     openChapter,
     nav,
   ])

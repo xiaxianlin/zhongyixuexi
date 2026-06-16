@@ -12,7 +12,6 @@
 import { useState, useCallback, useEffect } from 'react'
 import { settingsApi } from '@/lib/settings-api'
 import { useUiStore } from '@/stores/ui'
-import type { Theme } from '@/stores/ui'
 import type { ProviderConfig, BookFileEntry, OrphanScanResult } from './types'
 import './settings.css'
 
@@ -260,31 +259,10 @@ function ApiKeyPanel() {
 // SET-02: Appearance Panel
 // ============================================================================
 
-const THEMES: { value: Theme; label: string }[] = [
-  { value: 'paper', label: '米白' },
-  { value: 'ink', label: '墨绿' },
-  { value: 'dark', label: '深色' },
-]
-
 function AppearancePanel() {
-  const theme = useUiStore((s) => s.theme)
-  const setTheme = useUiStore((s) => s.setTheme)
   const fontScale = useUiStore((s) => s.fontScale)
   const setFontScale = useUiStore((s) => s.setFontScale)
   const [msg, setMsg] = useState('')
-
-  const onTheme = useCallback(
-    async (t: Theme) => {
-      setTheme(t) // optimistic local update
-      try {
-        await settingsApi.setAppearance({ theme: t })
-        setMsg('主题已保存')
-      } catch {
-        setMsg('保存失败')
-      }
-    },
-    [setTheme],
-  )
 
   const onFontScale = useCallback(
     async (v: number) => {
@@ -303,32 +281,16 @@ function AppearancePanel() {
     void (async () => {
       try {
         const a = await settingsApi.getAppearance()
-        if (a.theme) setTheme(a.theme as Theme)
         if (a.fontScale) setFontScale(a.fontScale)
       } catch {
         // DB not ready yet — ignore
       }
     })()
-  }, [setTheme, setFontScale])
+  }, [setFontScale])
 
   return (
     <div className="set-panel">
       <h3 className="set-panel__title">外观设置</h3>
-
-      <div className="field-group">
-        <label className="field-label">主题</label>
-        <div className="theme-switcher">
-          {THEMES.map((t) => (
-            <button
-              key={t.value}
-              className={theme === t.value ? 'theme-chip is-active' : 'theme-chip'}
-              onClick={() => onTheme(t.value)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-      </div>
 
       <div className="field-group">
         <label className="field-label">

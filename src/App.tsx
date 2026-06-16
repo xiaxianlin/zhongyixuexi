@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useUiStore } from '@/stores/ui'
 import { useSessionStore } from '@/stores/session'
 import { useAiStore, attachAiProgressListener } from '@/stores/ai'
 import { LibraryView } from '@/modules/library/LibraryView'
@@ -21,8 +20,6 @@ const NAV: { view: import('@/stores/session').View; label: string }[] = [
 ]
 
 export default function App() {
-  const theme = useUiStore((s) => s.theme)
-  const cycleTheme = useUiStore((s) => s.cycleTheme)
   const view = useSessionStore((s) => s.view)
   const activeBookId = useSessionStore((s) => s.activeBookId)
   const setActiveParagraph = useSessionStore((s) => s.setActiveParagraph)
@@ -62,14 +59,6 @@ export default function App() {
           问答
         </button>
         <AiStatusBadge />
-        <button
-          className="app__themeBtn"
-          onClick={cycleTheme}
-          title="切换主题"
-          aria-label="切换主题"
-        >
-          {theme === 'paper' ? '白' : theme === 'ink' ? '墨' : '夜'}
-        </button>
       </header>
 
       <DegradedNotice />

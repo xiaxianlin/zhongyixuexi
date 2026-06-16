@@ -1,33 +1,16 @@
 import { create } from 'zustand'
 
-export type Theme = 'paper' | 'ink' | 'dark'
-
+/**
+ * UI store. Theme is fixed to 宣纸白 (paper) — no switcher; only font-scale
+ * remains user-adjustable. data-theme="paper" is set once in main.tsx.
+ */
 interface UiState {
-  theme: Theme
   fontScale: number
-  setTheme: (theme: Theme) => void
-  cycleTheme: () => void
   setFontScale: (scale: number) => void
 }
 
-const ORDER: Theme[] = ['paper', 'ink', 'dark']
-
-function applyTheme(theme: Theme): void {
-  document.documentElement.dataset.theme = theme
-}
-
-export const useUiStore = create<UiState>((set, get) => ({
-  theme: 'paper',
+export const useUiStore = create<UiState>((set) => ({
   fontScale: 1,
-  setTheme: (theme) => {
-    applyTheme(theme)
-    set({ theme })
-  },
-  cycleTheme: () => {
-    const next = ORDER[(ORDER.indexOf(get().theme) + 1) % ORDER.length]
-    applyTheme(next)
-    set({ theme: next })
-  },
   setFontScale: (fontScale) => {
     document.documentElement.style.fontSize = `${16 * fontScale}px`
     set({ fontScale })
