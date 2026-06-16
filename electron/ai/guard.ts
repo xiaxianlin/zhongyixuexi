@@ -60,7 +60,7 @@ export function shouldBlock(query: string): GuardResult {
 
 // Dosage expressions to scrub from model output: digit(s) + TCM/medical unit.
 // Captures things like "3g", "15 克", "9钱", "2两", "100ml", "5粒", "每日3次".
-const DOSAGE_PATTERN = /(\d+(?:\.\d+)?)\s*(g|克|mg|ml|毫升|钱|两|粒|片|帖|贴|剂|枚|寸|分)(?![a-z])/gi
+const DOSAGE_PATTERN = /(\d+(?:\.\d+)?)\s*(g|克|mg|ml|毫升|钱|两|粒|片|帖|贴|剂|枚|寸|分(?!钟鐘))(?![a-z])/gi
 // Prescription/phrasing to scrub.
 const PRESCRIPTION_PATTERNS: RegExp[] = [
   /建议.{0,8}(服用|用药|口服|煎服|水煎服)/g,
