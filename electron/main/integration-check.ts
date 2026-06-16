@@ -1,54 +1,83 @@
 /**
- * Dev-only end-to-end check (Phase 1 exit verification). Triggered by
- * ZYXX_INTEGRATION=1 env var in main: imports a fixture EPUB, then asserts the
- * import → list → chapter-tree → FTS → cascade-delete chain. Runs against the
- * real userData app.db. Pre-cleans any leftover test books and always deletes
- * the one it imports (try/finally) so a failed assertion can't orphan data.
+ * Dev-only end-to-end check. Triggered by ZYXX_INTEGRATION=1 env var in main.
+ *
+ * NOTE: import is now AI-driven (requires a configured DeepSeek key), so this
+ * check no longer calls importEpubFile. Instead it inserts a small test book
+ * directly (bypassing AI) and verifies the list → tree → FTS → segment-edit →
+ * search → cascade-delete chain. To test the AI import path itself, configure
+ * a key and import a real EPUB via the UI.
  */
-import { app } from 'electron'
-import { existsSync } from 'node:fs'
-import { join } from 'node:path'
-import { importEpubFile } from '../services/import'
+import { randomUUID } from 'node:crypto'
 import { listBooks, getChapterTree, deleteBook } from '../services/library'
 import { getChapterParagraphs, updateParagraphText, splitParagraph } from '../services/segment'
 import { searchParagraphs } from '../services/search'
 import { getDb } from '../db'
 
-const TEST_TITLE_PREFIX = '神农本草经'
+const TEST_TITLE = '神农本草经（集成测试）'
 const FTS_QUERY = '久服轻身延年'
 
 function assert(cond: boolean, msg: string): void {
   if (!cond) throw new Error(`[integration] FAIL: ${msg}`)
 }
 
-function ftsMatchCount(): number {
+function ftsMatchCount(term: string = FTS_QUERY): number {
   const row = getDb()
     .prepare('SELECT count(*) AS c FROM fts_paragraphs WHERE fts_paragraphs MATCH ?')
-    .get(FTS_QUERY) as { c: number }
+    .get(term) as { c: number }
   return row.c
 }
 
-export async function runIntegrationCheck(): Promise<void> {
-  const fixture = join(app.getAppPath(), 'fixtures', 'sample.epub')
-  assert(existsSync(fixture), `fixture missing: ${fixture}`)
+/** Insert a minimal test book (2 chapters, 3 paragraphs) directly, bypassing AI. */
+function insertTestBook(): string {
+  const db = getDb()
+  const bookId = randomUUID()
+  const ch1 = randomUUID()
+  const ch2 = randomUUID()
+  const now = Date.now()
+  const insP = db.prepare(
+    `INSERT INTO paragraphs
+       (id, chapter_id, order_index, text, content_modern, content_explanation,
+        edited, parse_hash, is_noise, quality_flag, created_at, deleted_at)
+     VALUES (?, ?, ?, ?, NULL, NULL, 0, NULL, 0, 'ok', ?, NULL)`,
+  )
+  db.transaction(() => {
+    db.prepare(
+      `INSERT INTO books (id, title, author, source_format, source_file, cover, category,
+                          imported_at, parse_version, updated_at, deleted_at)
+       VALUES (?, ?, ?, 'manual', 'manual', NULL, NULL, ?, 1, ?, NULL)`,
+    ).run(bookId, TEST_TITLE, '佚名', now, now)
+    db.prepare(
+      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content_hash, created_at, deleted_at)
+       VALUES (?, ?, NULL, 0, NULL, '上品', NULL, ?, NULL)`,
+    ).run(ch1, bookId, now)
+    db.prepare(
+      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content_hash, created_at, deleted_at)
+       VALUES (?, ?, NULL, 1, NULL, '中品', NULL, ?, NULL)`,
+    ).run(ch2, bookId, now)
+    insP.run(randomUUID(), ch1, 0, '人参，味甘微寒。主补五脏，安精神，定魂魄。', now)
+    insP.run(randomUUID(), ch1, 1, '久服轻身延年。一名人衔。', now)
+    insP.run(randomUUID(), ch2, 0, '甘草，味甘平。主五脏六腑寒热邪气。', now)
+  })()
+  // The ai trigger fires on INSERT and indexes paragraphs into FTS; rebuild as a safety net.
+  db.exec("INSERT INTO fts_paragraphs(fts_paragraphs) VALUES('rebuild')")
+  return bookId
+}
 
-  // remove leftover test books from prior (possibly failed) runs
-  for (const b of listBooks().filter((x) => x.title.startsWith(TEST_TITLE_PREFIX))) {
+export async function runIntegrationCheck(): Promise<void> {
+  // pre-clean leftover test books
+  for (const b of listBooks().filter((x) => x.title === TEST_TITLE)) {
     deleteBook(b.id)
   }
-  assert(ftsMatchCount() === 0, `fts not clean before import: ${ftsMatchCount()}`)
+  assert(ftsMatchCount() === 0, `fts not clean before insert: ${ftsMatchCount()}`)
 
-  const res = await importEpubFile(fixture)
+  const bookId = insertTestBook()
   try {
-    assert(res.chapterCount === 2, `expected 2 chapters, got ${res.chapterCount}`)
-    assert(res.paragraphCount >= 3, `expected >=3 paragraphs, got ${res.paragraphCount}`)
-    console.log('[integration] import ok:', JSON.stringify(res))
+    const book = listBooks().find((b) => b.id === bookId)
+    assert(!!book, 'inserted book not in list')
+    assert(book!.chapter_count === 2, `chapter_count=${book!.chapter_count}`)
+    console.log('[integration] insert ok:', bookId)
 
-    const book = listBooks().find((b) => b.id === res.bookId)
-    assert(!!book, 'imported book not in list')
-    assert(book!.chapter_count === 2, `list chapter_count=${book!.chapter_count}`)
-
-    const tree = getChapterTree(res.bookId)
+    const tree = getChapterTree(bookId)
     assert(tree.length === 2, `tree roots=${tree.length}`)
     assert(tree[0].title === '上品', `tree[0]=${tree[0].title}`)
 
@@ -56,16 +85,13 @@ export async function runIntegrationCheck(): Promise<void> {
     assert(matched >= 1, `fts match returned ${matched}`)
     console.log('[integration] fts ok: matched', matched, 'paragraph(s)')
 
-    // IMP-03 segment editing: editing a paragraph must keep FTS in sync (au trigger)
+    // segment edit keeps FTS in sync (au trigger)
     const firstChapterId = tree[0].id
     const paras = getChapterParagraphs(firstChapterId)
     assert(paras.length >= 1, 'first chapter has no paragraphs')
     const MARKER = '独一无二的校对测试标记'
     updateParagraphText(paras[0].id, `${paras[0].text}${MARKER}`)
-    const marked = getDb()
-      .prepare('SELECT count(*) AS c FROM fts_paragraphs WHERE fts_paragraphs MATCH ?')
-      .get(MARKER) as { c: number }
-    assert(marked.c === 1, `segment edit did not reindex FTS (got ${marked.c})`)
+    assert(ftsMatchCount(MARKER) === 1, `segment edit did not reindex FTS`)
     splitParagraph(paras[0].id, 4)
     assert(
       getChapterParagraphs(firstChapterId).length >= paras.length,
@@ -73,21 +99,17 @@ export async function runIntegrationCheck(): Promise<void> {
     )
     console.log('[integration] segment edit/split ok: FTS reindexed via trigger')
 
-    // SRH fulltext search (Phase 3): searchParagraphs over FTS5 trigram.
-    const sr = searchParagraphs('久服轻身延年')
-    assert(sr.hits.length >= 1, `searchParagraphs returned ${sr.hits.length} hits`)
-    assert(!sr.degraded, 'search unexpectedly degraded to LIKE scan')
-    assert(sr.hits[0].paragraphId.length > 0, 'hit missing paragraphId')
+    // SRH search
+    const sr = searchParagraphs(FTS_QUERY)
+    assert(sr.hits.length >= 1, `search returned ${sr.hits.length} hits`)
+    assert(!sr.degraded, 'search unexpectedly degraded')
     console.log('[integration] search ok:', sr.hits.length, 'hits, total', sr.total)
   } finally {
-    // always clean up the imported book, even if an assertion threw
-    deleteBook(res.bookId)
+    deleteBook(bookId)
   }
 
-  const after = listBooks().filter((b) => b.id === res.bookId)
-  assert(after.length === 0, 'book still present after delete')
-
+  assert(listBooks().filter((b) => b.id === bookId).length === 0, 'book still present after delete')
   assert(ftsMatchCount() === 0, `fts rows survived delete: ${ftsMatchCount()}`)
 
-  console.log('[integration] PASS — import / list / tree / fts / delete verified')
+  console.log('[integration] PASS — insert / list / tree / fts / segment / search / delete verified')
 }

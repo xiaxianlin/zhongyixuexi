@@ -34,7 +34,12 @@ export function LibraryView() {
         setProgress('')
       }
     } catch (err) {
-      setProgress(`导入失败：${(err as Error).message}`)
+      const msg = (err as Error).message ?? ''
+      setProgress(
+        msg.includes('未配置') || msg.includes('Key')
+          ? '需要先配置 AI：请到「设置 → API 密钥」添加 DeepSeek Key'
+          : `导入失败：${msg}`,
+      )
     } finally {
       off()
       setBusy(false)
@@ -45,6 +50,28 @@ export function LibraryView() {
     async (id: string) => {
       await libraryApi.delete(id)
       await refresh()
+    },
+    [refresh],
+  )
+
+  const onReparse = useCallback(
+    async (id: string) => {
+      setBusy(true)
+      setProgress('AI 重新解析中…')
+      const off = subscribe('import:progress', (e) => {
+        const p = e as ImportProgress
+        setProgress(p.message ?? p.stage)
+      })
+      try {
+        const res = await importApi.reparse(id)
+        await refresh()
+        setProgress(`重新解析完成：${res.chapterCount} 章 / ${res.paragraphCount} 段`)
+      } catch (err) {
+        setProgress(`重新解析失败：${(err as Error).message}`)
+      } finally {
+        off()
+        setBusy(false)
+      }
     },
     [refresh],
   )
@@ -73,6 +100,16 @@ export function LibraryView() {
                   {b.author || '佚名'} · {b.chapter_count} 章 · {b.paragraph_count} 段
                 </div>
               </div>
+              <button
+                className="bookcard__rep"
+                title="AI 重新解析"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void onReparse(b.id)
+                }}
+              >
+                ↻
+              </button>
               <button
                 className="bookcard__del"
                 title="删除"

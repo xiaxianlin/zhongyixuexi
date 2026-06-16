@@ -150,25 +150,78 @@
   gap: 6px;
 }
 
-/* ---- Provider editor ---- */
+/* ---- Provider editor modal ---- */
 
-.provider-editor {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px;
+.pmodal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(28, 26, 23, 0.45);
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
 }
 
-.provider-editor h4 {
-  margin: 0 0 4px;
-  font-size: 15px;
+.pmodal {
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 20px 22px;
+  width: min(440px, 92vw);
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.28);
+}
+
+.pmodal__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pmodal__title {
+  margin: 0;
+  font-size: 17px;
   color: var(--fg);
 }
 
-.provider-editor__actions {
+.pmodal__close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted-fg);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pmodal__close:hover {
+  color: var(--fg);
+}
+
+.pmodal__hint {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted-fg);
+  line-height: 1.6;
+}
+
+.pmodal__error {
+  font-size: 13px;
+  color: var(--accent);
+  margin: 0;
+  padding: 6px 10px;
+  background: var(--bg);
+  border-radius: 6px;
+}
+
+.pmodal__actions {
   display: flex;
   gap: 8px;
   margin-top: 4px;

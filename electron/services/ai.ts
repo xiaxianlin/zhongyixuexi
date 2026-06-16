@@ -10,6 +10,9 @@
  *  generateCards(paragraphIds) — AI-06: extract card drafts. DeepSeek (JSON
  *     mode, temp 0.4) per paragraph → createCards() into LRN cards table
  *     (source='ai_batch'). Returns batch result.
+ *  parseChapterByAI(title, text) — IMP-AI: AI-driven chapter parsing. Judges
+ *     isContent + extracts body paragraphs (temp 0.2, JSON mode). Cache by
+ *     chapter content hash. Used by importEpubFile/reparseBook.
  *  invalidate(scopeId, kind) — manual regenerate entry point.
  *  status() — whether a key is configured (no plaintext).
  *
@@ -32,11 +35,13 @@ import {
   buildModernPrompt,
   buildQaPrompt,
   buildCardsPrompt,
+  buildParseChapterPrompt,
   type ModernJson,
   type ModernSentence,
   type QaContext,
   type QaTrailingJson,
   type CardsJson,
+  type ParseChapterJson,
 } from '../ai/prompts'
 import { shouldBlock, sanitizeOutput } from '../ai/guard'
 import { hitsToContext } from '../ai/rag'
@@ -45,9 +50,15 @@ import {
   findCache,
   writeCache,
   invalidateCache,
-  type AiCacheKind,
 } from '../ai/cache'
 import { aiError } from '../ai/errors'
+
+/**
+ * Extended cache-kind union — adds 'parse' for AI-driven chapter parsing.
+ * The DB column is TEXT so 'parse' is accepted at runtime; we widen the type
+ * locally so the existing findCache/writeCache calls type-check.
+ */
+type AiCacheKind = 'modern' | 'qa' | 'cards' | 'annotation' | 'parse'
 
 // ============================================================================
 // DTOs (self-contained; renderer mirrors in src/modules/ai/types.ts)
@@ -634,5 +645,128 @@ function tagToCardType(tag: string): CardDraft['type'] {
 // ============================================================================
 
 export function invalidate(scopeId: string, kind: AiCacheKind): { invalidated: number } {
-  return { invalidated: invalidateCache(scopeId, kind) }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { invalidated: invalidateCache(scopeId, kind as any) }
+}
+
+// ============================================================================
+// IMP-AI — AI-driven chapter parsing
+// ============================================================================
+
+export interface ParseChapterResult {
+  isContent: boolean
+  paragraphs: string[]
+}
+
+/**
+ * AI-driven chapter parsing for the IMP module.
+ *
+ * Given a chapter title and its plain-text body (HTML already stripped),
+ * asks DeepSeek to:
+ *   1. Judge whether the chapter is real book content (isContent).
+ *   2. If yes, extract clean body paragraphs (no headers/footers/page-numbers/
+ *      watermarks/repeated-lines/garbled/pure-punctuation/isolated-numbers).
+ *
+ * Requires a configured API key — throws AI_KEY_NOT_CONFIGURED if none.
+ * Caches by (scope='chapter', scope_id=contentHash, kind='parse',
+ * prompt_hash includes title+text). Cache hit returns instantly (no network).
+ *
+ * @param title chapter title from TOC/spine
+ * @param text  chapter body as plain text (HTML stripped + whitespace normalized)
+ * @returns     { isContent, paragraphs }
+ */
+export async function parseChapterByAI(title: string, text: string): Promise<ParseChapterResult> {
+  const cfg = loadConfig()
+  const built = buildParseChapterPrompt({ title, text })
+  const promptHash = computePromptHash(built.messages, cfg.model, built.temperature)
+
+  // Cache key: scope='chapter', scope_id = sha256(title + text) for stable identity.
+  const scopeId = createHashScopeId(title, text)
+
+  // 1. cache hit?
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hit = findCache(scopeId, 'parse' as any, promptHash)
+  if (hit) {
+    const cached = parseJsonLoose<ParseChapterJson>(hit.response)
+    return validateParseChapterJson(cached)
+  }
+
+  // 2. miss → call DeepSeek with one retry on parse failure (cooler temp).
+  let parsed: ParseChapterJson | undefined
+  let lastResp
+  let temperature = built.temperature
+  for (let attempt = 0; attempt < 2; attempt++) {
+    lastResp = await deepseek.chat(
+      {
+        model: cfg.model,
+        messages: built.messages,
+        temperature,
+        response_format: built.response_format,
+        stream: false,
+      },
+      cfg,
+    )
+    try {
+      parsed = validateParseChapterJson(
+        parseJsonLoose<ParseChapterJson>(lastResp.choices[0]?.message?.content ?? ''),
+      )
+      break
+    } catch (e) {
+      if (attempt === 1) throw e
+      temperature = 0.1 // retry even cooler for stability
+    }
+  }
+  if (!parsed || !lastResp) {
+    throw aiError('AI_PARSE_ERROR', '模型未返回有效的章节解析结果')
+  }
+
+  // 3. write cache.
+  writeCache({
+    scope: 'chapter',
+    scopeId,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    kind: 'parse' as any,
+    paragraphId: null,
+    promptHash,
+    response: JSON.stringify(parsed),
+    model: cfg.model,
+    promptTokens: lastResp.usage?.prompt_tokens ?? 0,
+    completionTokens: lastResp.usage?.completion_tokens ?? 0,
+    totalTokens: lastResp.usage?.total_tokens ?? 0,
+    meta: { title, isContent: parsed.isContent, paragraphCount: parsed.paragraphs.length },
+  })
+
+  return parsed
+}
+
+/** Compute a stable scope_id from title+text for cache keying. */
+function createHashScopeId(title: string, text: string): string {
+  return computePromptHash(
+    [{ role: 'user', content: `${title}\n\n${text}` }],
+    'scope',
+    0,
+  )
+}
+
+/** Validate the parse-chapter JSON shape. */
+function validateParseChapterJson(obj: ParseChapterJson): ParseChapterJson {
+  if (!obj || typeof obj !== 'object') {
+    throw aiError('AI_PARSE_ERROR', '模型输出不是有效 JSON 对象')
+  }
+  if (typeof obj.isContent !== 'boolean') {
+    throw aiError('AI_PARSE_ERROR', '模型输出缺少 isContent 布尔字段')
+  }
+  if (!Array.isArray(obj.paragraphs)) {
+    throw aiError('AI_PARSE_ERROR', '模型输出缺少 paragraphs 数组')
+  }
+  // Coerce every paragraph to a non-empty trimmed string; drop empties.
+  obj.paragraphs = obj.paragraphs
+    .map((p) => (typeof p === 'string' ? p.trim() : String(p ?? '').trim()))
+    .filter((p) => p.length > 0)
+  if (obj.isContent && obj.paragraphs.length === 0) {
+    // Model said content=true but produced no paragraphs — treat as non-content
+    // rather than producing an empty chapter.
+    obj.isContent = false
+  }
+  return obj
 }

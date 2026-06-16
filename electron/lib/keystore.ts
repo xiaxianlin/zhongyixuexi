@@ -7,7 +7,8 @@
  *    touches disk, logs, or IPC return values (08-settings-data §7.1, §8.3).
  *  - Provide `getActiveApiKey()` for the AI module (Phase 5) to obtain the
  *    decrypted key + endpoint config in-process.
- *  - Seed default provider presets (DeepSeek) on first run.
+ *  - The provider list starts empty; the renderer's editor pre-fills the
+ *    DeepSeek defaults when adding a new provider (no DB-level seeding).
  *
  * Security red lines (08-settings-data §8.3):
  *  - Plaintext key lives only in main-process memory, single-call lifetime.
@@ -50,52 +51,6 @@ export interface ProviderCredentialRow {
   created_at: number
   updated_at: number
 }
-
-// ---------- default presets (08-settings-data §7.1.3) ----------
-
-interface PresetTemplate {
-  id: string
-  provider: string
-  label: string
-  baseUrl: string
-  model: string
-  isActive: boolean
-}
-
-export const DEFAULT_PRESETS: PresetTemplate[] = [
-  {
-    id: 'deepseek-default',
-    provider: 'deepseek',
-    label: 'DeepSeek 默认',
-    baseUrl: 'https://api.deepseek.com/v1',
-    model: 'deepseek-chat',
-    isActive: true,
-  },
-  {
-    id: 'openai-template',
-    provider: 'openai',
-    label: 'OpenAI',
-    baseUrl: 'https://api.openai.com/v1',
-    model: 'gpt-4o-mini',
-    isActive: false,
-  },
-  {
-    id: 'anthropic-template',
-    provider: 'anthropic',
-    label: 'Anthropic Claude',
-    baseUrl: 'https://api.anthropic.com/v1',
-    model: 'claude-3-5-sonnet',
-    isActive: false,
-  },
-  {
-    id: 'qwen-template',
-    provider: 'qwen',
-    label: '通义千问',
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    model: 'qwen-plus',
-    isActive: false,
-  },
-]
 
 // ---------- safeStorage helpers ----------
 
@@ -189,40 +144,6 @@ const FALLBACK_HINT = 'fallback-aes-machinebound'
 
 function getHint(): string | null {
   return safeStorage.isEncryptionAvailable() ? null : FALLBACK_HINT
-}
-
-/**
- * Seeds default provider presets if the api_credentials table is empty.
- * Called once during module initialization.
- */
-export function seedDefaultProviders(): void {
-  const db = getDb()
-  const count = db.prepare('SELECT COUNT(*) as n FROM api_credentials').get() as { n: number }
-  if (count.n > 0) return
-
-  const now = Date.now()
-  const insert = db.prepare(
-    `INSERT INTO api_credentials
-       (id, provider, label, base_url, model, api_key_enc, key_iv_hint,
-        is_active, created_at, updated_at)
-     VALUES (@id, @provider, @label, @base_url, @model, NULL, NULL,
-             @isActive, @now, @now)`,
-  )
-
-  const tx = db.transaction(() => {
-    for (const p of DEFAULT_PRESETS) {
-      insert.run({
-        id: p.id,
-        provider: p.provider,
-        label: p.label,
-        base_url: p.baseUrl,
-        model: p.model,
-        isActive: p.isActive ? 1 : 0,
-        now,
-      })
-    }
-  })
-  tx()
 }
 
 /**

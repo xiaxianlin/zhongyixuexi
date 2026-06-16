@@ -15,11 +15,11 @@
   --font-mono: "SF Mono", Menlo, Consolas, monospace;
 
   /* ---- 尺度（大气：大字 / 大行距 / 大间距） ---- */
-  --fs-display: 30px;
-  --fs-title: 24px;
-  --fs-h2: 19px;
-  --fs-body: 17px;
-  --fs-small: 13px;
+  --fs-display: 34px;
+  --fs-title: 26px;
+  --fs-h2: 21px;
+  --fs-body: 18px;
+  --fs-small: 14px;
   --lh-relax: 1.9; /* 阅读行高，从容 */
   --lh-tight: 1.5; /* UI 行高 */
   --space-xs: 6px;

@@ -32,8 +32,8 @@ body {
 .app__header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 20px 28px;
+  gap: 14px;
+  padding: 24px 44px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -89,10 +89,12 @@ body {
   background: transparent;
   border: 1px solid transparent;
   color: var(--fg);
-  padding: 4px 12px;
+  padding: 8px 18px;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: var(--fs-small);
+  font-family: var(--font-title);
+  letter-spacing: 0.08em;
 }
 
 .app__navBtn:hover {
@@ -106,14 +108,59 @@ body {
 
 .app__main {
   flex: 1;
-  padding: 28px;
-  font-size: 15px;
-  line-height: 1.8;
+  padding: 44px;
+  font-size: var(--fs-body);
+  line-height: var(--lh-relax);
 }
 
 .app__hint {
   color: var(--muted-fg);
-  font-size: 13px;
+  font-size: var(--fs-small);
+}
+
+/* ---- 智能问答 悬浮入口（右下角）---- */
+/* 点击侧滑展开抽屉；抽屉打开时此按钮隐去，只能用抽屉内的关闭按钮收起。 */
+.app__qaFab {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(28, 26, 23, 0.24);
+  transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease,
+    visibility 0s;
+}
+
+.app__qaFab:hover {
+  background: var(--accent-soft);
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 12px 28px rgba(28, 26, 23, 0.3);
+}
+
+.app__qaFab:active {
+  transform: translateY(0) scale(1);
+}
+
+/* 抽屉打开时隐去入口（保证只能用关闭按钮收起）。 */
+.app__qaFab.is-hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.7);
+  pointer-events: none;
+  transition: transform 0.18s ease, opacity 0.18s ease, visibility 0s linear 0.18s;
 }
 
 code {

@@ -58,6 +58,7 @@ export const appApi = {
 /** import:* — main process owns the file picker; progress arrives via event. */
 export const importApi = {
   pickAndImport: () => invokeRaw<ImportResult | null>('import:pickAndImport'),
+  reparse: (bookId: string) => invokeRaw<ImportResult>('import:reparse', { bookId }),
 }
 
 /** library:* — book list, chapter tree, delete. */

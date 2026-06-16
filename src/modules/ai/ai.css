@@ -37,97 +37,79 @@
   opacity: 1;
 }
 
-/* ---- AiStatusBadge ---- */
-.ai-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
-  border: 1px solid #d0d0d0;
-  border-radius: 12px;
-  background: #fff;
-  font-size: 12px;
-  cursor: pointer;
-  color: inherit;
-}
-.ai-badge__dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #999;
-}
-.ai-badge--off {
-  color: #888;
-}
-.ai-badge--off .ai-badge__dot {
-  background: #bbb;
-}
-.ai-badge--on {
-  border-color: #6ec05f;
-  color: #2d7a2d;
-}
-.ai-badge--on .ai-badge__dot {
-  background: #6ec05f;
-}
-.ai-badge--degraded {
-  border-color: #e0a93b;
-  background: #fff8e8;
-  color: #9a6b1f;
-}
-.ai-badge--degraded .ai-badge__dot {
-  background: #e0a93b;
-}
-.ai-badge--unknown .ai-badge__dot {
-  background: #999;
-}
-
-/* ---- QaPanel (side panel) ---- */
+/* ---- QaPanel (侧滑抽屉：从右滑入，仅由关闭按钮收起) ---- */
 .ai-qa-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  height: 100vh;
+  width: 380px;
+  max-width: 86vw;
+  z-index: 1000;
   display: flex;
   flex-direction: column;
-  width: 360px;
-  height: 100%;
-  background: #fafaf7;
-  border-left: 1px solid #e3e3dd;
+  background: var(--surface-2);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -12px 0 32px rgba(28, 26, 23, 0.16);
+  /* 收起态：平移到屏幕右侧之外，延迟隐藏可访问性以让滑出动画跑完 */
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1),
+    visibility 0s linear 0.34s;
+}
+.ai-qa-panel.is-open {
+  transform: translateX(0);
+  visibility: visible;
+  transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s;
 }
 .ai-qa-panel__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e3e3dd;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
 }
 .ai-qa-panel__header h3 {
   margin: 0;
-  font-size: 14px;
-  font-weight: 600;
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--fg);
 }
 .ai-qa-panel__close {
   background: none;
   border: none;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  color: #888;
+  color: var(--faint-fg);
+  padding: 0 4px;
+  border-radius: 6px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.ai-qa-panel__close:hover {
+  color: var(--fg);
+  background: var(--surface);
 }
 .ai-qa-panel__body {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 16px;
+  padding: 14px 18px;
 }
 .ai-qa-panel__empty {
-  color: #999;
+  color: var(--faint-fg);
   font-size: 13px;
-  line-height: 1.6;
+  line-height: 1.7;
 }
 .ai-qa-panel__error {
   margin-top: 8px;
-  color: #c0392b;
+  color: var(--accent);
   font-size: 12px;
 }
 .ai-qa-panel__input {
-  border-top: 1px solid #e3e3dd;
-  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  padding: 12px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -135,33 +117,43 @@
 .ai-qa-panel__input textarea {
   width: 100%;
   resize: vertical;
-  border: 1px solid #d8d8d2;
+  border: 1px solid var(--border-strong);
   border-radius: 6px;
-  padding: 8px;
+  padding: 8px 10px;
   font-family: inherit;
   font-size: 13px;
   line-height: 1.5;
-  background: #fff;
+  color: var(--fg);
+  background: var(--bg);
+}
+.ai-qa-panel__input textarea:focus {
+  outline: none;
+  border-color: var(--accent);
 }
 .ai-qa-panel__send {
   align-self: flex-end;
-  padding: 6px 16px;
-  background: #2d5a8c;
-  color: #fff;
+  padding: 6px 18px;
+  background: var(--accent);
+  color: var(--accent-contrast);
   border: none;
   border-radius: 6px;
   font-size: 13px;
   cursor: pointer;
+  transition: background 0.15s ease;
+}
+.ai-qa-panel__send:hover:not(:disabled) {
+  background: var(--accent-soft);
 }
 .ai-qa-panel__send:disabled {
-  background: #aac0d8;
+  background: var(--faint-fg);
+  opacity: 0.55;
   cursor: not-allowed;
 }
 .ai-qa-panel__disclaimer {
   margin: 0;
-  padding: 0 16px 8px;
+  padding: 0 18px 10px;
   font-size: 11px;
-  color: #aaa;
+  color: var(--faint-fg);
 }
 
 /* ---- Answer view ---- */
@@ -173,13 +165,14 @@
 .ai-qa-answer__text {
   margin: 0;
   font-size: 13px;
-  line-height: 1.7;
+  line-height: 1.8;
   white-space: pre-wrap;
+  color: var(--fg);
 }
 .ai-qa-answer__scrubbed {
   margin: 0;
   font-size: 11px;
-  color: #b8860b;
+  color: var(--zheshi);
   font-style: italic;
 }
 .ai-qa-answer__cites {
@@ -193,17 +186,17 @@
   background: none;
   border: none;
   padding: 0;
-  color: #2d5a8c;
+  color: var(--huaqing);
   text-decoration: underline;
   text-align: left;
   cursor: pointer;
   font-size: 12px;
 }
 .ai-qa-answer__cite:hover {
-  color: #1a3d6c;
+  color: #2c4554;
 }
 .ai-qa-answer__meta {
   margin: 0;
   font-size: 11px;
-  color: #aaa;
+  color: var(--faint-fg);
 }

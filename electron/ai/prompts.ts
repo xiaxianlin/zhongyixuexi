@@ -239,3 +239,82 @@ ${input.text}
     response_format: { type: 'json_object' },
   }
 }
+
+// ============================================================================
+// IMP-AI 章节解析 — temperature 0.2, JSON mode
+// ============================================================================
+
+export interface ParseChapterInput {
+  /** Chapter title from the EPUB TOC / spine. */
+  title: string
+  /** Chapter body as plain text (HTML stripped, whitespace normalized). */
+  text: string
+}
+
+export interface ParseChapterJson {
+  /** True = this chapter is actual book content (正文/篇章正文). */
+  isContent: boolean
+  /** Extracted content paragraphs in reading order. Empty when isContent=false. */
+  paragraphs: string[]
+}
+
+/**
+ * Build the chat messages for AI-driven chapter parsing (IMP-AI).
+ *
+ * The model judges whether a chapter is real content vs. front-matter/TOC/
+ * copyright/ad/cover/navigation/acknowledgements, and if it IS content,
+ * extracts clean body paragraphs (excluding headers/footers/page-numbers/
+ * watermarks/repeated-lines/garbled/pure-punctuation/isolated-numbers).
+ *
+ * Low temperature (0.2) for deterministic, stable output.
+ */
+export function buildParseChapterPrompt(input: ParseChapterInput): {
+  messages: ChatMessage[]
+  temperature: number
+  response_format: { type: 'json_object' }
+} {
+  const task = `你的任务：判断该章节是否为正文内容章节，并提取正文段落。
+
+【判断 isContent】
+- 正文 / 篇章正文 = true（包括序言/前言中与正文内容直接相关的部分）
+- 以下情况 = false（非正文）：
+  - 版权页 / 出版信息 / CIP 数据
+  - 目录 / Table of Contents
+  - 广告 / 宣传页
+  - 封面 / 扉页
+  - 纯导航 / 书签页
+  - 致谢 / 作者简介 / 后记中非正文内容
+  - 空章节 / 仅含封面图的章节
+
+【提取正文段落（仅 isContent=true 时）】
+排除以下内容（不纳入 paragraphs）：
+- 页眉 / 页脚 / 页码
+- 水印 / 版权声明 / 扫描标记
+- 重复出现的行（跨段落重复 3 次以上的固定文字）
+- 乱码 / 不可读字符
+- 纯标点行 / 仅含标点符号
+- 孤立数字行
+
+按自然段切分正文，保持原始阅读顺序。每段为有意义的完整语义段落（非单句碎片）。`
+
+  const user = `章节标题：${input.title}
+
+章节正文：
+"""
+${input.text}
+"""
+
+请严格输出如下 JSON（不要输出 JSON 以外的任何文字）：
+{
+  "isContent": true,
+  "paragraphs": ["第一段正文…", "第二段正文…", "..."]
+}
+
+当 isContent=false 时 paragraphs 为空数组：{"isContent": false, "paragraphs": []}`
+
+  return {
+    messages: [system(task), { role: 'user', content: user }],
+    temperature: 0.2,
+    response_format: { type: 'json_object' },
+  }
+}

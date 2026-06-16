@@ -12,6 +12,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { settingsApi } from '@/lib/settings-api'
 import { useUiStore } from '@/stores/ui'
+import { ProviderEditorModal, type ProviderEditorMode } from './ProviderEditorModal'
 import type { ProviderConfig, BookFileEntry, OrphanScanResult } from './types'
 import './settings.css'
 
@@ -65,12 +66,8 @@ export function SettingsView() {
 
 function ApiKeyPanel() {
   const [providers, setProviders] = useState<ProviderConfig[]>([])
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [draftProvider, setDraftProvider] = useState('')
-  const [draftLabel, setDraftLabel] = useState('')
-  const [draftBaseUrl, setDraftBaseUrl] = useState('')
-  const [draftModel, setDraftModel] = useState('')
-  const [draftKey, setDraftKey] = useState('')
+  const [modalMode, setModalMode] = useState<ProviderEditorMode | null>(null)
+  const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null)
   const [msg, setMsg] = useState('')
 
   const refresh = useCallback(async () => {
@@ -82,50 +79,28 @@ function ApiKeyPanel() {
     void refresh()
   }, [refresh])
 
-  const startEdit = useCallback((p: ProviderConfig) => {
-    setEditingId(p.id)
-    setDraftProvider(p.provider)
-    setDraftLabel(p.label)
-    setDraftBaseUrl(p.baseUrl)
-    setDraftModel(p.model)
-    setDraftKey('')
+  const openCreate = useCallback(() => {
+    setEditingProvider(null)
+    setModalMode('create')
     setMsg('')
   }, [])
 
-  const startNew = useCallback(() => {
-    setEditingId('__new__')
-    setDraftProvider('deepseek')
-    setDraftLabel('')
-    setDraftBaseUrl('https://api.deepseek.com/v1')
-    setDraftModel('deepseek-chat')
-    setDraftKey('')
+  const openEdit = useCallback((p: ProviderConfig) => {
+    setEditingProvider(p)
+    setModalMode('edit')
     setMsg('')
   }, [])
 
-  const cancelEdit = useCallback(() => {
-    setEditingId(null)
-    setDraftKey('')
+  const closeModal = useCallback(() => {
+    setModalMode(null)
+    setEditingProvider(null)
   }, [])
 
-  const onSave = useCallback(async () => {
-    try {
-      const input = {
-        id: editingId === '__new__' ? undefined : editingId ?? undefined,
-        provider: draftProvider,
-        label: draftLabel,
-        baseUrl: draftBaseUrl,
-        model: draftModel,
-        apiKey: draftKey || undefined,
-      }
-      await settingsApi.saveProvider(input)
-      setDraftKey('')
-      setEditingId(null)
-      setMsg('已保存')
-      await refresh()
-    } catch (e) {
-      setMsg(`保存失败: ${(e as Error).message}`)
-    }
-  }, [editingId, draftProvider, draftLabel, draftBaseUrl, draftModel, draftKey, refresh])
+  const onSaved = useCallback(async () => {
+    setMsg('已保存')
+    closeModal()
+    await refresh()
+  }, [closeModal, refresh])
 
   const onActivate = useCallback(
     async (id: string) => {
@@ -176,7 +151,7 @@ function ApiKeyPanel() {
                   启用
                 </button>
               )}
-              <button className="btn btn--small" onClick={() => startEdit(p)}>
+              <button className="btn btn--small" onClick={() => openEdit(p)}>
                 编辑
               </button>
               <button
@@ -190,65 +165,17 @@ function ApiKeyPanel() {
         ))}
       </div>
 
-      <button className="btn btn--primary" onClick={startNew}>
+      <button className="btn btn--primary" onClick={openCreate}>
         + 新增配置
       </button>
 
-      {editingId !== null && (
-        <div className="provider-editor">
-          <h4>{editingId === '__new__' ? '新增配置' : '编辑配置'}</h4>
-          <label className="field">
-            <span>厂商标识</span>
-            <input
-              value={draftProvider}
-              onChange={(e) => setDraftProvider(e.target.value)}
-              placeholder="deepseek / openai / anthropic / qwen"
-            />
-          </label>
-          <label className="field">
-            <span>显示名称</span>
-            <input
-              value={draftLabel}
-              onChange={(e) => setDraftLabel(e.target.value)}
-              placeholder="如：DeepSeek 主力"
-            />
-          </label>
-          <label className="field">
-            <span>API Base URL</span>
-            <input
-              value={draftBaseUrl}
-              onChange={(e) => setDraftBaseUrl(e.target.value)}
-              placeholder="https://api.deepseek.com/v1"
-            />
-          </label>
-          <label className="field">
-            <span>默认模型</span>
-            <input
-              value={draftModel}
-              onChange={(e) => setDraftModel(e.target.value)}
-              placeholder="deepseek-chat"
-            />
-          </label>
-          <label className="field">
-            <span>API Key {editingId !== '__new__' && '(留空则不变)'}</span>
-            <input
-              type="password"
-              value={draftKey}
-              onChange={(e) => setDraftKey(e.target.value)}
-              placeholder="sk-..."
-              autoComplete="off"
-            />
-          </label>
-          <div className="provider-editor__actions">
-            <button className="btn btn--primary" onClick={onSave}>
-              保存
-            </button>
-            <button className="btn" onClick={cancelEdit}>
-              取消
-            </button>
-          </div>
-        </div>
-      )}
+      <ProviderEditorModal
+        open={modalMode !== null}
+        mode={modalMode ?? 'create'}
+        provider={editingProvider}
+        onClose={closeModal}
+        onSaved={onSaved}
+      />
 
       {msg && <p className="set-panel__msg">{msg}</p>}
     </div>

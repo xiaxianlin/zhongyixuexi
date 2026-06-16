@@ -70,10 +70,12 @@ export function QaPanel({ open, onClose, bookId, onCite }: QaPanelProps): JSX.El
     }
   }
 
-  if (!open) return null
-
   return (
-    <aside className="ai-qa-panel" aria-label="AI 问答">
+    <aside
+      className={open ? 'ai-qa-panel is-open' : 'ai-qa-panel'}
+      aria-label="AI 问答"
+      aria-hidden={!open}
+    >
       <header className="ai-qa-panel__header">
         <h3>智能问答</h3>
         {onClose && (

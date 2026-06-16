@@ -18,7 +18,6 @@ import { statSync, readdirSync, existsSync, unlinkSync } from 'node:fs'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
 import {
-  seedDefaultProviders,
   saveProviderCredential,
   deleteProviderCredential,
   setActiveProvider,
@@ -90,19 +89,6 @@ export interface CleanOrphansResult {
 }
 
 // ============================================================================
-// Module initialization — seeds default presets on first run
-// ============================================================================
-
-let initialized = false
-
-/** Called once during IPC registration to seed default provider presets. */
-export function initSettingsModule(): void {
-  if (initialized) return
-  seedDefaultProviders()
-  initialized = true
-}
-
-// ============================================================================
 // SET-01: Provider CRUD (returns safe DTOs, never key plaintext)
 // ============================================================================
 
@@ -121,12 +107,10 @@ function toDTO(row: ProviderCredentialRow): ProviderConfigDTO {
 }
 
 export function listProviders(): ProviderConfigDTO[] {
-  initSettingsModule()
   return listProviderCredentials().map(toDTO)
 }
 
 export function getProvider(id: string): ProviderConfigDTO {
-  initSettingsModule()
   const all = listProviderCredentials()
   const row = all.find((r) => r.id === id)
   if (!row) throw new AppError('NOT_FOUND', `provider ${id} not found`)
@@ -134,7 +118,6 @@ export function getProvider(id: string): ProviderConfigDTO {
 }
 
 export function saveProvider(input: SaveProviderInput): { id: string } {
-  initSettingsModule()
   const id = input.id || `custom-${Date.now().toString(36)}`
   saveProviderCredential(id, input.provider, input.label, input.baseUrl, input.model, input.apiKey)
   return { id }
