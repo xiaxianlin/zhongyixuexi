@@ -2,8 +2,9 @@
  * Import orchestration (IMP-01/02, slice S1.3 + AI parse).
  *
  * `importEpubFile` is the thin I/O orchestrator: parse EPUB structure →
- * copy source file → **AI-parse each chapter** (DeepSeek judges isContent +
- * extracts body paragraphs) → write books/chapters/paragraphs atomically.
+ * copy source file → **AI-parse the WHOLE BOOK in a single DeepSeek call**
+ * (1M-token context; model judges isContent + extracts body paragraphs for all
+ * chapters at once) → write books/chapters/paragraphs atomically.
  *
  * AI parsing replaces the old rule-based splitParagraphs. Non-content chapters
  * (copyright pages, TOC, ads, cover, navigation) are filtered out entirely —
@@ -28,7 +29,7 @@ import { join } from 'node:path'
 import { app } from 'electron'
 import { parseEpub } from './epub'
 import { normalizeWhitespace } from './paragraph'
-import { parseChapterByAI, type ParseChapterResult } from './ai'
+import { parseBookByAI, type ParseChapterResult } from './ai'
 import { getActiveApiKey } from './settings'
 import { getDb } from '../db'
 import { rebuildFts } from '../db/fts'
@@ -109,30 +110,26 @@ export async function importEpubFile(
   emit({ stage: 'parsing', message: '正在解析 EPUB…' })
   const parsed = await parseEpub(filePath)
 
-  // 3. AI-parse every chapter (judges isContent + extracts paragraphs).
-  emit({
-    stage: 'ai_parsing',
-    current: 0,
-    total: parsed.chapters.length,
-    message: 'AI 解析章节 0/' + parsed.chapters.length,
-  })
+  // 3. AI-parse ALL chapters in a SINGLE call (whole-book, 1M context).
+  //    Strip HTML per chapter first, then send all {title, text} to parseBookByAI.
+  emit({ stage: 'ai_parsing', message: 'AI 解析全书…' })
 
-  const aiResults: { chapter: typeof parsed.chapters[0]; result: ParseChapterResult }[] = []
+  const chaptersForAI = parsed.chapters.map((ch) => ({
+    title: ch.title,
+    text: stripHtmlToText(ch.xhtml),
+  }))
+  const aiResults = await parseBookByAI(chaptersForAI)
+
+  emit({ stage: 'ai_parsing', message: 'AI 解析全书完成' })
+
+  // 4. Filter to content chapters only (align by index).
+  const contentChapters: { chapter: typeof parsed.chapters[0]; result: ParseChapterResult }[] = []
   for (let i = 0; i < parsed.chapters.length; i++) {
-    const ch = parsed.chapters[i]
-    const plainText = stripHtmlToText(ch.xhtml)
-    const result = await parseChapterByAI(ch.title, plainText)
-    aiResults.push({ chapter: ch, result })
-    emit({
-      stage: 'ai_parsing',
-      current: i + 1,
-      total: parsed.chapters.length,
-      message: `AI 解析章节 ${i + 1}/${parsed.chapters.length}`,
-    })
+    const result = aiResults[i]
+    if (result && result.isContent && result.paragraphs.length > 0) {
+      contentChapters.push({ chapter: parsed.chapters[i], result })
+    }
   }
-
-  // 4. Filter to content chapters only.
-  const contentChapters = aiResults.filter((r) => r.result.isContent && r.result.paragraphs.length > 0)
 
   // 5. Copy original epub into userData/files/<bookId>.epub.
   const bookId = randomUUID()
@@ -283,30 +280,25 @@ export async function reparseBook(
   emit({ stage: 'parsing', message: '正在重新解析 EPUB…' })
   const parsed = await parseEpub(sourceFileAbs)
 
-  // 4. AI-parse every chapter.
-  emit({
-    stage: 'ai_parsing',
-    current: 0,
-    total: parsed.chapters.length,
-    message: 'AI 解析章节 0/' + parsed.chapters.length,
-  })
+  // 4. AI-parse ALL chapters in a SINGLE call (whole-book, 1M context).
+  emit({ stage: 'ai_parsing', message: 'AI 解析全书…' })
 
-  const aiResults: { chapter: typeof parsed.chapters[0]; result: ParseChapterResult }[] = []
+  const chaptersForAI = parsed.chapters.map((ch) => ({
+    title: ch.title,
+    text: stripHtmlToText(ch.xhtml),
+  }))
+  const aiResults = await parseBookByAI(chaptersForAI)
+
+  emit({ stage: 'ai_parsing', message: 'AI 解析全书完成' })
+
+  // 5. Filter to content chapters (align by index).
+  const contentChapters: { chapter: typeof parsed.chapters[0]; result: ParseChapterResult }[] = []
   for (let i = 0; i < parsed.chapters.length; i++) {
-    const ch = parsed.chapters[i]
-    const plainText = stripHtmlToText(ch.xhtml)
-    const result = await parseChapterByAI(ch.title, plainText)
-    aiResults.push({ chapter: ch, result })
-    emit({
-      stage: 'ai_parsing',
-      current: i + 1,
-      total: parsed.chapters.length,
-      message: `AI 解析章节 ${i + 1}/${parsed.chapters.length}`,
-    })
+    const result = aiResults[i]
+    if (result && result.isContent && result.paragraphs.length > 0) {
+      contentChapters.push({ chapter: parsed.chapters[i], result })
+    }
   }
-
-  // 5. Filter to content chapters.
-  const contentChapters = aiResults.filter((r) => r.result.isContent && r.result.paragraphs.length > 0)
 
   // 6. Transaction: delete old chapters (CASCADE → paragraphs) + insert new.
   emit({

@@ -36,12 +36,14 @@ import {
   buildQaPrompt,
   buildCardsPrompt,
   buildParseChapterPrompt,
+  buildParseBookPrompt,
   type ModernJson,
   type ModernSentence,
   type QaContext,
   type QaTrailingJson,
   type CardsJson,
   type ParseChapterJson,
+  type ParseBookJson,
 } from '../ai/prompts'
 import { shouldBlock, sanitizeOutput } from '../ai/guard'
 import { hitsToContext } from '../ai/rag'
@@ -52,6 +54,7 @@ import {
   invalidateCache,
 } from '../ai/cache'
 import { aiError } from '../ai/errors'
+import { createHash } from 'node:crypto'
 
 /**
  * Extended cache-kind union — adds 'parse' for AI-driven chapter parsing.
@@ -769,4 +772,166 @@ function validateParseChapterJson(obj: ParseChapterJson): ParseChapterJson {
     obj.isContent = false
   }
   return obj
+}
+
+// ============================================================================
+// IMP-AI — whole-book AI parsing (single call)
+// ============================================================================
+
+/**
+ * Max tokens for whole-book parse output. The full-book paragraphs JSON can be
+ * large; DeepSeek supports up to 8192 completion tokens. For very large books
+ * the output may be truncated — see risk note in parseBookByAI.
+ */
+const PARSE_BOOK_MAX_TOKENS = 8192
+
+/**
+ * AI-driven whole-book chapter parsing for the IMP module.
+ *
+ * Sends ALL chapters to DeepSeek in a SINGLE call (leveraging 1M-token context
+ * window), so the model has full-book visibility for better isContent judgment
+ * (e.g. identifying duplicate/duplicated chapters, cross-referencing structure).
+ *
+ * Cache: scope='book', scope_id = sha256(concatenated chapter content), kind='parse'.
+ * On cache hit returns instantly (no network).
+ *
+ * Validation: the returned chapters array is aligned to the input length — if
+ * the model returned fewer entries, the missing ones are filled with
+ * isContent=false; if more, the tail is truncated. Every item's paragraphs is
+ * coerced to string[].
+ *
+ * @param chapters  array of { title, text } for every chapter in the book
+ * @returns         ParseChapterResult[] in the SAME ORDER as input chapters
+ *
+ * RISK: For very large books (many chapters × long text), the output JSON may
+ * exceed PARSE_BOOK_MAX_TOKENS, causing truncation and a JSON parse error.
+ * If this occurs, the fallback strategy is batch-sharding (future enhancement).
+ * For typical 中医 classics (10–50 chapters, moderate paragraph counts), 8192
+ * output tokens is sufficient.
+ */
+export async function parseBookByAI(
+  chapters: { title: string; text: string }[],
+): Promise<ParseChapterResult[]> {
+  const cfg = loadConfig()
+  const built = buildParseBookPrompt(chapters)
+  const promptHash = computePromptHash(built.messages, cfg.model, built.temperature)
+
+  // Cache key: scope='book', scope_id = sha256 of all chapter content.
+  const scopeId = createBookScopeId(chapters)
+
+  // 1. cache hit?
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const hit = findCache(scopeId, 'parse' as any, promptHash)
+  if (hit) {
+    const cached = parseJsonLoose<ParseBookJson>(hit.response)
+    return validateParseBookJson(cached, chapters.length)
+  }
+
+  // 2. miss → call DeepSeek with one retry on parse failure (cooler temp).
+  let parsed: ParseBookJson | undefined
+  let lastResp
+  let temperature = built.temperature
+  for (let attempt = 0; attempt < 2; attempt++) {
+    lastResp = await deepseek.chat(
+      {
+        model: cfg.model,
+        messages: built.messages,
+        temperature,
+        max_tokens: PARSE_BOOK_MAX_TOKENS,
+        response_format: built.response_format,
+        stream: false,
+      },
+      cfg,
+    )
+    try {
+      const raw = lastResp.choices[0]?.message?.content ?? ''
+      parsed = parseJsonLoose<ParseBookJson>(raw)
+      // Validate immediately — may throw, triggering retry.
+      validateParseBookJson(parsed, chapters.length)
+      break
+    } catch (e) {
+      if (attempt === 1) throw e
+      temperature = 0.1 // retry even cooler for stability
+    }
+  }
+  if (!parsed || !lastResp) {
+    throw aiError('AI_PARSE_ERROR', '模型未返回有效的全书解析结果')
+  }
+
+  // 3. Normalize + validate (align length to input).
+  const results = validateParseBookJson(parsed, chapters.length)
+
+  // 4. write cache.
+  writeCache({
+    scope: 'book',
+    scopeId,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    kind: 'parse' as any,
+    paragraphId: null,
+    promptHash,
+    response: JSON.stringify(parsed),
+    model: cfg.model,
+    promptTokens: lastResp.usage?.prompt_tokens ?? 0,
+    completionTokens: lastResp.usage?.completion_tokens ?? 0,
+    totalTokens: lastResp.usage?.total_tokens ?? 0,
+    meta: {
+      chapterCount: chapters.length,
+      contentCount: results.filter((r) => r.isContent).length,
+      totalParagraphs: results.reduce((sum, r) => sum + r.paragraphs.length, 0),
+    },
+  })
+
+  return results
+}
+
+/** Compute a stable book-level scope_id from all chapter content for cache keying. */
+function createBookScopeId(chapters: { title: string; text: string }[]): string {
+  const blob = chapters.map((ch) => `${ch.title}\n\n${ch.text}`).join('\n===\n')
+  return createHash('sha256').update(blob, 'utf8').digest('hex').slice(0, 16)
+}
+
+/**
+ * Validate the parse-book JSON and align the chapters array to the expected length.
+ *
+ * - If chapters array is shorter than expected: pad with isContent=false entries.
+ * - If longer: truncate to expected length.
+ * - Each item's paragraphs is coerced to string[] with trimmed non-empty strings.
+ * - isContent is coerced to boolean.
+ */
+function validateParseBookJson(obj: ParseBookJson, expectedLength: number): ParseChapterResult[] {
+  if (!obj || typeof obj !== 'object') {
+    throw aiError('AI_PARSE_ERROR', '模型输出不是有效 JSON 对象')
+  }
+  if (!Array.isArray(obj.chapters)) {
+    throw aiError('AI_PARSE_ERROR', '模型输出缺少 chapters 数组')
+  }
+
+  const arr = obj.chapters
+
+  // Align length to expected.
+  const results: ParseChapterResult[] = []
+  for (let i = 0; i < expectedLength; i++) {
+    const item = arr[i]
+    if (!item || typeof item !== 'object') {
+      // Missing or invalid → default to non-content.
+      results.push({ isContent: false, paragraphs: [] })
+      continue
+    }
+
+    const isContent = typeof item.isContent === 'boolean' ? item.isContent : false
+
+    let paragraphs: string[] = []
+    if (Array.isArray(item.paragraphs)) {
+      paragraphs = item.paragraphs
+        .map((p) => (typeof p === 'string' ? p.trim() : String(p ?? '').trim()))
+        .filter((p) => p.length > 0)
+    }
+
+    // If model said content=true but produced no paragraphs, treat as non-content.
+    const finalIsContent = isContent && paragraphs.length > 0
+
+    results.push({ isContent: finalIsContent, paragraphs: finalIsContent ? paragraphs : [] })
+  }
+
+  return results
 }

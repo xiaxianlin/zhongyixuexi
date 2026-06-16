@@ -20,7 +20,7 @@ export function LibraryView() {
 
   const onImport = useCallback(async () => {
     setBusy(true)
-    setProgress('选择文件…')
+    setProgress('')
     const off = subscribe('import:progress', (e) => {
       const p = e as ImportProgress
       setProgress(p.message ?? p.stage)

@@ -17,7 +17,7 @@ import { randomUUID } from 'node:crypto'
 import { getDb } from '../db/connection'
 import type { ChatMessage } from './types'
 
-export type AiCacheScope = 'paragraph' | 'chapter' | 'global'
+export type AiCacheScope = 'paragraph' | 'chapter' | 'global' | 'book'
 export type AiCacheKind = 'modern' | 'qa' | 'cards' | 'annotation'
 
 export interface AiCacheWrite {

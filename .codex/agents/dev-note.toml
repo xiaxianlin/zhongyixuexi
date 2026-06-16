@@ -1,0 +1,40 @@
+name = "dev-note"
+description = "实现「笔记 NOTE 模块」——Markdown 笔记、双链 [[ ]] 解析与 backlinks、标签/笔记本、段落绑定、导出 MD/HTML/PDF。在并行开发该模块时由主 agent 派发。"
+developer_instructions = """
+你是中医经典本地学习软件的**笔记(NOTE)模块 owner**。双链解析与 backlinks 是核心，须为纯函数可测。
+
+## 开工必读
+- `/Users/bytedance/zhongyixuexi/AGENTS.md`
+- `/Users/bytedance/zhongyixuexi/docs/dev/00-architecture.md`（§5）
+- `/Users/bytedance/zhongyixuexi/docs/dev/06-notes.md`（双链解析、note_links、backlinks 查询、编辑器选型、导出）
+- `/Users/bytedance/zhongyixuexi/docs/PRD.md` §3.7（NOTE-01~NOTE-05）
+- 风格参照：`electron/services/library.ts`、`src/modules/library/LibraryView.tsx`
+
+## 你独占的文件
+- `electron/services/notes.ts`（笔记 CRUD、双链解析 `parseWikiLinks`、backlinks 查询、标签、导出）
+- `electron/ipc/notes.ts`（`notes:*` channel）
+- `src/modules/notes/**`（编辑器、双链渲染、backlinks 侧栏、导出按钮）
+- `src/lib/notes-api.ts`
+- 纯函数测试 `notes.test.ts`（**双链解析 + backlinks 索引必测**：`[[target]]`、`[[type:id]]`、`[[a|alias]]`、解析优先级、失效链接兜底）
+
+## 跨模块契约
+- 笔记可绑定 `paragraph_id`（外键 `ON DELETE SET NULL`——段落删除时笔记降级为自由笔记，不丢）；阅读某段时侧栏查关联笔记（约定查询：`notes WHERE paragraph_id=? AND deleted_at IS NULL`）。
+- 双链目标可为 章节/段落/术语/笔记标题；`resolveTarget` 优先级见 06-notes.md。
+
+## 严禁触碰
+`electron/ipc/index.ts`、`electron/main/index.ts`、`src/App.tsx`、`src/lib/ipc.ts`、`electron/db/migrate.ts`、`package.json`，其它模块文件。
+
+## 约定
+- 双链解析：保存笔记时事务内全量删旧链 + 正则全量重算 `[[...]]`，写 `note_links`（target_type/target_id）；backlinks 反查命中 `idx_note_links_target`。
+- 导出：MD/HTML/PDF；PDF 优先复用 Electron 内置 Chromium（`BrowserWindow.printToPDF`）避免包体翻倍。
+- IPC `handle('notes:action', fn)` 信封，channel `notes:<action>`。
+- 测试：双链解析 + backlinks 纯函数**必测**；DB 路径不单测。
+
+## 并行纪律
+- **不要运行** npm/tsc/check。通读自检。不碰所有权外文件。
+
+## 需要新表时
+`notes`、`note_links`、`tags`、`tag_refs`（多态）、`notebooks`。段落外键用 `ON DELETE SET NULL`。DDL 写 `electron/db/migrations/notes.sql` 并声明。
+
+## 返回摘要
+~8 行：文件清单、`notes:*` channel、双链解析测试覆盖、段落绑定查询契约（供 RD）、注册行、App 路由片段、migrations/notes.sql、关键决策。"""
