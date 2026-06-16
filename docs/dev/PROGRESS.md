@@ -3,7 +3,7 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`，末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-16（Phase 5 AI 完成，所有功能模块就绪；剩 Phase 8 打包）
+最后更新：2026-06-16（导入改为全书 AI 解析 + 段落任务创建；剩 Phase 8 打包）
 
 ---
 
@@ -155,3 +155,4 @@ Exit：双平台安装包可装可用。
 - 2026-06-16：Phase 2(RD)+3(SRH) 完成（dev-rd/dev-srh agent 并行产出 + 主 agent 集成）— 三栏阅读工作台/段级进度/书签/同步滚动/快捷键；FTS5 全文检索+全库高亮+术语词典。migrate v4(dictionary)+v5(reading)；端到端 PASS（含 search 断言）。**Phase 2 & 3 exit 达成。** 关键修复：导出 invokeRaw 共享、useProgress 去除 render 中写 ref、Node 需 22+（.nvmrc，vitest 4 require(ESM)）。
 - 2026-06-16：Phase 4(SET)+6(LRN)+7(NOTE) 完成（dev-set/dev-lrn/dev-note agent 并行 fan-out + 主 agent 集成）— safeStorage Key/备份/设置、SM-2 记忆卡/测验/仪表盘、笔记/双链/导出。migrate v6(settings)+v7(learning)+v8(notes)；152 tests 全绿；smoke schema v8 全表。**Wave 1 全完，Phase 4/6/7 exit 达成。** 剩 Phase 5(AI, Wave 2，依赖 set+srh)。集成期修：3 处类型(sender.id/printToPDF marginsType/digest hex)、backup.test 移 node root、agent 测试 4 处断言修正、adm-zip 移 deps。
 - 2026-06-16：Phase 5(AI) 完成（dev-ai agent + 主 agent 集成）— DeepSeek 客户端/ai_cache/白话解读/RAG 问答/失败降级/三层红线/AI 卡片。migrate v9(ai_cache)；203 tests 全绿；smoke schema v9。**所有功能模块(Phase 0-7)就绪，剩 Phase 8 打包。** 集成期修：splitAnswerAndCites 顶层块提取、normalizePrompt 空白归一、sanitizeOutput 中文剂量正则、eslint argsIgnorePattern^_、InterpretPanel 生成按钮+reload。
+- 2026-06-16：导入解析流程调整 — AI 配置恢复为应用使用必要条件；EPUB 导入改为“读取 EPUB 全书文本 → 全书交给 AI 排除目录/版权/广告等非正文 → AI 输出章节段落 → 保存解析结果 → 基于已保存段落创建白话解析/图片生成任务”的主路径；新增 schema v10 `ai_generation_tasks`；IMP `reparseBook` 保留稳定 ID 保守复用，旧行软删避免破坏下游引用并补齐任务；SET `triggerReparse` 接入安全 reparse；`npm run check` 全绿（209 tests）。

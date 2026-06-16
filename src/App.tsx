@@ -31,7 +31,6 @@ export default function App() {
     return off
   }, [refreshAiStatus])
 
-  // Onboarding gate: force-config an AI provider before the app is usable.
   const showForceSetup = aiStatus !== null && !aiStatus.configured
   const onForceSaved = useCallback(() => {
     void refreshAiStatus()

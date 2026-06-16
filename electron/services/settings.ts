@@ -17,6 +17,7 @@ import { join, resolve, relative, sep } from 'node:path'
 import { statSync, readdirSync, existsSync, unlinkSync } from 'node:fs'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
+import { reparseBook } from './import'
 import {
   saveProviderCredential,
   deleteProviderCredential,
@@ -262,34 +263,10 @@ export function listBookFiles(): BookFileEntry[] {
   return entries.sort((a, b) => b.sizeBytes - a.sizeBytes)
 }
 
-/**
- * Triggers a re-parse of a book by delegating to the IMP module's importEpubFile.
- *
- * This is a DECLARED DELEGATION: the actual re-parse logic (with stable-ID
- * preservation via parse_hash matching) is IMP-07 and not yet implemented.
- * This function finds the book's source file and re-imports it, replacing the
- * old book record. The old book is soft-deleted to preserve any downstream
- * references.
- *
- * NOTE: Full stable-ID-preserving re-parse (matching old paragraphs by
- * parse_hash) requires IMP-07. This is a best-effort re-import.
- */
-export function triggerReparse(bookId: string): { jobId: string } {
-  const db = getDb()
-  const book = db
-    .prepare('SELECT id, title, source_file FROM books WHERE id = ? AND deleted_at IS NULL')
-    .get(bookId) as { id: string; title: string; source_file: string } | undefined
-
-  if (!book) throw new AppError('NOT_FOUND', `book ${bookId} not found`)
-
-  // Declare delegation: actual re-parse is IMP-07's responsibility.
-  // For now, we return a job id and log the intent. The main agent can wire
-  // this to IMP's reparseBook when IMP-07 lands.
-  throw new AppError(
-    'CONFLICT',
-    '重新解析功能由 IMP 模块 (IMP-07) 提供，尚未实现。请在 IMP-07 完成后接入。',
-    { bookId, sourceFile: book.source_file },
-  )
+/** Runs IMP-07 stable-ID-preserving reparse for a book. */
+export function triggerReparse(bookId: string): ReturnType<typeof reparseBook> {
+  if (!bookId) throw new AppError('VALIDATION', 'bookId is required')
+  return reparseBook(bookId)
 }
 
 /**

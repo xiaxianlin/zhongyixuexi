@@ -1,44 +1,31 @@
 /**
- * Import orchestration (IMP-01/02, slice S1.3 + AI parse).
+ * Import orchestration (IMP-01/02/07).
  *
- * `importEpubFile` is the thin I/O orchestrator: parse EPUB structure →
- * copy source file → **AI-parse the WHOLE BOOK in a single DeepSeek call**
- * (1M-token context; model judges isContent + extracts body paragraphs for all
- * chapters at once) → write books/chapters/paragraphs atomically.
+ * Import path: read EPUB structure, extract whole-book chapter text, hand the
+ * full book to AI for non-content exclusion + chapter/paragraph parsing, then
+ * write books/chapters/paragraphs atomically. AI interpretation/image jobs are
+ * downstream work; this module creates the clean paragraph graph they target.
  *
- * AI parsing replaces the old rule-based splitParagraphs. Non-content chapters
- * (copyright pages, TOC, ads, cover, navigation) are filtered out entirely —
- * they are never written to the database.
- *
- * Requires a configured DeepSeek API Key. If none is configured, throws
- * AppError('AI', ..., { aiCode: 'AI_KEY_NOT_CONFIGURED' }) so the renderer can
- * prompt the user to configure one in Settings. No silent fallback to rules.
- *
- * `reparseBook` re-runs AI parsing on an existing book: hard-deletes old
- * chapters/paragraphs (FK CASCADE), writes new ones with fresh UUIDs, and
- * rebuilds the FTS index (CASCADE does not fire triggers).
- *
- * Stable IDs (00-architecture §5.5): every book/chapter/paragraph id is a
- * fresh crypto.randomUUID(); paragraph rows carry parse_hash (sha256 of the
- * normalised text) for future stable-ID re-parse mapping.
+ * Reparse is stable-ID preserving: existing chapters/paragraphs are matched by
+ * content hash, title/order and parse_hash before new rows are minted. Unmatched
+ * old rows are soft-deleted, so SET NULL references degrade gracefully and
+ * CASCADE-bound rows are not destroyed by a hard delete.
  */
 
 import { createHash, randomUUID } from 'node:crypto'
 import { copyFile, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import { app } from 'electron'
-import { parseEpub } from './epub'
+import { parseEpub, type ParsedChapter } from './epub'
 import { normalizeWhitespace } from './paragraph'
 import { parseBookByAI, type ParseChapterResult } from './ai'
-import { getActiveApiKey } from './settings'
 import { getDb } from '../db'
 import { rebuildFts } from '../db/fts'
-import { aiError } from '../ai/errors'
 import { AppError } from '../lib/error'
 import type { ImportProgress, ImportResult } from '../models/content'
 
 export interface ImportOptions {
-  /** Streamed progress callback (parsing | ai_parsing | copying | writing | done). */
+  /** Streamed progress callback (parsing | copying | writing | done). */
   onProgress?: (p: ImportProgress) => void
 }
 
@@ -52,11 +39,30 @@ function sha256Hex16(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 16)
 }
 
-/**
- * Strip HTML tags from an XHTML string and normalize whitespace, producing
- * plain text suitable for AI parsing. Removes script/style blocks first.
- */
-function stripHtmlToText(xhtml: string): string {
+interface ParsedContentChapter {
+  chapter: ParsedChapter
+  result: ParseChapterResult
+}
+
+interface ChapterRow {
+  id: string
+  order_index: number
+  title: string
+  content_hash: string | null
+}
+
+interface ParagraphRow {
+  id: string
+  chapter_id: string
+  order_index: number
+  text: string
+  edited: number
+  parse_hash: string | null
+}
+
+type AiTaskKind = 'modern' | 'image'
+
+export function stripHtmlToText(xhtml: string): string {
   return normalizeWhitespace(
     xhtml
       .replace(/<script[\s\S]*?<\/script>/gi, '')
@@ -67,32 +73,36 @@ function stripHtmlToText(xhtml: string): string {
   )
 }
 
-/**
- * Verify a DeepSeek API key is configured. Throws AI_KEY_NOT_CONFIGURED if not.
- * Called early in importEpubFile/reparseBook so the user gets a clear error
- * before any chapters are processed.
- */
-function ensureApiKey(): void {
-  const cfg = getActiveApiKey()
-  if (!cfg || !cfg.apiKey) {
-    throw aiError(
-      'AI_KEY_NOT_CONFIGURED',
-      '未配置 AI，请先在设置中配置 DeepSeek API Key',
-    )
+export function buildAiParseInput(chapters: ParsedChapter[]): { title: string; text: string }[] {
+  return chapters.map((chapter) => ({
+    title: chapter.title,
+    text: stripHtmlToText(chapter.xhtml),
+  }))
+}
+
+export function alignAiContentChapters(
+  chapters: ParsedChapter[],
+  aiResults: ParseChapterResult[],
+): ParsedContentChapter[] {
+  const out: ParsedContentChapter[] = []
+  for (let i = 0; i < chapters.length; i++) {
+    const result = aiResults[i]
+    if (result?.isContent && result.paragraphs.length > 0) {
+      out.push({ chapter: chapters[i], result })
+    }
   }
+  return out
+}
+
+function getBookOrThrow(bookId: string): { id: string; title: string; source_file: string } {
+  const row = getDb()
+    .prepare('SELECT id, title, source_file FROM books WHERE id = ? AND deleted_at IS NULL')
+    .get(bookId) as { id: string; title: string; source_file: string } | undefined
+  if (!row) throw new AppError('NOT_FOUND', `书籍 ${bookId} 不存在`)
+  return row
 }
 
 /**
- * Imports an EPUB into the local library using AI-driven chapter parsing.
- *
- * Flow: parseEpub (structure) → ensureApiKey → strip HTML per chapter →
- * parseChapterByAI (DeepSeek judges isContent + extracts paragraphs) →
- * copy source file → write books/chapters/paragraphs atomically.
- *
- * Non-content chapters (isContent=false) are skipped — not written to DB.
- * If any chapter's AI parsing fails, the entire import aborts (no half-written
- * data) so the user can retry cleanly.
- *
  * @param filePath absolute path to the .epub on disk
  * @param opts.onProgress optional progress callback
  * @returns ImportResult (bookId + chapter/paragraph counts)
@@ -103,35 +113,18 @@ export async function importEpubFile(
 ): Promise<ImportResult> {
   const emit = opts.onProgress ?? (() => {})
 
-  // 1. Verify API key before any work (fail fast, clear error).
-  ensureApiKey()
-
-  // 2. Parse EPUB structure.
-  emit({ stage: 'parsing', message: '正在解析 EPUB…' })
+  emit({ stage: 'importing', message: '正在导入文件…' })
   const parsed = await parseEpub(filePath)
 
-  // 3. AI-parse ALL chapters in a SINGLE call (whole-book, 1M context).
-  //    Strip HTML per chapter first, then send all {title, text} to parseBookByAI.
-  emit({ stage: 'ai_parsing', message: 'AI 解析全书…' })
+  emit({
+    stage: 'whole_book_ai_parse',
+    current: 0,
+    total: parsed.chapters.length,
+    message: '正在全书解析并排除目录/版权页等非正文…',
+  })
+  const aiResults = await parseBookByAI(buildAiParseInput(parsed.chapters))
+  const contentChapters = alignAiContentChapters(parsed.chapters, aiResults)
 
-  const chaptersForAI = parsed.chapters.map((ch) => ({
-    title: ch.title,
-    text: stripHtmlToText(ch.xhtml),
-  }))
-  const aiResults = await parseBookByAI(chaptersForAI)
-
-  emit({ stage: 'ai_parsing', message: 'AI 解析全书完成' })
-
-  // 4. Filter to content chapters only (align by index).
-  const contentChapters: { chapter: typeof parsed.chapters[0]; result: ParseChapterResult }[] = []
-  for (let i = 0; i < parsed.chapters.length; i++) {
-    const result = aiResults[i]
-    if (result && result.isContent && result.paragraphs.length > 0) {
-      contentChapters.push({ chapter: parsed.chapters[i], result })
-    }
-  }
-
-  // 5. Copy original epub into userData/files/<bookId>.epub.
   const bookId = randomUUID()
   const now = Date.now()
   const sourceFile = `files/${bookId}.epub`
@@ -141,12 +134,11 @@ export async function importEpubFile(
   await mkdir(filesDir, { recursive: true })
   await copyFile(filePath, join(filesDir, `${bookId}.epub`))
 
-  // 6. Write to DB atomically.
   emit({
-    stage: 'writing',
+    stage: 'saving_parse',
     current: 0,
     total: contentChapters.length,
-    message: '正在写入数据库…',
+    message: '正在保存章节与段落解析结果…',
   })
 
   const db = getDb()
@@ -176,6 +168,7 @@ export async function importEpubFile(
   )
 
   let paragraphCount = 0
+  let taskCount = 0
 
   const tx = db.transaction(() => {
     insertBook.run({
@@ -203,11 +196,12 @@ export async function importEpubFile(
       chapterIndex++
 
       let orderIndex = 0
-      for (const paraText of result.paragraphs) {
-        const normalized = normalize(paraText)
+      for (const paragraph of result.paragraphs) {
+        const normalized = normalize(paragraph)
         if (!normalized) continue
+        const paragraphId = randomUUID()
         insertParagraph.run({
-          id: randomUUID(),
+          id: paragraphId,
           chapterId,
           orderIndex,
           text: normalized,
@@ -220,37 +214,30 @@ export async function importEpubFile(
         paragraphCount++
       }
     }
+
+    taskCount = createAiTasksForBook(bookId, now)
   })
 
   tx()
 
-  emit({ stage: 'done', current: contentChapters.length, total: contentChapters.length })
+  emit({
+    stage: 'creating_tasks',
+    current: taskCount,
+    total: paragraphCount * 2,
+    message: `已创建 ${taskCount} 个段落解析/图片生成任务…`,
+  })
+  emit({ stage: 'done', current: contentChapters.length, total: contentChapters.length, message: '完成解析' })
 
   return {
     bookId,
     chapterCount: contentChapters.length,
     paragraphCount,
+    taskCount,
   }
 }
 
 /**
- * Re-parses an existing book: reads the stored source EPUB, re-runs AI chapter
- * parsing, and replaces all chapters/paragraphs with fresh data.
- *
- * Strategy:
- *   1. Read books.source_file → resolve absolute path → re-parse EPUB.
- *   2. AI-parse every chapter (same as importEpubFile).
- *   3. Transaction: DELETE old chapters (FK CASCADE removes paragraphs +
- *      downstream rows) → INSERT new chapters/paragraphs with fresh UUIDs.
- *   4. Rebuild FTS index (CASCADE deletes do NOT fire AFTER DELETE triggers,
- *      so fts_paragraphs would be orphaned — rebuildFts fixes this per
- *      00-architecture §5.4).
- *   5. Bump books.parse_version + updated_at.
- *
- * Note: paragraphs get new UUIDs (not stable-ID-mapped), so downstream notes/
- * cards bound to old paragraph_ids will be cascaded. This is the "reset"
- * semantics — acceptable for re-parse (PRD IMP-07 treats full re-parse as a
- * reset; incremental stable-ID mapping can be layered on later).
+ * Re-parses an existing book without hard-deleting content rows.
  *
  * @param bookId existing book id
  * @param onProgress optional progress callback
@@ -263,54 +250,29 @@ export async function reparseBook(
   const emit = opts.onProgress ?? (() => {})
   const db = getDb()
 
-  // 1. Verify API key.
-  ensureApiKey()
-
-  // 2. Read book row to get source file path.
-  const book = db
-    .prepare('SELECT id, title, source_file FROM books WHERE id = ? AND deleted_at IS NULL')
-    .get(bookId) as { id: string; title: string; source_file: string } | undefined
-  if (!book) {
-    throw new AppError('NOT_FOUND', `书籍 ${bookId} 不存在`)
-  }
-
+  const book = getBookOrThrow(bookId)
   const sourceFileAbs = join(app.getPath('userData'), book.source_file)
 
-  // 3. Re-parse EPUB structure.
-  emit({ stage: 'parsing', message: '正在重新解析 EPUB…' })
+  emit({ stage: 'importing', message: '正在读取原始 EPUB…' })
   const parsed = await parseEpub(sourceFileAbs)
 
-  // 4. AI-parse ALL chapters in a SINGLE call (whole-book, 1M context).
-  emit({ stage: 'ai_parsing', message: 'AI 解析全书…' })
-
-  const chaptersForAI = parsed.chapters.map((ch) => ({
-    title: ch.title,
-    text: stripHtmlToText(ch.xhtml),
-  }))
-  const aiResults = await parseBookByAI(chaptersForAI)
-
-  emit({ stage: 'ai_parsing', message: 'AI 解析全书完成' })
-
-  // 5. Filter to content chapters (align by index).
-  const contentChapters: { chapter: typeof parsed.chapters[0]; result: ParseChapterResult }[] = []
-  for (let i = 0; i < parsed.chapters.length; i++) {
-    const result = aiResults[i]
-    if (result && result.isContent && result.paragraphs.length > 0) {
-      contentChapters.push({ chapter: parsed.chapters[i], result })
-    }
-  }
-
-  // 6. Transaction: delete old chapters (CASCADE → paragraphs) + insert new.
   emit({
-    stage: 'writing',
+    stage: 'whole_book_ai_parse',
+    current: 0,
+    total: parsed.chapters.length,
+    message: '正在全书 AI 重新解析并排除非正文…',
+  })
+  const aiResults = await parseBookByAI(buildAiParseInput(parsed.chapters))
+  const contentChapters = alignAiContentChapters(parsed.chapters, aiResults)
+
+  emit({
+    stage: 'saving_parse',
     current: 0,
     total: contentChapters.length,
-    message: '正在写入数据库…',
+    message: '正在保存新的章节与段落解析结果…',
   })
 
   const now = Date.now()
-
-  const deleteChapters = db.prepare('DELETE FROM chapters WHERE book_id = ?')
 
   const insertChapter = db.prepare(
     `INSERT INTO chapters
@@ -328,65 +290,274 @@ export async function reparseBook(
              0, @parseHash, @isNoise, @qualityFlag, @createdAt, NULL)`,
   )
 
+  const updateChapter = db.prepare(
+    `UPDATE chapters
+     SET order_index = @orderIndex,
+         title = @title,
+         content_hash = @contentHash,
+         deleted_at = NULL
+     WHERE id = @id`,
+  )
+
+  const softDeleteChapter = db.prepare(
+    `UPDATE chapters SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL`,
+  )
+
+  const updateParagraph = db.prepare(
+    `UPDATE paragraphs
+     SET chapter_id = @chapterId,
+         order_index = @orderIndex,
+         text = CASE WHEN edited = 1 THEN text ELSE @text END,
+         parse_hash = CASE WHEN edited = 1 THEN parse_hash ELSE @parseHash END,
+         is_noise = @isNoise,
+         quality_flag = @qualityFlag,
+         deleted_at = NULL
+     WHERE id = @id`,
+  )
+
+  const softDeleteParagraph = db.prepare(
+    `UPDATE paragraphs SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL`,
+  )
+
   const bumpBook = db.prepare(
     `UPDATE books SET updated_at = ?, parse_version = parse_version + 1 WHERE id = ?`,
   )
 
+  const oldChapters = db
+    .prepare(
+      `SELECT id, order_index, title, content_hash
+       FROM chapters
+       WHERE book_id = ? AND deleted_at IS NULL
+       ORDER BY order_index, id`,
+    )
+    .all(bookId) as ChapterRow[]
+
+  const oldParagraphs = db
+    .prepare(
+      `SELECT id, chapter_id, order_index, text, edited, parse_hash
+       FROM paragraphs
+       WHERE chapter_id IN (SELECT id FROM chapters WHERE book_id = ?)
+         AND deleted_at IS NULL
+       ORDER BY chapter_id, order_index, id`,
+    )
+    .all(bookId) as ParagraphRow[]
+
   let paragraphCount = 0
+  let taskCount = 0
 
   const tx = db.transaction(() => {
-    // Delete old chapters → FK CASCADE removes old paragraphs (+ downstream).
-    deleteChapters.run(bookId)
+    const availableChapters = new Map(oldChapters.map((ch) => [ch.id, ch]))
+    const chaptersByHash = groupBy(oldChapters.filter((ch) => ch.content_hash), (ch) => ch.content_hash!)
+    const chaptersByTitle = groupBy(oldChapters, (ch) => normalize(ch.title))
+    const paragraphsByChapter = groupBy(oldParagraphs, (p) => p.chapter_id)
+    const usedParagraphIds = new Set<string>()
+    const usedChapterIds = new Set<string>()
 
     let chapterIndex = 0
     for (const { chapter: ch, result } of contentChapters) {
-      const chapterId = randomUUID()
       const contentHash = sha256Hex16(ch.xhtml)
-
-      insertChapter.run({
-        id: chapterId,
-        bookId,
+      const matchedChapter = pickChapterMatch({
         orderIndex: chapterIndex,
         title: ch.title,
         contentHash,
-        createdAt: now,
+        available: availableChapters,
+        byHash: chaptersByHash,
+        byTitle: chaptersByTitle,
       })
-      chapterIndex++
+      const chapterId = matchedChapter?.id ?? randomUUID()
 
-      let orderIndex = 0
-      for (const paraText of result.paragraphs) {
-        const normalized = normalize(paraText)
-        if (!normalized) continue
-        insertParagraph.run({
-          id: randomUUID(),
-          chapterId,
-          orderIndex,
-          text: normalized,
-          parseHash: sha256Hex16(normalized),
-          isNoise: 0,
-          qualityFlag: 'ok',
+      if (matchedChapter) {
+        availableChapters.delete(matchedChapter.id)
+        usedChapterIds.add(matchedChapter.id)
+        updateChapter.run({
+          id: chapterId,
+          orderIndex: chapterIndex,
+          title: ch.title,
+          contentHash,
+        })
+      } else {
+        insertChapter.run({
+          id: chapterId,
+          bookId,
+          orderIndex: chapterIndex,
+          title: ch.title,
+          contentHash,
           createdAt: now,
         })
+      }
+      chapterIndex++
+
+      const existingParas = matchedChapter ? (paragraphsByChapter.get(matchedChapter.id) ?? []) : []
+      const availableParas = new Map(existingParas.map((p) => [p.id, p]))
+      const parasByHash = groupBy(existingParas.filter((p) => p.parse_hash), (p) => p.parse_hash!)
+
+      let orderIndex = 0
+      for (const paragraph of result.paragraphs) {
+        const normalized = normalize(paragraph)
+        if (!normalized) continue
+        const parseHash = sha256Hex16(normalized)
+        const matchedPara = pickParagraphMatch({
+          orderIndex,
+          parseHash,
+          available: availableParas,
+          byHash: parasByHash,
+        })
+        if (matchedPara) {
+          availableParas.delete(matchedPara.id)
+          usedParagraphIds.add(matchedPara.id)
+          updateParagraph.run({
+            id: matchedPara.id,
+            chapterId,
+            orderIndex,
+            text: normalized,
+            parseHash,
+            isNoise: 0,
+            qualityFlag: 'ok',
+          })
+        } else {
+          insertParagraph.run({
+            id: randomUUID(),
+            chapterId,
+            orderIndex,
+            text: normalized,
+            parseHash,
+            isNoise: 0,
+            qualityFlag: 'ok',
+            createdAt: now,
+          })
+        }
         orderIndex++
         paragraphCount++
       }
+
+      for (const oldPara of existingParas) {
+        if (!usedParagraphIds.has(oldPara.id)) {
+          softDeleteParagraph.run(now, oldPara.id)
+        }
+      }
     }
 
-    // Bump parse_version + updated_at.
-    bumpBook.run(now, bookId)
+    for (const oldChapter of oldChapters) {
+      if (!usedChapterIds.has(oldChapter.id)) {
+        for (const oldPara of paragraphsByChapter.get(oldChapter.id) ?? []) {
+          softDeleteParagraph.run(now, oldPara.id)
+        }
+        softDeleteChapter.run(now, oldChapter.id)
+      }
+    }
 
-    // Rebuild FTS: CASCADE deletes did NOT fire AFTER DELETE triggers, so
-    // fts_paragraphs was not cleaned. Rebuild from the now-fresh paragraphs.
+    bumpBook.run(now, bookId)
     rebuildFts(db)
+    taskCount = createAiTasksForBook(bookId, now)
   })
 
   tx()
 
-  emit({ stage: 'done', current: contentChapters.length, total: contentChapters.length })
+  emit({
+    stage: 'creating_tasks',
+    current: taskCount,
+    total: paragraphCount * 2,
+    message: `已创建/补齐 ${taskCount} 个段落解析/图片生成任务…`,
+  })
+  emit({ stage: 'done', current: contentChapters.length, total: contentChapters.length, message: '完成解析' })
 
   return {
     bookId,
     chapterCount: contentChapters.length,
     paragraphCount,
+    taskCount,
   }
+}
+
+function createAiTasksForBook(bookId: string, now: number): number {
+  const db = getDb()
+  const paragraphs = db
+    .prepare(
+      `SELECT p.id AS paragraphId,
+              p.chapter_id AS chapterId,
+              p.order_index AS orderIndex
+       FROM paragraphs p
+       JOIN chapters c ON c.id = p.chapter_id
+       WHERE c.book_id = ?
+         AND c.deleted_at IS NULL
+         AND p.deleted_at IS NULL
+         AND p.is_noise = 0
+       ORDER BY c.order_index, p.order_index`,
+    )
+    .all(bookId) as { paragraphId: string; chapterId: string; orderIndex: number }[]
+
+  const insertTask = db.prepare(
+    `INSERT OR IGNORE INTO ai_generation_tasks
+       (id, book_id, chapter_id, paragraph_id, kind, status, priority,
+        attempts, created_at, updated_at, started_at, finished_at, error, meta)
+     VALUES
+       (@id, @bookId, @chapterId, @paragraphId, @kind, 'pending', @priority,
+        0, @createdAt, @updatedAt, NULL, NULL, NULL, @meta)`,
+  )
+
+  let created = 0
+  for (const paragraph of paragraphs) {
+    for (const kind of ['modern', 'image'] satisfies AiTaskKind[]) {
+      const result = insertTask.run({
+        id: randomUUID(),
+        bookId,
+        chapterId: paragraph.chapterId,
+        paragraphId: paragraph.paragraphId,
+        kind,
+        priority: paragraph.orderIndex,
+        createdAt: now,
+        updatedAt: now,
+        meta: JSON.stringify({ source: 'import' }),
+      })
+      created += result.changes
+    }
+  }
+  return created
+}
+
+function groupBy<T>(rows: T[], keyOf: (row: T) => string): Map<string, T[]> {
+  const out = new Map<string, T[]>()
+  for (const row of rows) {
+    const key = keyOf(row)
+    const bucket = out.get(key)
+    if (bucket) bucket.push(row)
+    else out.set(key, [row])
+  }
+  return out
+}
+
+function firstAvailable<T extends { id: string }>(
+  rows: T[] | undefined,
+  available: Map<string, T>,
+): T | undefined {
+  return rows?.find((row) => available.has(row.id))
+}
+
+export function pickChapterMatch(input: {
+  orderIndex: number
+  title: string
+  contentHash: string
+  available: Map<string, ChapterRow>
+  byHash: Map<string, ChapterRow[]>
+  byTitle: Map<string, ChapterRow[]>
+}): ChapterRow | undefined {
+  const hashHit = firstAvailable(input.byHash.get(input.contentHash), input.available)
+  if (hashHit) return hashHit
+
+  const titleHit = firstAvailable(input.byTitle.get(normalize(input.title)), input.available)
+  if (titleHit) return titleHit
+
+  return [...input.available.values()].find((ch) => ch.order_index === input.orderIndex)
+}
+
+export function pickParagraphMatch(input: {
+  orderIndex: number
+  parseHash: string
+  available: Map<string, ParagraphRow>
+  byHash: Map<string, ParagraphRow[]>
+}): ParagraphRow | undefined {
+  const hashHit = firstAvailable(input.byHash.get(input.parseHash), input.available)
+  if (hashHit) return hashHit
+
+  return [...input.available.values()].find((p) => p.order_index === input.orderIndex)
 }

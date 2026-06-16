@@ -29,6 +29,7 @@ export interface ImportResult {
   bookId: string
   chapterCount: number
   paragraphCount: number
+  taskCount?: number
 }
 
 export interface ImportProgress {
