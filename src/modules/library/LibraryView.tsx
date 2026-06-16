@@ -78,52 +78,71 @@ export function LibraryView() {
 
   return (
     <div className="lib">
-      <div className="lib__toolbar">
-        <h2>书库</h2>
-        <button className="lib__import" disabled={busy} onClick={onImport}>
-          {busy ? '导入中…' : '+ 导入 EPUB'}
-        </button>
-      </div>
-
-      {progress && <p className="lib__progress">{progress}</p>}
-
       {books.length === 0 ? (
-        <p className="lib__empty">还没有书籍，点击「导入 EPUB」开始。</p>
-      ) : (
-        <div className="lib__grid">
-          {books.map((b) => (
-            <div key={b.id} className="bookcard" onClick={() => openBook(b.id)}>
-              <div className="bookcard__cover">{b.title.slice(0, 1)}</div>
-              <div className="bookcard__body">
-                <div className="bookcard__title">{b.title}</div>
-                <div className="bookcard__meta">
-                  {b.author || '佚名'} · {b.chapter_count} 章 · {b.paragraph_count} 段
-                </div>
-              </div>
-              <button
-                className="bookcard__rep"
-                title="AI 重新解析"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  void onReparse(b.id)
-                }}
-              >
-                ↻
-              </button>
-              <button
-                className="bookcard__del"
-                title="删除"
-                aria-label="删除"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  void onDelete(b.id)
-                }}
-              >
-                ×
-              </button>
-            </div>
-          ))}
+        /* —— 空态：居中引导，大气端庄 —— */
+        <div className="lib__emptyState">
+          <div className="lib__emptyIcon" aria-hidden>
+            卷
+          </div>
+          <p className="lib__emptyDesc">导入你的第一本中医典籍，AI 解析章节内容</p>
+          <button className="lib__sealBtn" disabled={busy} onClick={onImport}>
+            {busy ? '导入中…' : '导入 EPUB'}
+          </button>
+          {progress && <p className="lib__progress">{progress}</p>}
         </div>
+      ) : (
+        /* —— 列表态：书库标题 + 卡片网格，导入作为网格末尾项 —— */
+        <>
+          <h2 className="lib__heading">书库</h2>
+          {progress && <p className="lib__progress">{progress}</p>}
+          <div className="lib__grid">
+            {books.map((b) => (
+              <div key={b.id} className="bookcard" onClick={() => openBook(b.id)}>
+                <div className="bookcard__cover">{b.title.slice(0, 1)}</div>
+                <div className="bookcard__body">
+                  <div className="bookcard__title">{b.title}</div>
+                  <div className="bookcard__meta">
+                    {b.author || '佚名'} · {b.chapter_count} 章 · {b.paragraph_count} 段
+                  </div>
+                </div>
+                <button
+                  className="bookcard__rep"
+                  title="AI 重新解析"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void onReparse(b.id)
+                  }}
+                >
+                  ↻
+                </button>
+                <button
+                  className="bookcard__del"
+                  title="删除"
+                  aria-label="删除"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void onDelete(b.id)
+                  }}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+
+            {/* 导入卡片：作为网格末尾项，占一格 */}
+            <button
+              className="lib__addCard"
+              disabled={busy}
+              onClick={onImport}
+              title={busy ? '导入中…' : '导入 EPUB'}
+            >
+              <span className="lib__addIcon" aria-hidden>
+                {busy ? '…' : '+'}
+              </span>
+              <span className="lib__addLabel">{busy ? '导入中' : '导入 EPUB'}</span>
+            </button>
+          </div>
+        </>
       )}
     </div>
   )

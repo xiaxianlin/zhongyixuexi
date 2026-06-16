@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
 import { useSessionStore } from '@/stores/session'
 import { useAiStore, attachAiProgressListener } from '@/stores/ai'
 import { LibraryView } from '@/modules/library/LibraryView'
@@ -8,7 +8,6 @@ import { SettingsView } from '@/modules/settings/SettingsView'
 import { ProviderEditorModal } from '@/modules/settings/ProviderEditorModal'
 import { LearningView } from '@/modules/learning/LearningView'
 import { NotesView } from '@/modules/notes/NotesView'
-import { QaPanel } from '@/modules/ai/QaPanel'
 import { DegradedNotice } from '@/modules/ai/DegradedNotice'
 
 const NAV: { view: import('@/stores/session').View; label: string }[] = [
@@ -22,12 +21,9 @@ const NAV: { view: import('@/stores/session').View; label: string }[] = [
 export default function App() {
   const view = useSessionStore((s) => s.view)
   const activeBookId = useSessionStore((s) => s.activeBookId)
-  const setActiveParagraph = useSessionStore((s) => s.setActiveParagraph)
   const setView = useSessionStore((s) => s.setView)
   const refreshAiStatus = useAiStore((s) => s.refreshStatus)
   const aiStatus = useAiStore((s) => s.status)
-
-  const [qaOpen, setQaOpen] = useState(false)
 
   useEffect(() => {
     const off = attachAiProgressListener()
@@ -36,9 +32,6 @@ export default function App() {
   }, [refreshAiStatus])
 
   // Onboarding gate: force-config an AI provider before the app is usable.
-  // Only shown once the status probe has resolved (status !== null) and the
-  // active provider has no key. The force modal auto-activates on save, so
-  // refreshing the status flips this off and dismisses it.
   const showForceSetup = aiStatus !== null && !aiStatus.configured
   const onForceSaved = useCallback(() => {
     void refreshAiStatus()
@@ -80,25 +73,6 @@ export default function App() {
           <LibraryView />
         )}
       </main>
-
-      <QaPanel
-        open={qaOpen}
-        onClose={() => setQaOpen(false)}
-        bookId={activeBookId}
-        onCite={(pid) => setActiveParagraph(pid)}
-      />
-
-      <button
-        type="button"
-        className={qaOpen ? 'app__qaFab is-hidden' : 'app__qaFab'}
-        onClick={() => setQaOpen(true)}
-        title="AI 智能问答"
-        aria-label="打开智能问答"
-        aria-hidden={qaOpen}
-        tabIndex={qaOpen ? -1 : 0}
-      >
-        问
-      </button>
 
       <ProviderEditorModal mode="force" open={showForceSetup} provider={null} onSaved={onForceSaved} />
     </div>

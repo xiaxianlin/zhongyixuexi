@@ -1,17 +1,15 @@
-/* AI module styles. Kept self-contained (no imports from other modules' CSS)
-   so the main agent can mount the components without CSS-order surprises.
-   Class names are prefixed ai- to avoid collisions. */
+/* AI 模块样式 —— 水墨宣纸主题（智能问答已移除，仅留降级横幅） */
 
-/* ---- DegradedNotice (top banner) ---- */
+/* ---- DegradedNotice 顶部降级横幅 ---- */
 .ai-degraded-notice {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: #fef3cd;
-  border-bottom: 1px solid #f5d785;
-  color: #7a5b00;
-  font-size: 13px;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--qianjiang);
+  border-bottom: 1px solid var(--border-strong);
+  color: var(--zheshi);
+  font-size: var(--fs-small);
 }
 .ai-degraded-notice__body {
   display: flex;
@@ -20,183 +18,20 @@
   flex: 1;
 }
 .ai-degraded-notice__hint {
-  color: #9a7b1f;
-  font-size: 12px;
+  color: var(--zheshi);
+  opacity: 0.8;
+  font-size: var(--fs-small);
 }
 .ai-degraded-notice__dismiss {
   background: none;
   border: none;
   color: inherit;
-  font-size: 20px;
+  font-size: 22px;
   line-height: 1;
   cursor: pointer;
-  padding: 0 4px;
+  padding: 0 var(--space-xs);
   opacity: 0.7;
 }
 .ai-degraded-notice__dismiss:hover {
   opacity: 1;
-}
-
-/* ---- QaPanel (侧滑抽屉：从右滑入，仅由关闭按钮收起) ---- */
-.ai-qa-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  height: 100vh;
-  width: 380px;
-  max-width: 86vw;
-  z-index: 1000;
-  display: flex;
-  flex-direction: column;
-  background: var(--surface-2);
-  border-left: 1px solid var(--border-strong);
-  box-shadow: -12px 0 32px rgba(28, 26, 23, 0.16);
-  /* 收起态：平移到屏幕右侧之外，延迟隐藏可访问性以让滑出动画跑完 */
-  transform: translateX(100%);
-  visibility: hidden;
-  transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1),
-    visibility 0s linear 0.34s;
-}
-.ai-qa-panel.is-open {
-  transform: translateX(0);
-  visibility: visible;
-  transition: transform 0.34s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s;
-}
-.ai-qa-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 18px;
-  border-bottom: 1px solid var(--border);
-}
-.ai-qa-panel__header h3 {
-  margin: 0;
-  font-family: var(--font-title);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  color: var(--fg);
-}
-.ai-qa-panel__close {
-  background: none;
-  border: none;
-  font-size: 22px;
-  line-height: 1;
-  cursor: pointer;
-  color: var(--faint-fg);
-  padding: 0 4px;
-  border-radius: 6px;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-.ai-qa-panel__close:hover {
-  color: var(--fg);
-  background: var(--surface);
-}
-.ai-qa-panel__body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 14px 18px;
-}
-.ai-qa-panel__empty {
-  color: var(--faint-fg);
-  font-size: 13px;
-  line-height: 1.7;
-}
-.ai-qa-panel__error {
-  margin-top: 8px;
-  color: var(--accent);
-  font-size: 12px;
-}
-.ai-qa-panel__input {
-  border-top: 1px solid var(--border);
-  padding: 12px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.ai-qa-panel__input textarea {
-  width: 100%;
-  resize: vertical;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  padding: 8px 10px;
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--fg);
-  background: var(--bg);
-}
-.ai-qa-panel__input textarea:focus {
-  outline: none;
-  border-color: var(--accent);
-}
-.ai-qa-panel__send {
-  align-self: flex-end;
-  padding: 6px 18px;
-  background: var(--accent);
-  color: var(--accent-contrast);
-  border: none;
-  border-radius: 6px;
-  font-size: 13px;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-.ai-qa-panel__send:hover:not(:disabled) {
-  background: var(--accent-soft);
-}
-.ai-qa-panel__send:disabled {
-  background: var(--faint-fg);
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.ai-qa-panel__disclaimer {
-  margin: 0;
-  padding: 0 18px 10px;
-  font-size: 11px;
-  color: var(--faint-fg);
-}
-
-/* ---- Answer view ---- */
-.ai-qa-answer {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.ai-qa-answer__text {
-  margin: 0;
-  font-size: 13px;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  color: var(--fg);
-}
-.ai-qa-answer__scrubbed {
-  margin: 0;
-  font-size: 11px;
-  color: var(--zheshi);
-  font-style: italic;
-}
-.ai-qa-answer__cites {
-  margin: 0;
-  padding-left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.ai-qa-answer__cite {
-  background: none;
-  border: none;
-  padding: 0;
-  color: var(--huaqing);
-  text-decoration: underline;
-  text-align: left;
-  cursor: pointer;
-  font-size: 12px;
-}
-.ai-qa-answer__cite:hover {
-  color: #2c4554;
-}
-.ai-qa-answer__meta {
-  margin: 0;
-  font-size: 11px;
-  color: var(--faint-fg);
 }

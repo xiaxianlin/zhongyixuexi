@@ -11,7 +11,6 @@
 import { invokeRaw, subscribe, type IpcError } from './ipc'
 import type {
   ModernResultDTO,
-  QaAnswerDTO,
   CardsBatchResultDTO,
   AiStatusDTO,
   AiProgressPayload,
@@ -40,9 +39,6 @@ export const aiApi = {
     invokeRaw<{ done: number; total: number; errors: string[] }>('ai:generateModernBatch', {
       chapterId,
     }),
-
-  ask: (query: string, opts?: { bookId?: string | null; topK?: number }) =>
-    invokeRaw<QaAnswerDTO>('ai:ask', { query, ...(opts ?? {}) }),
 
   generateCards: (paragraphIds: string[]) =>
     invokeRaw<CardsBatchResultDTO>('ai:generateCards', { paragraphIds }),

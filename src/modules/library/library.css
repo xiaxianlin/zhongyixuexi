@@ -1,42 +1,108 @@
 /* 书库 —— 册页式书卡 + 印章封面（大气端庄：大尺寸、方正、宋体、留白） */
 
-.lib__toolbar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 32px;
-}
-
-.lib__toolbar h2 {
-  margin: 0;
+/* —— 列表态标题（原 toolbar 拆简为标题行） —— */
+.lib__heading {
+  margin: 0 0 var(--space-lg);
   font-family: var(--font-title);
   font-size: var(--fs-h2);
   font-weight: 700;
   letter-spacing: 0.1em;
 }
 
-.lib__import {
-  margin-left: auto;
+.lib__progress {
+  margin: 0 0 var(--space-md);
+  color: var(--muted-fg);
+  font-size: var(--fs-small);
+}
+
+/* —— 空态：居中、大留白、印章式导入 —— */
+.lib__emptyState {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-lg);
+  padding: var(--space-xl) var(--space-lg);
+}
+
+.lib__emptyIcon {
+  font-family: var(--font-title);
+  font-size: 64px;
+  line-height: 1;
+  color: var(--accent);
+  font-weight: 700;
+  opacity: 0.85;
+}
+
+.lib__emptyDesc {
+  margin: 0;
+  color: var(--muted-fg);
+  font-size: var(--fs-body);
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+/* 印章式按钮（空态与列表态通用） */
+.lib__sealBtn {
   background: var(--accent);
   color: var(--accent-contrast);
   border: none;
-  padding: 12px 26px;
+  padding: 14px 32px;
   border-radius: 3px; /* 方正，端庄 */
   cursor: pointer;
   font-family: var(--font-title);
   font-size: var(--fs-small);
-  letter-spacing: 0.14em;
+  letter-spacing: 0.18em;
+  font-weight: 700;
+  transition: background 0.2s ease;
 }
 
-.lib__import:disabled {
+.lib__sealBtn:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+.lib__sealBtn:disabled {
   opacity: 0.6;
   cursor: default;
 }
 
-.lib__progress,
-.lib__empty {
-  color: var(--muted-fg);
+/* —— 列表态导入卡片：作为网格末尾项 —— */
+.lib__addCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 138px; /* 与 bookcard 高度接近 */
+  background: transparent;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--accent);
+  font-family: var(--font-title);
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.lib__addCard:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: rgba(178, 58, 46, 0.04); /* 朱砂极淡晕染 */
+}
+
+.lib__addCard:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.lib__addIcon {
+  font-size: 32px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.lib__addLabel {
   font-size: var(--fs-small);
+  letter-spacing: 0.14em;
 }
 
 .lib__grid {

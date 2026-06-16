@@ -33,16 +33,6 @@ export function registerAiHandlers(): void {
     return ai.generateModernBatch(chapterId, (p) => event.sender.send('ai:progress', p))
   })
 
-  // AI-02: RAG Q&A.
-  handle('ai:ask', (_event, payload: unknown) => {
-    const { query, bookId, topK } = payload as {
-      query: string
-      bookId?: string | null
-      topK?: number
-    }
-    return ai.ask(query, { bookId, topK })
-  })
-
   // AI-06: card batch generation (persists via LRN createCards, source='ai_batch').
   handle('ai:generateCards', (_event, payload: unknown) => {
     const { paragraphIds } = payload as { paragraphIds: string[] }
