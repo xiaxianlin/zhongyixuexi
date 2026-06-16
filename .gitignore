@@ -1,0 +1,20 @@
+node_modules/
+out/
+dist/
+release/
+.vite/
+coverage/
+*.log
+.DS_Store
+
+# harness / local (never commit) — but share subagent definitions
+.claude/*
+!.claude/agents/
+
+# local data (never commit user content / DB)
+*.db
+*.db-journal
+*.sqlite
+*.tcmz
+.env
+.env.local

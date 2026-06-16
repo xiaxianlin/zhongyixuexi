@@ -1,0 +1,297 @@
+import { app } from 'electron'
+import { resolve } from 'node:path'
+import { unlinkSync } from 'node:fs'
+import { getDb } from '../db/connection'
+import { AppError } from '../lib/error'
+
+/**
+ * Library service (LIB module).
+ *
+ * Book list / detail, chapter-tree assembly, and transactional cascading delete.
+ * All queries go through the better-sqlite3 singleton from getDb(); the
+ * connection initializer enforces PRAGMA foreign_keys=ON (00-arch §5.1) so the
+ * ON DELETE CASCADE declared on chapters/paragraphs/etc. actually fires.
+ *
+ * Column note: the real schema (db/migrate.ts v2) uses `id` as the stable
+ * TEXT primary key on books/chapters/paragraphs (NOT `book_id`/`chapter_id`).
+ * paragraphs.id is TEXT while the implicit `rowid` is what fts_paragraphs
+ * (content='paragraphs', content_rowid='rowid') keys on.
+ */
+
+// ---------- DTOs (self-contained; do NOT import models/content.ts) ----------
+
+export interface BookListItem {
+  id: string
+  title: string
+  author: string | null
+  cover: string | null
+  category: string | null
+  source_format: string
+  chapter_count: number
+  paragraph_count: number
+  /** 0..1 progress. reading_progress is RD Phase 2 (not present yet) → always 0 until then. */
+  progress: number
+  imported_at: number
+}
+
+export interface ChapterListItem {
+  id: string
+  parent_id: string | null
+  order_index: number
+  level: string | null
+  title: string
+}
+
+export interface BookDetail {
+  id: string
+  title: string
+  author: string | null
+  cover: string | null
+  category: string | null
+  source_format: string
+  source_file: string
+  imported_at: number
+  updated_at: number
+  chapter_count: number
+  paragraph_count: number
+  progress: number
+  chapters: ChapterListItem[]
+}
+
+export interface ChapterNode {
+  id: string
+  title: string
+  order_index: number
+  level?: string | null
+  children: ChapterNode[]
+}
+
+/** Flat row shape consumed by buildChapterTree. */
+export interface ChapterRow {
+  id: string
+  parent_id: string | null
+  order_index: number
+  title: string
+  level?: string | null
+}
+
+// ---------- list / detail ----------
+
+/**
+ * All live books (deleted_at IS NULL) with aggregated chapter_count,
+ * paragraph_count and a progress placeholder. progress is LEFT JOINed against
+ * reading_progress so the same code works once RD writes that table; until then
+ * the COALESCE yields 0. Ordered by imported_at desc.
+ */
+export function listBooks(): BookListItem[] {
+  const db = getDb()
+  // NOTE: progress is hard-coded 0 here. The reading_progress table (RD, Phase 2)
+  // does not exist yet — joining it would throw "no such table". RD will add the
+  // table and re-introduce the progress aggregation then.
+  const rows = db
+    .prepare(
+      `SELECT
+         b.id,
+         b.title,
+         b.author,
+         b.cover,
+         b.category,
+         b.source_format,
+         b.imported_at,
+         COALESCE(s.chapter_count, 0)   AS chapter_count,
+         COALESCE(s.paragraph_count, 0) AS paragraph_count,
+         0                              AS progress
+       FROM books b
+       LEFT JOIN (
+         SELECT c.book_id                 AS book_id,
+                COUNT(DISTINCT c.id)      AS chapter_count,
+                COUNT(p.id)               AS paragraph_count
+         FROM chapters c
+         LEFT JOIN paragraphs p ON p.chapter_id = c.id AND p.deleted_at IS NULL
+         WHERE c.deleted_at IS NULL
+         GROUP BY c.book_id
+       ) s ON s.book_id = b.id
+       WHERE b.deleted_at IS NULL
+       ORDER BY b.imported_at DESC`,
+    )
+    .all() as BookListItem[]
+  return rows
+}
+
+/** Single book with its flat chapter list. Returns null if not found / soft-deleted. */
+export function getBook(bookId: string): BookDetail | null {
+  const db = getDb()
+  const book = db
+    .prepare(
+      `SELECT id, title, author, cover, category, source_format, source_file,
+              imported_at, updated_at
+       FROM books
+       WHERE id = ? AND deleted_at IS NULL`,
+    )
+    .get(bookId) as
+    | {
+        id: string
+        title: string
+        author: string | null
+        cover: string | null
+        category: string | null
+        source_format: string
+        source_file: string
+        imported_at: number
+        updated_at: number
+      }
+    | undefined
+  if (!book) return null
+
+  const chapters = db
+    .prepare(
+      `SELECT id, parent_id, order_index, level, title
+       FROM chapters
+       WHERE book_id = ? AND deleted_at IS NULL
+       ORDER BY order_index`,
+    )
+    .all(bookId) as ChapterListItem[]
+
+  const agg = db
+    .prepare(
+      `SELECT COUNT(DISTINCT c.id) AS chapter_count, COUNT(p.id) AS paragraph_count
+       FROM chapters c
+       LEFT JOIN paragraphs p ON p.chapter_id = c.id AND p.deleted_at IS NULL
+       WHERE c.book_id = ? AND c.deleted_at IS NULL`,
+    )
+    .get(bookId) as { chapter_count: number; paragraph_count: number }
+
+  return {
+    ...book,
+    chapter_count: agg.chapter_count ?? 0,
+    paragraph_count: agg.paragraph_count ?? 0,
+    progress: 0, // RD Phase 2
+    chapters,
+  }
+}
+
+// ---------- chapter tree ----------
+
+/**
+ * Returns the chapter tree for a book as a nested structure, built in memory
+ * from a single flat query (02-library §7.2: O(n) assembly, no recursive CTE).
+ */
+export function getChapterTree(bookId: string): ChapterNode[] {
+  const db = getDb()
+  const rows = db
+    .prepare(
+      `SELECT id, parent_id, order_index, level, title
+       FROM chapters
+       WHERE book_id = ? AND deleted_at IS NULL
+       ORDER BY order_index`,
+    )
+    .all(bookId) as ChapterRow[]
+  return buildChapterTree(rows)
+}
+
+/**
+ * Pure tree builder. Given flat ChapterRow[] (already ordered by order_index),
+ * assemble a nested ChapterNode[] tree.
+ *
+ * Algorithm: two-pass O(n log n).
+ *  Pass 0 — sort a copy by order_index so siblings (roots and per-parent) are
+ *           emitted in order regardless of input ordering.
+ *  Pass 1 — index every row into a Map<id, node> with an empty children array.
+ *  Pass 2 — walk the sorted rows; if parent_id resolves to a known node, attach
+ *           as its child, otherwise (parent null OR orphan: parent points to an
+ *           id not present in this set) attach to roots. Pre-sorting guarantees
+ *           siblings retain order_index order within each bucket.
+ *
+ * Exported for unit testing without a database.
+ */
+export function buildChapterTree(flatRows: ChapterRow[]): ChapterNode[] {
+  const sorted = [...flatRows].sort((a, b) => a.order_index - b.order_index)
+  const map = new Map<string, ChapterNode>()
+  const roots: ChapterNode[] = []
+
+  for (const r of sorted) {
+    map.set(r.id, {
+      id: r.id,
+      title: r.title,
+      order_index: r.order_index,
+      level: r.level ?? null,
+      children: [],
+    })
+  }
+
+  for (const r of sorted) {
+    const node = map.get(r.id)!
+    const parent = r.parent_id != null ? map.get(r.parent_id) : undefined
+    if (parent) {
+      parent.children.push(node)
+    } else {
+      // root (parent_id null) or orphan (parent_id set but not in this set) → root
+      roots.push(node)
+    }
+  }
+
+  return roots
+}
+
+// ---------- delete ----------
+
+/**
+ * Transactionally deletes a book and everything that belongs to it.
+ *
+ * Cascade plan (00-arch §5.3 / 02-library §7.4):
+ *  1. Manually clear fts_paragraphs first. Reason: deleting the books row
+ *     triggers FK ON DELETE CASCADE on chapters → paragraphs, but **SQLite
+ *     foreign-key actions do NOT fire row-level triggers** (fts_paragraphs's
+ *     AFTER DELETE sync trigger). So the FTS shadow rows would be orphaned if
+ *     we relied on cascade alone. We delete them explicitly here, keyed on the
+ *     paragraphs rowid that FTS5 content_rowid references.
+ *  2. DELETE FROM books — CASCADE then wipes chapters, paragraphs and any
+ *     future child tables (reading_progress, notes, cards, ai_cache, …) as long
+ *     as they declared ON DELETE CASCADE.
+ *
+ * File-system side effects (original epub + cover) run AFTER the transaction
+ * commits and are best-effort: a missing/locked file only logs a warning and
+ * never rolls back the already-committed DB delete.
+ */
+export function deleteBook(bookId: string): void {
+  const db = getDb()
+
+  const book = db
+    .prepare('SELECT source_file, cover FROM books WHERE id = ?')
+    .get(bookId) as { source_file: string; cover: string | null } | undefined
+  if (!book) {
+    throw new AppError('NOT_FOUND', `book ${bookId} not found`)
+  }
+
+  const tx = db.transaction(() => {
+    // FK ON DELETE CASCADE removes chapters + paragraphs (+ future child tables).
+    // Note: FK cascade does NOT fire the paragraphs_ad trigger (00-arch §5.3), so
+    // FTS is not updated by the cascade — we rebuild it explicitly below.
+    db.prepare('DELETE FROM books WHERE id = ?').run(bookId)
+    // Rebuild the FTS index from the now-reduced content table. Both a plain
+    // DELETE on fts_paragraphs and the per-row 'delete' command corrupted the
+    // trigram external-content index (SQLITE_CORRUPT_VTAB); a full rebuild is
+    // correct and cheap at book scale.
+    db.exec("INSERT INTO fts_paragraphs(fts_paragraphs) VALUES('rebuild')")
+  })
+
+  tx()
+
+  // 3. best-effort file cleanup (DB already committed)
+  const userData = app.getPath('userData')
+  const safeUnlink = (rel: string | null | undefined): void => {
+    if (!rel) return
+    try {
+      const abs = resolve(userData, rel)
+      // path-traversal guard: must stay under userData
+      if (abs.startsWith(userData)) {
+        unlinkSync(abs)
+      }
+    } catch (e) {
+      // file missing / locked / permission — do not fail the delete
+      console.warn('[library] deleteBook: unlink failed for', rel, e)
+    }
+  }
+  safeUnlink(book.source_file)
+  safeUnlink(book.cover)
+}

@@ -1,0 +1,43 @@
+/* Theme tokens. Semantic variables drive all components; per-theme blocks
+   swap them. Defaults to the 古风米白 (paper) palette (PRD §10). */
+
+:root,
+[data-theme='paper'] {
+  --bg: #ede4d5;
+  --surface: #f5efe2;
+  --fg: #5c4033;
+  --muted-fg: #8a7563;
+  --accent: #a67c5d;
+  --accent-contrast: #fbf6ec;
+  --border: rgba(92, 64, 51, 0.18);
+  /* legacy aliases retained for early scaffolding refs */
+  --ink: #5c4033;
+  --paper: #ede4d5;
+  color-scheme: light;
+}
+
+[data-theme='ink'] {
+  --bg: #2b3a30;
+  --surface: #34463a;
+  --fg: #e7e2d3;
+  --muted-fg: #a9b3a6;
+  --accent: #9fc3ac;
+  --accent-contrast: #1d2a22;
+  --border: rgba(231, 226, 211, 0.16);
+  --ink: #e7e2d3;
+  --paper: #2b3a30;
+  color-scheme: dark;
+}
+
+[data-theme='dark'] {
+  --bg: #1c1814;
+  --surface: #27221c;
+  --fg: #ede4d5;
+  --muted-fg: #9b8f7c;
+  --accent: #c79a6f;
+  --accent-contrast: #1c1814;
+  --border: rgba(237, 228, 213, 0.14);
+  --ink: #ede4d5;
+  --paper: #1c1814;
+  color-scheme: dark;
+}
