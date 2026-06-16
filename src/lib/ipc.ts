@@ -36,7 +36,7 @@ export class IpcError extends Error {
   }
 }
 
-async function invokeRaw<T>(channel: string, ...args: unknown[]): Promise<T> {
+export async function invokeRaw<T>(channel: string, ...args: unknown[]): Promise<T> {
   if (!window.api) {
     throw new IpcError({ code: 'UNKNOWN', message: 'API bridge unavailable' })
   }

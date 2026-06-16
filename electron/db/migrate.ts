@@ -131,6 +131,85 @@ const MIGRATIONS: Migration[] = [
       `)
     },
   },
+  {
+    // v4 — SRH terminology dictionary (05-search.md §4.3). fts_paragraphs already
+    // exists (v3, IMP-owned); SRH only reads it. New tables: dictionary_terms +
+    // term_occurrences. DDL mirrored from electron/db/migrations/search.sql.
+    version: 4,
+    name: 'dictionary',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS dictionary_terms (
+            term_id      TEXT PRIMARY KEY,
+            term         TEXT NOT NULL,
+            definition   TEXT,
+            source       TEXT,
+            category     TEXT,
+            attributes   TEXT,
+            created_by   TEXT NOT NULL,
+            paragraph_id TEXT,
+            created_at   INTEGER NOT NULL,
+            updated_at   INTEGER NOT NULL,
+            FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE SET NULL
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_dict_term     ON dictionary_terms(term);
+        CREATE INDEX        IF NOT EXISTS idx_dict_category ON dictionary_terms(category);
+
+        CREATE TABLE IF NOT EXISTS term_occurrences (
+            term_id      TEXT NOT NULL,
+            paragraph_id TEXT NOT NULL,
+            count        INTEGER NOT NULL DEFAULT 1,
+            PRIMARY KEY (term_id, paragraph_id),
+            FOREIGN KEY (term_id)      REFERENCES dictionary_terms(term_id) ON DELETE CASCADE,
+            FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id)           ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_occ_paragraph ON term_occurrences(paragraph_id);
+      `)
+    },
+  },
+  {
+    // v5 — RD reading progress + bookmarks (03-reading.md §4). DDL mirrored from
+    // electron/db/migrations/reading.sql. reading_progress is segment-level
+    // (one row per book); bookmarks bind to segment or chapter (paragraph_id
+    // NULL → chapter-level) and degrade via ON DELETE SET NULL.
+    version: 5,
+    name: 'reading',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS reading_progress (
+            book_id      TEXT    NOT NULL,
+            chapter_id   TEXT    NOT NULL,
+            paragraph_id TEXT    NOT NULL,
+            scroll_ratio REAL    NOT NULL DEFAULT 0,
+            read_seconds INTEGER NOT NULL DEFAULT 0,
+            percent      REAL    NOT NULL DEFAULT 0,
+            updated_at   INTEGER NOT NULL,
+            PRIMARY KEY (book_id),
+            FOREIGN KEY (book_id)      REFERENCES books(id)      ON DELETE CASCADE,
+            FOREIGN KEY (chapter_id)   REFERENCES chapters(id)   ON DELETE CASCADE,
+            FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_reading_progress_updated ON reading_progress(updated_at DESC);
+
+        CREATE TABLE IF NOT EXISTS bookmarks (
+            id           TEXT    PRIMARY KEY,
+            book_id      TEXT    NOT NULL,
+            chapter_id   TEXT    NOT NULL,
+            paragraph_id TEXT,
+            title        TEXT,
+            note         TEXT,
+            color        TEXT,
+            created_at   INTEGER NOT NULL,
+            updated_at   INTEGER NOT NULL,
+            FOREIGN KEY (book_id)      REFERENCES books(id)      ON DELETE CASCADE,
+            FOREIGN KEY (chapter_id)   REFERENCES chapters(id)   ON DELETE CASCADE,
+            FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_bookmarks_book_created ON bookmarks(book_id, created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_bookmarks_paragraph ON bookmarks(paragraph_id) WHERE paragraph_id IS NOT NULL;
+      `)
+    },
+  },
 ]
 
 const META_TABLE = `

@@ -3,7 +3,7 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`，末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-16（Phase 1 完成）
+最后更新：2026-06-16（Phase 2+3 完成）
 
 ---
 
@@ -44,14 +44,14 @@ Exit：流畅阅读、进度可恢复、布局可调。
 
 | # | 状态 | 摘要 | 产出 | 决策/阻塞 |
 |---|---|---|---|---|
-| S2.1 | todo | 三栏工作台 + 布局预设 | | |
-| S2.2 | todo | 原文栏渲染 + 古风排版 + 繁简/拼音占位 | | |
-| S2.3 | todo | 段级进度 reading_progress + 书签 bookmarks | | |
-| S2.4 | todo | 逐段锁定同步滚动（解读栏占位） | | |
-| S2.5 | todo | 词条浮窗（本地词典占位） | | |
-| S2.6 | todo | 沉浸/主题/快捷键/多Tab | | |
+| S2.1 | done | 三栏工作台 + 布局预设 | src/modules/reading/{ReadingWorkbench,store,panelRegistry,reading.css} | 可拖拽调宽/折叠；布局预设内存 store（持久化待 SET） |
+| S2.2 | done | 原文栏渲染 + 古风排版 + 繁简/拼音占位 | OriginalPanel,ParagraphBlock,useChapterContent | 衬线/行高1.7；繁简拼音占位 toggle |
+| S2.3 | done | 段级进度 + 书签 | useProgress；reading_progress/bookmarks 表(migrate v5)；reading:getProgress/saveProgress/listBookmarks 等 | book_id 唯一进度+scroll_ratio；书签段/章，段删 SET NULL 降级；防抖+hide/unload flush |
+| S2.4 | done | 逐段锁定同步滚动 | useSyncScroll,syncScroll.ts+test,InterpretPanel | 元素锚定+段内比例纯函数(单测)；解读栏读 content_modern 空则占位 |
+| S2.5 | done | 词条浮窗 | TermPopover；reading:lookupTerm(读 SRH dictionary_terms) | 占位→已接 Phase 3 真实词典 |
+| S2.6 | done | 沉浸/主题/快捷键/多Tab | useReadingKeyboard,ResourcePanel | 快捷键翻段/书签；沉浸 toggle；主题复用 ui |
 
-- [ ] Phase 2 exit 达成
+- [x] Phase 2 exit 达成
 
 ---
 
@@ -60,11 +60,11 @@ Exit：跨书搜词命中段落可跳转。
 
 | # | 状态 | 摘要 | 产出 | 决策/阻塞 |
 |---|---|---|---|---|
-| S3.1 | todo | 全文检索(FTS5 trigram) + 定位到段 | | |
-| S3.2 | todo | 全库高亮 + 结果列表 | | |
-| S3.3 | todo | 术语词典 dictionary_terms | | |
+| S3.1 | done | 全文检索(FTS5 trigram) + 定位到段 | electron/services/search.ts,ipc/search.ts,search-api.ts | BM25+highlight/snippet；<3字降级 LIKE；导出 searchParagraphs 供 AI RAG |
+| S3.2 | done | 全库高亮 + 结果列表 | src/modules/search/{SearchPanel,ResultList},stores/search.ts | 命中点击设 session 字段→RD 跳转；<mark> 安全渲染(非 dangerouslySetInnerHTML) |
+| S3.3 | done | 术语词典 dictionary_terms | migrations/search.sql(migrate v4),term_occurrences,TermPopup | 用户自建 CRUD；paragraph_id SET NULL；预留 AI 标注 |
 
-- [ ] Phase 3 exit 达成
+- [x] Phase 3 exit 达成
 
 ---
 
@@ -152,3 +152,4 @@ Exit：双平台安装包可装可用。
 - 2026-06-16：S1.2 完成 — EPUB 解析服务（container/opf/ncx/nav 纯解析器 + parseEpub 编排）。
 - 2026-06-16：S1.3/S1.4/S1.6 完成（subagent 并行）— 段落切分+导入编排 / FTS5 trigram 同步触发器 / 书库+目录树+级联删除。
 - 2026-06-16：S1.5 完成 — import/library/segment IPC + 书库/目录树/段级校对 UI + 端到端集成检查（import→list→tree→fts→segment 编辑→delete 全 PASS）。**Phase 1 exit 达成。**
+- 2026-06-16：Phase 2(RD)+3(SRH) 完成（dev-rd/dev-srh agent 并行产出 + 主 agent 集成）— 三栏阅读工作台/段级进度/书签/同步滚动/快捷键；FTS5 全文检索+全库高亮+术语词典。migrate v4(dictionary)+v5(reading)；端到端 PASS（含 search 断言）。**Phase 2 & 3 exit 达成。** 关键修复：导出 invokeRaw 共享、useProgress 去除 render 中写 ref、Node 需 22+（.nvmrc，vitest 4 require(ESM)）。

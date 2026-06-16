@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type View = 'library' | 'reading' | 'review' | 'notes' | 'settings'
+export type View = 'library' | 'reading' | 'review' | 'notes' | 'settings' | 'search'
 
 /**
  * Cross-module shared session state (00-architecture §6): the book/chapter/

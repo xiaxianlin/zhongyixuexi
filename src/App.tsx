@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react'
 import { useUiStore } from '@/stores/ui'
 import { useSessionStore } from '@/stores/session'
 import { LibraryView } from '@/modules/library/LibraryView'
-import { ChapterTree } from '@/modules/library/ChapterTree'
-import { SegmentEditor } from '@/modules/library/SegmentEditor'
+import { ReadingWorkbench } from '@/modules/reading/ReadingWorkbench'
+import { SearchPanel } from '@/modules/search/SearchPanel'
 
 export default function App() {
   const theme = useUiStore((s) => s.theme)
@@ -12,30 +11,26 @@ export default function App() {
   const activeBookId = useSessionStore((s) => s.activeBookId)
   const setView = useSessionStore((s) => s.setView)
 
-  const [chapterId, setChapterId] = useState<string | null>(null)
-
-  // reset chapter selection when the open book changes
-  useEffect(() => {
-    setChapterId(null)
-  }, [activeBookId])
-
   const reading = view === 'reading' && activeBookId !== null
 
   return (
     <div className="app">
       <header className="app__header">
         <h1>中医经典学习</h1>
-        {reading && (
+        <nav className="app__nav">
           <button
-            className="app__back"
-            onClick={() => {
-              setChapterId(null)
-              setView('library')
-            }}
+            className={view === 'library' ? 'app__navBtn is-active' : 'app__navBtn'}
+            onClick={() => setView('library')}
           >
-            ← 书库
+            书库
           </button>
-        )}
+          <button
+            className={view === 'search' ? 'app__navBtn is-active' : 'app__navBtn'}
+            onClick={() => setView('search')}
+          >
+            检索
+          </button>
+        </nav>
         <button
           className="app__themeBtn"
           onClick={cycleTheme}
@@ -48,20 +43,9 @@ export default function App() {
 
       <main className="app__main">
         {reading && activeBookId ? (
-          <div className="reader">
-            <div className="reader__sidebar">
-              <ChapterTree bookId={activeBookId} onSelect={setChapterId} />
-            </div>
-            <div className="reader__main">
-              {chapterId ? (
-                <SegmentEditor chapterId={chapterId} />
-              ) : (
-                <p className="reader__placeholder">
-                  从左侧选择一章进行段级校对。阅读三栏模块将在 Phase 2 接入。
-                </p>
-              )}
-            </div>
-          </div>
+          <ReadingWorkbench bookId={activeBookId} />
+        ) : view === 'search' ? (
+          <SearchPanel />
         ) : (
           <LibraryView />
         )}

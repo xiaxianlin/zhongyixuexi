@@ -11,6 +11,7 @@ import { join } from 'node:path'
 import { importEpubFile } from '../services/import'
 import { listBooks, getChapterTree, deleteBook } from '../services/library'
 import { getChapterParagraphs, updateParagraphText, splitParagraph } from '../services/segment'
+import { searchParagraphs } from '../services/search'
 import { getDb } from '../db'
 
 const TEST_TITLE_PREFIX = '神农本草经'
@@ -71,6 +72,13 @@ export async function runIntegrationCheck(): Promise<void> {
       'split shrank paragraph count',
     )
     console.log('[integration] segment edit/split ok: FTS reindexed via trigger')
+
+    // SRH fulltext search (Phase 3): searchParagraphs over FTS5 trigram.
+    const sr = searchParagraphs('久服轻身延年')
+    assert(sr.hits.length >= 1, `searchParagraphs returned ${sr.hits.length} hits`)
+    assert(!sr.degraded, 'search unexpectedly degraded to LIKE scan')
+    assert(sr.hits[0].paragraphId.length > 0, 'hit missing paragraphId')
+    console.log('[integration] search ok:', sr.hits.length, 'hits, total', sr.total)
   } finally {
     // always clean up the imported book, even if an assertion threw
     deleteBook(res.bookId)
