@@ -157,7 +157,7 @@ export function registerNotesHandlers(): void {
     const input = (payload ?? {}) as ExportInput
     if (input.format === 'pdf') {
       // PDF: use Electron's BrowserWindow.printToPDF (avoids puppeteer dependency).
-      return exportNotesPdf(event.sender.id, input, (_current, _total, _file) => {
+      return exportNotesPdf(input, (_current, _total, _file) => {
         // Progress reporting via webContents.
         const win = BrowserWindow.fromWebContents(event.sender)
         win?.webContents.send('notes:exportProgress', {
@@ -201,7 +201,6 @@ export function registerNotesHandlers(): void {
  * BrowserWindow + webContents.printToPDF. Avoids bundling puppeteer.
  */
 async function exportNotesPdf(
-  _senderId: number,
   input: ExportInput,
   _onProgress: (current: number, total: number, file: string) => void,
 ): Promise<{ files: string[] }> {

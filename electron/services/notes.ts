@@ -801,6 +801,8 @@ export function getBacklinks(targetType: LinkTargetType, targetId: string): Back
     target_id: r.target_id,
     target_alias: r.target_alias,
     display_text: r.display_text,
+    target_title: r.display_text ?? r.target_alias ?? undefined,
+    target_valid: true,
     position: r.position,
     note_title: r.note_title,
     note_updated_at: r.note_updated_at,
