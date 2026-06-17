@@ -18,7 +18,7 @@ import { getDb } from '../db/connection'
 import type { ChatMessage } from './types'
 
 export type AiCacheScope = 'paragraph' | 'chapter' | 'global' | 'book'
-export type AiCacheKind = 'modern' | 'qa' | 'cards' | 'annotation'
+export type AiCacheKind = 'modern' | 'qa' | 'annotation'
 
 export interface AiCacheWrite {
   scope: AiCacheScope

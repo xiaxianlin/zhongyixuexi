@@ -39,7 +39,7 @@ export const aiApi = {
       chapterId,
     }),
 
-  invalidate: (scopeId: string, kind: 'modern' | 'qa' | 'cards' | 'annotation') =>
+  invalidate: (scopeId: string, kind: 'modern' | 'qa' | 'annotation') =>
     invokeRaw<{ invalidated: number }>('ai:invalidate', { scopeId, kind }),
 
   /** Subscribe to ai:progress events. Returns an unsubscribe function. */

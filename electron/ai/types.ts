@@ -17,7 +17,7 @@ export interface ChatMessage {
 export interface ChatRequest {
   model: string
   messages: ChatMessage[]
-  /** 0.3–0.5 for modern/cards, 0.5–0.7 for qa. Defaults per template. */
+  /** 0.3–0.5 for modern analysis, 0.5–0.7 for qa. Defaults per template. */
   temperature?: number
   max_tokens?: number
   /** DeepSeek/OpenAI JSON mode: forces a valid JSON object response. */

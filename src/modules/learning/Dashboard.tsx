@@ -1,7 +1,5 @@
 /**
- * Learning Dashboard (LRN-06 — 04-learning.md §7.5).
- *
- * Shows: mastery ring, streak badge, total cards, and yearly learning heatmap.
+ * Learning dashboard.
  */
 
 import { useCallback, useEffect, useState } from 'react'
@@ -15,7 +13,7 @@ export function Dashboard() {
 
   const load = useCallback(async () => {
     try {
-      const d = await learningApi.getDashboard(365)
+      const d = await learningApi.getDashboard()
       setData(d)
     } catch (e) {
       setError((e as Error).message)
@@ -29,7 +27,7 @@ export function Dashboard() {
   if (error) return <div className="dashboard"><p className="dashboard__error">{error}</p></div>
   if (!data) return <div className="dashboard"><p>加载仪表盘…</p></div>
 
-  const masteryPct = Math.round(data.masteryRate * 100)
+  const analysisPct = Math.round(data.analysisRate * 100)
 
   return (
     <div className="dashboard">
@@ -38,17 +36,32 @@ export function Dashboard() {
           <p className="dashboard__eyebrow">学习仪表盘</p>
           <h2>学习总览</h2>
         </div>
-        <p className="dashboard__heroMeta">读过多少，掌握多少，日日积累多少</p>
+        <p className="dashboard__heroMeta">阅读、分析、笔记的学习进度</p>
       </header>
 
       <div className="dashboard__top">
-        <MasteryRing percent={masteryPct} mastered={data.mastered} total={data.totalCards} />
+        <ProgressRing percent={analysisPct} analyzed={data.analyzedParagraphs} total={data.totalParagraphs} />
         <div className="dashboard__stats">
-          <StatCard label="连续学习" value={`${data.streak} 天`} />
-          <StatCard label="已掌握" value={String(data.mastered)} />
-          <StatCard label="学习卡片" value={String(data.totalCards)} />
+          <StatCard label="书籍" value={String(data.totalBooks)} />
+          <StatCard label="章节" value={String(data.totalChapters)} />
+          <StatCard label="笔记" value={String(data.noteCount)} />
+          <StatCard label="阅读时长" value={formatDuration(data.totalReadSeconds)} />
         </div>
       </div>
+
+      {data.recentBooks.length > 0 && (
+        <section className="dashboard__section">
+          <h4>最近阅读</h4>
+          <div className="dashboard__recent">
+            {data.recentBooks.map((book) => (
+              <article key={book.book_id} className="dashboard__recentBook">
+                <span className="dashboard__recentTitle">{book.title}</span>
+                <span className="dashboard__recentMeta">{Math.round(book.percent * 100)}%</span>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <Heatmap data={data.heatmap} />
     </div>
@@ -64,7 +77,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   )
 }
 
-function MasteryRing({ percent, mastered, total }: { percent: number; mastered: number; total: number }) {
+function ProgressRing({ percent, analyzed, total }: { percent: number; analyzed: number; total: number }) {
   const r = 52
   const c = 2 * Math.PI * r
   const offset = c - (percent / 100) * c
@@ -87,7 +100,7 @@ function MasteryRing({ percent, mastered, total }: { percent: number; mastered: 
       </svg>
       <div className="dashboard__ring-text">
         <span className="dashboard__ring-pct">{percent}%</span>
-        <span className="dashboard__ring-sub">{mastered}/{total} 掌握</span>
+        <span className="dashboard__ring-sub">{analyzed}/{total} 已分析</span>
       </div>
     </div>
   )
@@ -113,7 +126,7 @@ function Heatmap({ data }: { data: Record<string, number> }) {
           <div
             key={d.day}
             className={`heatmap__cell ${heatLevel(d.count)}`}
-            title={`${d.day}: ${d.count} 次`}
+            title={`${d.day}: ${d.count} 次学习`}
           />
         ))}
       </div>
@@ -136,4 +149,12 @@ function heatLevel(count: number): string {
   if (count <= 5) return 'heatmap__cell--l2'
   if (count <= 10) return 'heatmap__cell--l3'
   return 'heatmap__cell--l4'
+}
+
+function formatDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds} 秒`
+  const minutes = Math.round(seconds / 60)
+  if (minutes < 60) return `${minutes} 分钟`
+  const hours = Math.round((minutes / 60) * 10) / 10
+  return `${hours} 小时`
 }

@@ -63,7 +63,7 @@ import {
  * The DB column is TEXT so 'parse' is accepted at runtime; we widen the type
  * locally so the existing findCache/writeCache calls type-check.
  */
-type AiCacheKind = 'modern' | 'qa' | 'cards' | 'annotation' | 'parse'
+type AiCacheKind = 'modern' | 'qa' | 'annotation' | 'parse'
 const MODERN_CACHE_KIND: Extract<StoredAiCacheKind, ParagraphAnalysisKind> =
   DEFAULT_PARAGRAPH_ANALYSIS_KIND
 

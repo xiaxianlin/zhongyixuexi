@@ -35,7 +35,7 @@ export function registerAiHandlers(): void {
 
   // Manual cache invalidation (triggers regenerate on next call).
   handle('ai:invalidate', (_event, payload: unknown) => {
-    const { scopeId, kind } = payload as { scopeId: string; kind: 'modern' | 'qa' | 'cards' | 'annotation' }
+    const { scopeId, kind } = payload as { scopeId: string; kind: 'modern' | 'qa' | 'annotation' }
     return ai.invalidate(scopeId, kind)
   })
 }

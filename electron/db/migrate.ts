@@ -1,12 +1,15 @@
 import type { DB } from './connection'
-import { getDb } from './connection'
+import { getDb, resetDbFiles } from './connection'
 
 type Migration = { version: number; name: string; up: (db: DB) => void }
+
+const SCHEMA_ID = '2026-06-dashboard-only'
 
 /**
  * Inline migration registry. Schema migrations arrive with their owning slices
  * (S1.1 books/chapters/paragraphs, S4.4 migration-runner hardening, etc.).
- * Migrations are forward-only and MUST NOT drop stable ID columns (00-architecture §5.5).
+ * During development the app keeps only the latest schema. Older local DB files
+ * are reset on startup instead of migrated forward.
  */
 const MIGRATIONS: Migration[] = [
   {
@@ -231,76 +234,6 @@ const MIGRATIONS: Migration[] = [
     },
   },
   {
-    // v7 — LRN spaced-repetition cards + review log + quiz (04-learning.md §4).
-    // Mirrored from electron/db/migrations/learning.sql. All content FKs CASCADE.
-    version: 7,
-    name: 'learning',
-    up: (db) => {
-      db.exec(`
-        CREATE TABLE IF NOT EXISTS cards (
-          id TEXT PRIMARY KEY,
-          deck TEXT NOT NULL DEFAULT 'default',
-          type TEXT NOT NULL,
-          front TEXT NOT NULL,
-          back TEXT NOT NULL,
-          book_id TEXT, chapter_id TEXT, paragraph_id TEXT,
-          source TEXT NOT NULL DEFAULT 'manual', source_ref TEXT,
-          ease_factor REAL NOT NULL DEFAULT 2.5,
-          interval_days INTEGER NOT NULL DEFAULT 0,
-          repetitions INTEGER NOT NULL DEFAULT 0,
-          due_at INTEGER NOT NULL,
-          status TEXT NOT NULL DEFAULT 'active',
-          reviewed_count INTEGER NOT NULL DEFAULT 0,
-          lapsed_count INTEGER NOT NULL DEFAULT 0,
-          tags TEXT,
-          created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL, deleted_at INTEGER,
-          FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
-          FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
-          FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_cards_due ON cards(deck, status, due_at);
-        CREATE INDEX IF NOT EXISTS idx_cards_source ON cards(source, paragraph_id);
-        CREATE INDEX IF NOT EXISTS idx_cards_chapter ON cards(chapter_id);
-        CREATE INDEX IF NOT EXISTS idx_cards_book ON cards(book_id);
-
-        CREATE TABLE IF NOT EXISTS review_log (
-          id TEXT PRIMARY KEY, card_id TEXT NOT NULL,
-          grade INTEGER NOT NULL, grade_label TEXT NOT NULL,
-          prev_ease_factor REAL NOT NULL, prev_interval_days INTEGER NOT NULL, prev_repetitions INTEGER NOT NULL,
-          next_ease_factor REAL NOT NULL, next_interval_days INTEGER NOT NULL, next_repetitions INTEGER NOT NULL,
-          next_due_at INTEGER NOT NULL,
-          elapsed_ms INTEGER, reviewed_at INTEGER NOT NULL,
-          FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_review_log_card ON review_log(card_id, reviewed_at);
-        CREATE INDEX IF NOT EXISTS idx_review_log_day ON review_log(reviewed_at);
-
-        CREATE TABLE IF NOT EXISTS quiz_questions (
-          id TEXT PRIMARY KEY,
-          book_id TEXT, chapter_id TEXT, paragraph_id TEXT,
-          source TEXT NOT NULL DEFAULT 'generated',
-          qtype TEXT NOT NULL, stem TEXT NOT NULL, payload TEXT NOT NULL, answer TEXT NOT NULL,
-          explanation TEXT, difficulty REAL DEFAULT 0.5, created_at INTEGER NOT NULL,
-          FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
-          FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
-          FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_quiz_q_chapter ON quiz_questions(chapter_id);
-        CREATE INDEX IF NOT EXISTS idx_quiz_q_book ON quiz_questions(book_id);
-
-        CREATE TABLE IF NOT EXISTS quiz_results (
-          id TEXT PRIMARY KEY, quiz_question_id TEXT NOT NULL, session_id TEXT NOT NULL,
-          user_answer TEXT, is_correct INTEGER NOT NULL, time_spent_ms INTEGER,
-          turned_to_card INTEGER NOT NULL DEFAULT 0, answered_at INTEGER NOT NULL,
-          FOREIGN KEY (quiz_question_id) REFERENCES quiz_questions(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_quiz_r_session ON quiz_results(session_id);
-        CREATE INDEX IF NOT EXISTS idx_quiz_r_correct ON quiz_results(is_correct, answered_at);
-        CREATE INDEX IF NOT EXISTS idx_quiz_r_chapter ON quiz_results(quiz_question_id);
-      `)
-    },
-  },
-  {
     // v8 — NOTE notes + wiki-links + tags + notebooks + fts_notes (06-notes.md §4).
     // Mirrored from electron/db/migrations/notes.sql. paragraph_id FK is SET NULL
     // (a deleted segment degrades the note to free-standing, never lost).
@@ -494,16 +427,29 @@ const META_TABLE = `
 
 /** Runs all pending migrations in order. Returns the resulting schema version. */
 export function runMigrations(): number {
-  const db = getDb()
+  let db = getDb()
+  const hasExistingAppTables = db
+    .prepare("SELECT 1 AS found FROM sqlite_master WHERE type IN ('table', 'view') AND name <> 'schema_meta' LIMIT 1")
+    .get() as { found: number } | undefined
+
   db.exec(META_TABLE)
+
+  const schemaRow = db.prepare('SELECT value FROM schema_meta WHERE key = ?').get('schema_id') as
+    | { value?: string }
+    | undefined
+  if (schemaRow?.value !== SCHEMA_ID && hasExistingAppTables) {
+    resetDbFiles()
+    db = getDb()
+    db.exec(META_TABLE)
+  }
 
   const row = db.prepare('SELECT value FROM schema_meta WHERE key = ?').get('version') as
     | { value?: string }
     | undefined
   let current = row?.value ? Number(row.value) : 0
 
-  const upsertVersion = db.prepare(
-    `INSERT INTO schema_meta (key, value) VALUES ('version', ?)
+  const upsertMeta = db.prepare(
+    `INSERT INTO schema_meta (key, value) VALUES (?, ?)
      ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
   )
 
@@ -511,10 +457,11 @@ export function runMigrations(): number {
     if (m.version <= current) continue
     db.transaction(() => {
       m.up(db)
-      upsertVersion.run(String(m.version))
+      upsertMeta.run('version', String(m.version))
     })()
     current = m.version
   }
 
+  upsertMeta.run('schema_id', SCHEMA_ID)
   return current
 }

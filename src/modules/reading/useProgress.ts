@@ -8,8 +8,8 @@
  * (the main-process write is transactional — 03-reading.md §7.3 crash safety).
  *
  * A coarse reading-seconds counter ticks every 30s while the chapter is open
- * and the tab is visible, accumulating into read_seconds for the streak/
- * dashboard (NFR-driven, display-only here).
+ * and the tab is visible, accumulating into read_seconds for the dashboard
+ * (NFR-driven, display-only here).
  */
 import { useEffect } from 'react'
 import { readingApi } from '@/lib/reading-api'

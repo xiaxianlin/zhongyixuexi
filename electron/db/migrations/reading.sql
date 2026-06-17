@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS reading_progress (
     chapter_id   TEXT    NOT NULL,                 -- current chapter (FK chapters.id)
     paragraph_id TEXT    NOT NULL,                 -- top visible paragraph (FK paragraphs.id)
     scroll_ratio REAL    NOT NULL DEFAULT 0,       -- 0..1 within-chapter fine adjustment
-    read_seconds INTEGER NOT NULL DEFAULT 0,       -- accumulated reading seconds (streak/dashboard)
+    read_seconds INTEGER NOT NULL DEFAULT 0,       -- accumulated reading seconds (dashboard)
     percent      REAL    NOT NULL DEFAULT 0,       -- whole-book percent (display,冗余)
     updated_at   INTEGER NOT NULL,                 -- unix ms
     PRIMARY KEY (book_id),

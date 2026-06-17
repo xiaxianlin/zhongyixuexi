@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS ai_cache (
   id               TEXT    PRIMARY KEY,            -- UUID v4
   scope            TEXT    NOT NULL,               -- 'paragraph' | 'chapter' | 'global'
   scope_id         TEXT    NOT NULL,               -- paragraph_id / chapter_id / 'qa' etc.
-  kind             TEXT    NOT NULL,               -- 'modern' | 'qa' | 'cards' | 'annotation'
+  kind             TEXT    NOT NULL,               -- 'modern' | 'qa' | 'annotation'
   paragraph_id     TEXT,                           -- FK paragraphs.id (nullable for scope='global')
   prompt_hash      TEXT    NOT NULL,               -- sha256(normalized_prompt + model + temperature)
   response         TEXT    NOT NULL,               -- raw/structured result (JSON string or plain text)
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS ai_cache (
   total_tokens     INTEGER NOT NULL DEFAULT 0,
   created_at       INTEGER NOT NULL,               -- unix ms
   invalidated      INTEGER NOT NULL DEFAULT 0,     -- 0 valid / 1 user-invalidated (regenerate sets old rows =1)
-  meta             TEXT,                            -- JSON: extra info (qa query, cards count, etc.)
+  meta             TEXT,                            -- JSON: extra info (qa query, etc.)
   FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE CASCADE
 );
 
