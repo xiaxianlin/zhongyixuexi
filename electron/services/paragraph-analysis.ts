@@ -493,18 +493,3 @@ export function activateParagraphAnalysis(
     }
   })()
 }
-
-export function deactivateParagraphAnalysesForBook(bookId: string, updatedAt: number): number {
-  const result = getDb()
-    .prepare(
-      `UPDATE paragraph_analyses
-       SET is_active = 0, updated_at = ?
-       WHERE paragraph_id IN (
-         SELECT id FROM paragraphs
-         WHERE chapter_id IN (SELECT id FROM chapters WHERE book_id = ?)
-       )
-         AND is_active = 1`,
-    )
-    .run(updatedAt, bookId)
-  return result.changes
-}

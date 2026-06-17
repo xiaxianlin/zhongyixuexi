@@ -5,7 +5,7 @@
  * organization, and export (MD/HTML/PDF). All queries go through the
  * better-sqlite3 singleton from getDb(); the connection initializer enforces
  * PRAGMA foreign_keys=ON (00-arch §5.1) so the ON DELETE CASCADE / SET NULL
- * declared in migrations/notes.sql actually fires.
+ * declared in the current database schema actually fires.
  *
  * Wiki-link parsing (NOTE-02 core) is split into pure functions
  * (parseWikiLinks, normalizeTermKey) that are unit-tested without a database,

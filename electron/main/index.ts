@@ -1,6 +1,6 @@
 import { app, BrowserWindow, shell } from 'electron'
 import { join } from 'node:path'
-import { runMigrations, getDb, closeDb } from '../db'
+import { prepareDatabase, getDb, closeDb } from '../db'
 import { registerAllIpc } from '../ipc'
 import { runIntegrationCheck } from './integration-check'
 import { seedBuiltinContent } from '../services/builtin-content'
@@ -39,7 +39,7 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
-  const schemaVersion = runMigrations()
+  const schemaVersion = prepareDatabase()
   const seeded = seedBuiltinContent()
 
   if (process.env.ZYXX_INTEGRATION === '1') {

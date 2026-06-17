@@ -4,24 +4,23 @@ import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 
 /**
- * Static-analysis test for the S1.4 FTS5 migration (migrate.ts v3 'fts_index').
+ * Static-analysis test for the current FTS5 schema.
  *
- * better-sqlite3 is a native addon whose ABI must match Electron's, NOT the
- * host Node/Vitest ABI — so it fails to load under `vitest run` in this repo.
- * That means we cannot spin up a real DB and run the migration here. Instead we
- * assert that the v3 migration source text contains the load-bearing SQL
+ * better-sqlite3 is a native addon whose ABI must match Electron's, not the
+ * host Node/Vitest ABI in this repo. That means we cannot spin up a real DB
+ * here. Instead we assert that the schema source text contains the load-bearing SQL
  * fragments (FTS5 external-content DDL, trigram tokenizer, the three triggers,
  * and the WHEN-clause filters that keep soft-deleted / noise segments out of
  * the index). This guards against regressions in the slice's core contract.
  */
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const source = readFileSync(join(__dirname, 'migrate.ts'), 'utf8')
+const source = readFileSync(join(__dirname, 'schema.ts'), 'utf8')
 
-describe('migrate.ts v3 fts_index migration (S1.4)', () => {
-  it('declares a version 3 migration named fts_index', () => {
-    expect(source).toMatch(/version:\s*3\b/)
-    expect(source).toMatch(/name:\s*['"]fts_index['"]/)
+describe('schema.ts fts_paragraphs schema', () => {
+  it('declares the current schema id and version', () => {
+    expect(source).toContain('SCHEMA_ID')
+    expect(source).toContain('SCHEMA_VERSION')
   })
 
   it('creates the fts_paragraphs external-content FTS5 table', () => {

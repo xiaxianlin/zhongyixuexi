@@ -5,7 +5,6 @@ import { app } from 'electron'
 import { getDb } from '../db'
 import { rebuildFts } from '../db/fts'
 import { normalize } from './content-normalize'
-import { deactivateParagraphAnalysesForBook } from './paragraph-analysis'
 
 const BUILTIN_FILES = ['nanjing-original.json', 'huangdi-neijing-original.json'] as const
 
@@ -106,8 +105,8 @@ function validateBuiltinFile(file: BuiltinDataFile, fileName: string): void {
 }
 
 /**
- * Seeds bundled classical content on app startup. Idempotent: when bundled data
- * is unchanged, startup leaves existing progress, notes, and analyses untouched.
+ * Seeds bundled classical content on app startup. Development keeps only the
+ * latest bundled data: a changed book is deleted and inserted again.
  */
 export function seedBuiltinContent(): SeedBuiltinResult {
   const files = BUILTIN_FILES.map((fileName) => ({
@@ -127,33 +126,12 @@ export function seedBuiltinContent(): SeedBuiltinResult {
              @importedAt, @parseVersion, @updatedAt, NULL)`,
   )
 
-  const updateBook = db.prepare(
-    `UPDATE books
-     SET title = @title,
-         author = @author,
-         source_format = 'builtin',
-         source_file = @sourceFile,
-         category = @category,
-         parse_version = @parseVersion,
-         updated_at = @updatedAt,
-         deleted_at = NULL
-     WHERE id = @id`,
-  )
-
   const insertChapter = db.prepare(
     `INSERT INTO chapters
        (id, book_id, parent_id, order_index, level, title, content_hash,
         created_at, deleted_at)
      VALUES (@id, @bookId, @parentId, @orderIndex, @level, @title, @contentHash,
-             @createdAt, NULL)
-     ON CONFLICT(id) DO UPDATE SET
-       book_id = excluded.book_id,
-       parent_id = excluded.parent_id,
-       order_index = excluded.order_index,
-       level = excluded.level,
-       title = excluded.title,
-       content_hash = excluded.content_hash,
-       deleted_at = NULL`,
+             @createdAt, NULL)`,
   )
 
   const insertParagraph = db.prepare(
@@ -161,16 +139,7 @@ export function seedBuiltinContent(): SeedBuiltinResult {
        (id, chapter_id, order_index, text, edited, parse_hash, is_noise,
         quality_flag, created_at, deleted_at)
      VALUES (@id, @chapterId, @orderIndex, @text, 0, @parseHash, 0,
-             @qualityFlag, @createdAt, NULL)
-     ON CONFLICT(id) DO UPDATE SET
-       chapter_id = excluded.chapter_id,
-       order_index = excluded.order_index,
-       text = excluded.text,
-       edited = 0,
-       parse_hash = excluded.parse_hash,
-       is_noise = 0,
-       quality_flag = excluded.quality_flag,
-       deleted_at = NULL`,
+             @qualityFlag, @createdAt, NULL)`,
   )
 
   const tx = db.transaction(() => {
@@ -180,7 +149,7 @@ export function seedBuiltinContent(): SeedBuiltinResult {
       bookIds.push(bookId)
 
       const existing = db
-        .prepare('SELECT id, parse_version FROM books WHERE id = ? AND deleted_at IS NULL')
+        .prepare('SELECT id, parse_version FROM books WHERE id = ?')
         .get(bookId) as { id: string; parse_version: number } | undefined
       if (existing?.parse_version === version) continue
 
@@ -196,22 +165,8 @@ export function seedBuiltinContent(): SeedBuiltinResult {
         updatedAt: now,
       }
 
-      if (existing) {
-        db.prepare(
-          `UPDATE paragraphs
-           SET deleted_at = ?
-           WHERE chapter_id IN (SELECT id FROM chapters WHERE book_id = ?)
-             AND deleted_at IS NULL`,
-        ).run(now, bookId)
-        deactivateParagraphAnalysesForBook(bookId, now)
-        db.prepare('UPDATE chapters SET deleted_at = ? WHERE book_id = ? AND deleted_at IS NULL').run(
-          now,
-          bookId,
-        )
-        updateBook.run(bookParams)
-      } else {
-        insertBook.run(bookParams)
-      }
+      if (existing) db.prepare('DELETE FROM books WHERE id = ?').run(bookId)
+      insertBook.run(bookParams)
 
       for (const chapter of data.chapters) {
         const chapterText = chapter.paragraphs.map((p) => normalize(p.text)).join('\n')

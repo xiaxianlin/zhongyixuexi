@@ -8,7 +8,7 @@ import { getDb } from '../db/connection'
  * connection initializer enforces PRAGMA foreign_keys=ON (00-arch §5.1) so the
  * ON DELETE CASCADE declared on chapters/paragraphs/etc. actually fires.
  *
- * Column note: the real schema (db/migrate.ts v2) uses `id` as the stable
+ * Column note: the current schema uses `id` as the stable
  * TEXT primary key on books/chapters/paragraphs (NOT `book_id`/`chapter_id`).
  * paragraphs.id is TEXT while the implicit `rowid` is what fts_paragraphs
  * (content='paragraphs', content_rowid='rowid') keys on.
