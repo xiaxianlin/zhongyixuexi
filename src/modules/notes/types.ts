@@ -48,6 +48,7 @@ export interface NoteListItem {
   id: string
   title: string
   preview: string
+  content?: string
   notebook_id: string | null
   paragraph_id: string | null
   pinned: boolean

@@ -73,6 +73,7 @@ export interface NoteListItem {
   id: string
   title: string
   preview: string
+  content?: string
   notebook_id: string | null
   paragraph_id: string | null
   pinned: boolean
@@ -626,7 +627,7 @@ export function getNotesByParagraph(paragraphId: string): NoteListItem[] {
   const db = getDb()
   const rows = db
     .prepare(
-      `SELECT id, title, substr(content, 1, 200) AS preview, notebook_id, paragraph_id,
+      `SELECT id, title, content, substr(content, 1, 200) AS preview, notebook_id, paragraph_id,
               pinned, updated_at
        FROM notes
        WHERE paragraph_id = ? AND deleted_at IS NULL
@@ -635,6 +636,7 @@ export function getNotesByParagraph(paragraphId: string): NoteListItem[] {
     .all(paragraphId) as Array<{
     id: string
     title: string
+    content: string
     preview: string
     notebook_id: string | null
     paragraph_id: string | null
@@ -645,6 +647,7 @@ export function getNotesByParagraph(paragraphId: string): NoteListItem[] {
     id: r.id,
     title: r.title,
     preview: r.preview,
+    content: r.content,
     notebook_id: r.notebook_id,
     paragraph_id: r.paragraph_id,
     pinned: Boolean(r.pinned),

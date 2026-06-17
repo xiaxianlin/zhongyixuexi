@@ -23,8 +23,8 @@ export function registerAiHandlers(): void {
 
   // AI-01: per-paragraph modern interpretation (cache-aware, may be instant).
   handle('ai:generateModern', (_event, payload: unknown) => {
-    const { paragraphId } = payload as { paragraphId: string }
-    return ai.generateModern(paragraphId)
+    const { paragraphId, force } = payload as { paragraphId: string; force?: boolean }
+    return ai.generateModern(paragraphId, { force })
   })
 
   // AI-01 batch: whole-chapter modern interpretation, emitting ai:progress.

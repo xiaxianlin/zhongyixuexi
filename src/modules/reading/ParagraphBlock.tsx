@@ -91,17 +91,17 @@ function ParagraphBlockImpl({
     <div className={cls} data-paragraph-id={paragraph.id}>
       {hasInterpretation ? (
         <>
-          {hasModern && <p className="pblock__modern">{paragraph.content_modern}</p>}
+          {hasModern && <p className="pblock__modern">{compactAnalysisText(paragraph.content_modern ?? '')}</p>}
           {hasExpl && (
             <div className="pblock__expl">
               <span className="pblock__expl-label">医理</span>
-              <p>{paragraph.content_explanation}</p>
+              <p>{compactAnalysisText(paragraph.content_explanation ?? '')}</p>
             </div>
           )}
           {hasAnalysis && (
             <div className="pblock__expl">
               <span className="pblock__expl-label">解读</span>
-              <p>{paragraph.content_analysis}</p>
+              <p>{compactAnalysisText(paragraph.content_analysis ?? '')}</p>
             </div>
           )}
         </>
@@ -118,3 +118,11 @@ function ParagraphBlockImpl({
 }
 
 export const ParagraphBlock = memo(ParagraphBlockImpl)
+
+function compactAnalysisText(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n')
+}

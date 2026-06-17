@@ -4,7 +4,7 @@ import { aiApi, aiSubCodeFrom } from '@/lib/ai-api'
 import { notesApi } from '@/lib/notes-api'
 import { readingApi } from '@/lib/reading-api'
 import type { BookListItem, ChapterNode } from '@/lib/types'
-import type { Note, NoteListItem } from '@/modules/notes/types'
+import type { NoteListItem } from '@/modules/notes/types'
 import type { ParagraphDTO } from '@/modules/reading/types'
 import './library.css'
 
@@ -82,10 +82,10 @@ function BookDetail({
   const [noteSaving, setNoteSaving] = useState(false)
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
-  const [noteDetail, setNoteDetail] = useState<Note | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<NoteListItem | null>(null)
   const [deletingNote, setDeletingNote] = useState(false)
   const [aiGenerating, setAiGenerating] = useState(false)
+  const [reanalyzeConfirmOpen, setReanalyzeConfirmOpen] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => {
@@ -120,6 +120,7 @@ function BookDetail({
   const selectedChapter = tree.find((chapter) => chapter.id === selectedChapterId) ?? null
   const selectedParagraph =
     paragraphs.find((paragraph) => paragraph.id === selectedParagraphId) ?? null
+  const noteColumns = splitIntoColumns(notes, 3)
 
   useEffect(() => {
     let alive = true
@@ -189,17 +190,26 @@ function BookDetail({
     setSelectedChapterId(chapter.id)
   }, [])
 
-  const generateModern = useCallback(async () => {
+  const selectedParagraphAnalyzed = Boolean(
+    selectedParagraph?.content_modern ||
+      selectedParagraph?.content_explanation ||
+      selectedParagraph?.content_analysis,
+  )
+
+  const runAnalysis = useCallback(async (force = false) => {
     if (!selectedParagraph) return
+    const startedAt = Date.now()
     setAiGenerating(true)
     setToastMessage('')
     try {
-      const result = await aiApi.generateModern(selectedParagraph.id)
-      const contentModern = result.sentences.map((sentence) => sentence.modern).join('\n')
+      const result = await aiApi.generateModern(selectedParagraph.id, { force })
+      const contentModern = compactAnalysisText(
+        result.sentences.map((sentence) => sentence.modern).join('\n'),
+      )
       const contentExplanation = result.sentences
-        .map((sentence, index) => `${index + 1}. ${sentence.commentary}`)
-        .join('\n\n')
-      const contentAnalysis = result.analysis || result.summary
+        .map((sentence, index) => `${index + 1}. ${stripLeadingNumber(sentence.commentary)}`)
+        .join('\n')
+      const contentAnalysis = compactAnalysisText(result.analysis || result.summary)
       setParagraphs((current) =>
         current.map((paragraph) =>
           paragraph.id === selectedParagraph.id
@@ -220,9 +230,22 @@ function BookDetail({
           : `AI 解读失败：${(e as Error).message}`,
       )
     } finally {
+      const elapsed = Date.now() - startedAt
+      if (elapsed < 450) {
+        await new Promise((resolve) => window.setTimeout(resolve, 450 - elapsed))
+      }
       setAiGenerating(false)
     }
   }, [selectedParagraph])
+
+  const requestAnalysis = useCallback(() => {
+    if (!selectedParagraph) return
+    if (selectedParagraphAnalyzed) {
+      setReanalyzeConfirmOpen(true)
+      return
+    }
+    void runAnalysis(true)
+  }, [runAnalysis, selectedParagraph, selectedParagraphAnalyzed])
 
   const createParagraphNote = useCallback(async () => {
     if (!selectedParagraph || !selectedChapter) return
@@ -257,16 +280,6 @@ function BookDetail({
     selectedParagraph,
   ])
 
-  const openNoteDetail = useCallback(async (noteId: string) => {
-    setToastMessage('')
-    try {
-      const nextNote = await notesApi.get(noteId)
-      setNoteDetail(nextNote)
-    } catch (e) {
-      setToastMessage(`笔记详情加载失败：${(e as Error).message}`)
-    }
-  }, [])
-
   const deleteNote = useCallback(async () => {
     if (!deleteTarget || !selectedParagraph) return
     setDeletingNote(true)
@@ -274,7 +287,6 @@ function BookDetail({
     try {
       await notesApi.delete(deleteTarget.id)
       setDeleteTarget(null)
-      setNoteDetail((current) => (current?.id === deleteTarget.id ? null : current))
       setNotes(await notesApi.getByParagraph(selectedParagraph.id))
     } catch (e) {
       setToastMessage(`删除失败：${(e as Error).message}`)
@@ -377,9 +389,7 @@ function BookDetail({
                 <div>
                   <div className="bookdetail__railTitleRow">
                     <div className="bookdetail__railHead">析</div>
-                    {(selectedParagraph.content_modern ||
-                      selectedParagraph.content_explanation ||
-                      selectedParagraph.content_analysis) && (
+                    {selectedParagraphAnalyzed && (
                       <span className="bookdetail__parsedTag">已解析</span>
                     )}
                   </div>
@@ -388,7 +398,7 @@ function BookDetail({
                   type="button"
                   className={aiGenerating ? 'bookdetail__btn bookdetail__btn--loading' : 'bookdetail__btn'}
                   disabled={aiGenerating}
-                  onClick={() => void generateModern()}
+                  onClick={requestAnalysis}
                 >
                   {aiGenerating && <span className="bookdetail__loadingSeal" aria-hidden />}
                   {aiGenerating ? '分析中' : '分析'}
@@ -396,22 +406,20 @@ function BookDetail({
               </div>
 
               <div
-                className={
-                  aiGenerating
-                    ? 'bookdetail__inspectScroll bookdetail__inspectScroll--generating'
-                    : 'bookdetail__inspectScroll'
-                }
+                className="bookdetail__inspectScroll"
               >
                 {aiGenerating && (
-                  <div className="bookdetail__aiProgress" aria-live="polite">
-                    <span className="bookdetail__aiProgressDot" />
-                    正在分析白话、医理与解读
+                  <div className="bookdetail__analysisOverlay" aria-live="polite">
+                    <span className="bookdetail__analysisSpinner" aria-hidden />
+                    <span>分析中</span>
                   </div>
                 )}
                 <section className="bookdetail__panelBlock">
                   <div className="bookdetail__panelTitle">白话</div>
                   {selectedParagraph.content_modern ? (
-                    <p className="bookdetail__modernText">{selectedParagraph.content_modern}</p>
+                    <p className="bookdetail__modernText">
+                      {compactAnalysisText(selectedParagraph.content_modern)}
+                    </p>
                   ) : (
                     <p className="bookdetail__muted">尚未生成</p>
                   )}
@@ -421,7 +429,7 @@ function BookDetail({
                   <div className="bookdetail__panelTitle">医理</div>
                   {selectedParagraph.content_explanation ? (
                     <pre className="bookdetail__explainText">
-                      {formatMedicalExplanation(selectedParagraph.content_explanation)}
+                      {formatMedicalExplanation(compactAnalysisText(selectedParagraph.content_explanation))}
                     </pre>
                   ) : (
                     <p className="bookdetail__muted">暂无点拨</p>
@@ -431,7 +439,9 @@ function BookDetail({
                 <section className="bookdetail__panelBlock">
                   <div className="bookdetail__panelTitle">解读</div>
                   {selectedParagraph.content_analysis ? (
-                    <p className="bookdetail__analysisText">{selectedParagraph.content_analysis}</p>
+                    <p className="bookdetail__analysisText">
+                      {compactAnalysisText(selectedParagraph.content_analysis)}
+                    </p>
                   ) : (
                     <p className="bookdetail__muted">暂无解读</p>
                   )}
@@ -469,27 +479,30 @@ function BookDetail({
               <p className="bookdetail__muted">还没有笔记</p>
             ) : (
               <div className="bookdetail__noteGrid">
-                {notes.map((note) => (
-                  <article
-                    key={note.id}
-                    className="bookdetail__noteItem"
-                    onClick={() => void openNoteDetail(note.id)}
-                  >
-                    <div className="bookdetail__noteItemHead">
-                      <button
-                        type="button"
-                        className="bookdetail__noteDelete"
-                        title="删除笔记"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          setDeleteTarget(note)
-                        }}
+                {noteColumns.map((column, columnIndex) => (
+                  <div key={columnIndex} className="bookdetail__noteColumn">
+                    {column.map((note) => (
+                      <article
+                        key={note.id}
+                        className="bookdetail__noteItem"
                       >
-                        ×
-                      </button>
-                    </div>
-                    <p>{note.preview || '（空）'}</p>
-                  </article>
+                        <div className="bookdetail__noteItemHead">
+                          <button
+                            type="button"
+                            className="bookdetail__noteDelete"
+                            title="删除笔记"
+                            onClick={(event) => {
+                              event.stopPropagation()
+                              setDeleteTarget(note)
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                        <p>{note.content || note.preview || '（空）'}</p>
+                      </article>
+                    ))}
+                  </div>
                 ))}
               </div>
             )}
@@ -530,20 +543,6 @@ function BookDetail({
         </div>
       )}
 
-      {noteDetail && (
-        <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
-          <div className="bookdetail__modal bookdetail__modal--note">
-            <div className="bookdetail__modalHead">
-              <h3>笔记详情</h3>
-              <button type="button" onClick={() => setNoteDetail(null)}>
-                ×
-              </button>
-            </div>
-            <pre className="bookdetail__noteDetail">{noteDetail.content || '（空）'}</pre>
-          </div>
-        </div>
-      )}
-
       {deleteTarget && (
         <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
           <div className="bookdetail__modal bookdetail__modal--confirm">
@@ -565,6 +564,42 @@ function BookDetail({
                 onClick={() => void deleteNote()}
               >
                 {deletingNote ? '删除中' : '删除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {reanalyzeConfirmOpen && (
+        <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
+          <div className="bookdetail__modal bookdetail__modal--confirm">
+            <div className="bookdetail__modalHead">
+              <h3>重新分析</h3>
+              <button type="button" onClick={() => setReanalyzeConfirmOpen(false)}>
+                ×
+              </button>
+            </div>
+            <p className="bookdetail__confirmText">当前段落已有分析内容。重新分析会覆盖白话、医理和解读。</p>
+            <div className="bookdetail__modalActions">
+              <button
+                type="button"
+                className="bookdetail__btn"
+                onClick={() => setReanalyzeConfirmOpen(false)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="bookdetail__dangerBtn"
+                disabled={aiGenerating}
+                onClick={() => {
+                  setReanalyzeConfirmOpen(false)
+                  window.requestAnimationFrame(() => {
+                    void runAnalysis(true)
+                  })
+                }}
+              >
+                确认覆盖
               </button>
             </div>
           </div>
@@ -594,5 +629,27 @@ function formatMedicalExplanation(explanation: string): string {
       }
       return lines.join('\n')
     })
-    .join('\n\n')
+    .join('\n')
+}
+
+function compactAnalysisText(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n')
+}
+
+function stripLeadingNumber(text: string): string {
+  return text.replace(/^\s*(?:\d+[.、)]|[（(]\d+[）)]|[一二三四五六七八九十]+[、.])\s*/u, '')
+}
+
+function splitIntoColumns<T>(items: T[], columnCount: number): T[][] {
+  return items.reduce<T[][]>(
+    (columns, item, index) => {
+      columns[index % columnCount].push(item)
+      return columns
+    },
+    Array.from({ length: columnCount }, () => []),
+  )
 }

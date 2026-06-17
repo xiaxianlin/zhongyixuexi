@@ -221,7 +221,26 @@ function validateModernJson(obj: ModernJson): ModernJson {
   }
   if (typeof obj.summary !== 'string') obj.summary = ''
   if (typeof obj.analysis !== 'string') obj.analysis = obj.summary
+  obj.summary = compactAiText(obj.summary)
+  obj.analysis = compactAiText(obj.analysis)
+  obj.sentences = obj.sentences.map((sentence) => ({
+    original: stripLeadingNumber(compactAiText(sentence.original)),
+    modern: stripLeadingNumber(compactAiText(sentence.modern)),
+    commentary: stripLeadingNumber(compactAiText(sentence.commentary)),
+  }))
   return obj
+}
+
+function compactAiText(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join('\n')
+}
+
+function stripLeadingNumber(text: string): string {
+  return text.replace(/^\s*(?:\d+[.、)]|[（(]\d+[）)]|[一二三四五六七八九十]+[、.])\s*/u, '')
 }
 
 // ============================================================================
@@ -235,25 +254,34 @@ function validateModernJson(obj: ModernJson): ModernJson {
  * temp 0.3) → validate → write paragraphs.content_modern/explanation/analysis AND
  * ai_cache in one transaction → return DTO.
  */
-export function generateModern(paragraphId: string): Promise<ModernResultDTO> {
+export function generateModern(paragraphId: string, opts: { force?: boolean } = {}): Promise<ModernResultDTO> {
   const cacheKey = `modern:${paragraphId}`
-  return dedupe(cacheKey, () => generateModernImpl(paragraphId))
+  return dedupe(cacheKey, () => generateModernImpl(paragraphId, opts))
 }
 
-function generateModernImpl(paragraphId: string): Promise<ModernResultDTO> {
+function generateModernImpl(
+  paragraphId: string,
+  opts: { force?: boolean } = {},
+): Promise<ModernResultDTO> {
   const para = getParagraph(paragraphId)
   const cfg = loadConfig()
   const built = buildModernPrompt({ text: para.text })
   const promptHash = computePromptHash(built.messages, cfg.model, built.temperature)
 
   // 1. cache hit?
-  const hit = findCache(paragraphId, 'modern', promptHash)
+  if (opts.force) {
+    invalidateCache(paragraphId, 'modern')
+  }
+  const hit = opts.force ? null : findCache(paragraphId, 'modern', promptHash)
+  console.info(
+    `[ai] generateModern paragraph=${paragraphId} force=${opts.force ? 'true' : 'false'} cache=${hit ? 'hit' : 'miss'}`,
+  )
   if (hit) {
     const parsed = validateModernJson(parseJsonLoose<ModernJson>(hit.response))
     const modernText = parsed.sentences.map((s) => s.modern).join('\n')
     const explainText = parsed.sentences
       .map((s, i) => `${i + 1}. ${s.commentary}`)
-      .join('\n\n')
+      .join('\n')
     getDb()
       .prepare(
         `UPDATE paragraphs SET content_modern = ?, content_explanation = ?, content_analysis = ?
@@ -270,6 +298,9 @@ function generateModernImpl(paragraphId: string): Promise<ModernResultDTO> {
     let lastResp
     let temperature = built.temperature
     for (let attempt = 0; attempt < 2; attempt++) {
+      console.info(
+        `[ai] DeepSeek request paragraph=${paragraphId} force=${opts.force ? 'true' : 'false'} attempt=${attempt + 1}`,
+      )
       lastResp = await deepseek.chat(
         {
           model: cfg.model,
@@ -298,7 +329,7 @@ function generateModernImpl(paragraphId: string): Promise<ModernResultDTO> {
     const modernText = parsed.sentences.map((s) => s.modern).join('\n')
     const explainText = parsed.sentences
       .map((s, i) => `${i + 1}. ${s.commentary}`)
-      .join('\n\n')
+      .join('\n')
     const analysisText = parsed.analysis || parsed.summary
 
     const db = getDb()

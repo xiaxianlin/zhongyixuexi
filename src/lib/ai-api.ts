@@ -32,8 +32,8 @@ export type { IpcError }
 export const aiApi = {
   status: () => invokeRaw<AiStatusDTO>('ai:status'),
 
-  generateModern: (paragraphId: string) =>
-    invokeRaw<ModernResultDTO>('ai:generateModern', { paragraphId }),
+  generateModern: (paragraphId: string, opts: { force?: boolean } = {}) =>
+    invokeRaw<ModernResultDTO>('ai:generateModern', { paragraphId, ...opts }),
 
   generateModernBatch: (chapterId: string) =>
     invokeRaw<{ done: number; total: number; errors: string[] }>('ai:generateModernBatch', {
