@@ -24,6 +24,4 @@ async function invokeRaw<T>(channel: string, ...args: unknown[]): Promise<T> {
 /** learning:* — dashboard-only renderer API. */
 export const learningApi = {
   getDashboard: () => invokeRaw<DashboardDTO>('learning:getDashboard'),
-  getHeatmap: (year: number) =>
-    invokeRaw<Record<string, number>>('learning:getHeatmap', { year }),
 }

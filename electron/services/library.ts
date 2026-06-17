@@ -29,27 +29,6 @@ export interface BookListItem {
   updated_at: number
 }
 
-export interface ChapterListItem {
-  id: string
-  parent_id: string | null
-  order_index: number
-  level: string | null
-  title: string
-}
-
-export interface BookDetail {
-  id: string
-  title: string
-  author: string | null
-  cover: string | null
-  category: string | null
-  updated_at: number
-  chapter_count: number
-  paragraph_count: number
-  progress: number
-  chapters: ChapterListItem[]
-}
-
 export interface ChapterNode {
   id: string
   title: string
@@ -103,61 +82,6 @@ export function listBooks(): BookListItem[] {
     )
     .all() as BookListItem[]
   return rows
-}
-
-/** Single book with its flat chapter list. Returns null if not found / soft-deleted. */
-export function getBook(bookId: string): BookDetail | null {
-  const db = getDb()
-  const book = db
-    .prepare(
-      `SELECT id, title, author, cover, category, updated_at
-       FROM books
-       WHERE id = ? AND deleted_at IS NULL`,
-    )
-    .get(bookId) as
-    | {
-        id: string
-        title: string
-        author: string | null
-        cover: string | null
-        category: string | null
-        updated_at: number
-      }
-    | undefined
-  if (!book) return null
-
-  const chapters = db
-    .prepare(
-      `SELECT id, parent_id, order_index, level, title
-       FROM chapters
-       WHERE book_id = ? AND deleted_at IS NULL
-       ORDER BY order_index`,
-    )
-    .all(bookId) as ChapterListItem[]
-
-  const agg = db
-    .prepare(
-      `SELECT COUNT(DISTINCT c.id) AS chapter_count, COUNT(p.id) AS paragraph_count
-       FROM chapters c
-       LEFT JOIN paragraphs p ON p.chapter_id = c.id AND p.deleted_at IS NULL
-       WHERE c.book_id = ? AND c.deleted_at IS NULL`,
-    )
-    .get(bookId) as { chapter_count: number; paragraph_count: number }
-
-  return {
-    ...book,
-    chapter_count: agg.chapter_count ?? 0,
-    paragraph_count: agg.paragraph_count ?? 0,
-    progress: getBookProgress(bookId),
-    chapters,
-  }
-}
-
-function getBookProgress(bookId: string): number {
-  const row = getDb()
-    .prepare('SELECT percent FROM reading_progress WHERE book_id = ?')
-    .get(bookId) as { percent: number } | undefined
-  return row?.percent ?? 0
 }
 
 // ---------- chapter tree ----------

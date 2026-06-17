@@ -20,8 +20,6 @@ import type {
 export const settingsApi = {
   listProviders: () => invokeRaw<ProviderConfig[]>('settings:listProviders'),
 
-  getProvider: (id: string) => invokeRaw<ProviderConfig>('settings:getProvider', id),
-
   saveProvider: (input: SaveProviderInput) =>
     invokeRaw<{ id: string }>('settings:saveProvider', input),
 

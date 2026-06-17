@@ -1,4 +1,3 @@
-import { registerAppHandlers } from './app'
 import { registerLibraryHandlers } from './library'
 import { registerReadingHandlers } from './reading'
 import { registerSearchHandlers } from './search'
@@ -9,7 +8,6 @@ import { registerAiHandlers } from './ai'
 
 /** Registers every IPC channel. Called once on app ready. */
 export function registerAllIpc(): void {
-  registerAppHandlers()
   registerLibraryHandlers()
   registerReadingHandlers()
   registerSearchHandlers()

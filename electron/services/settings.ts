@@ -12,7 +12,6 @@
  * All DB access goes through the better-sqlite3 singleton from getDb().
  */
 
-import { AppError } from '../lib/error'
 import {
   saveProviderCredential,
   setActiveProvider,
@@ -72,13 +71,6 @@ function toDTO(row: ProviderCredentialRow): ProviderConfigDTO {
 
 export function listProviders(): ProviderConfigDTO[] {
   return listProviderCredentials().map(toDTO)
-}
-
-export function getProvider(id: string): ProviderConfigDTO {
-  const all = listProviderCredentials()
-  const row = all.find((r) => r.id === id)
-  if (!row) throw new AppError('NOT_FOUND', `provider ${id} not found`)
-  return toDTO(row)
 }
 
 export function saveProvider(input: SaveProviderInput): { id: string } {

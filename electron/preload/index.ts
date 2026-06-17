@@ -14,8 +14,6 @@ const api = {
       ipcRenderer.off(channel, listener)
     }
   },
-
-  getAppInfo: () => ipcRenderer.invoke('app:getInfo'),
 }
 
 export type Api = typeof api

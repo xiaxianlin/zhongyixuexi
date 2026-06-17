@@ -50,11 +50,6 @@ export function subscribe(channel: string, cb: (payload: unknown) => void): () =
   return window.api.on(channel, cb)
 }
 
-/** app:* — process metadata, proves the IPC round-trip. */
-export const appApi = {
-  getInfo: () => invokeRaw<{ version: string; platform: string; electron: string }>('app:getInfo'),
-}
-
 /** library:* — book list and chapter tree. */
 export const libraryApi = {
   list: () => invokeRaw<BookListItem[]>('library:list'),

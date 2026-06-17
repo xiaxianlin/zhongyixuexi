@@ -100,7 +100,7 @@ export function getDashboard(): DashboardDTO {
   }
 }
 
-export function getHeatmap(year: number): Record<string, number> {
+function getHeatmap(year: number): Record<string, number> {
   const db = getDb()
   const { start, end } = yearRange(year)
   const rows = db

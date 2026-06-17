@@ -25,10 +25,6 @@ import type { SaveProviderInput } from '../services/settings'
 export function registerSettingsHandlers(): void {
   handle('settings:listProviders', () => settings.listProviders())
 
-  handle('settings:getProvider', (_event, id: unknown) =>
-    settings.getProvider(id as string),
-  )
-
   handle('settings:saveProvider', (_event, input: unknown) =>
     settings.saveProvider(input as SaveProviderInput),
   )
