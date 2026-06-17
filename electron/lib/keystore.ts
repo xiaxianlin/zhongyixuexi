@@ -205,33 +205,6 @@ export function saveProviderCredential(
 }
 
 /**
- * Deletes a provider credential. If it was the active provider, active switches
- * to the first remaining provider (or none).
- */
-export function deleteProviderCredential(id: string): void {
-  const db = getDb()
-  const row = db
-    .prepare('SELECT is_active FROM api_credentials WHERE id = ?')
-    .get(id) as { is_active: number } | undefined
-  if (!row) throw new AppError('NOT_FOUND', `provider ${id} not found`)
-
-  db.prepare('DELETE FROM api_credentials WHERE id = ?').run(id)
-
-  // If we deleted the active provider, pick the first remaining as active.
-  if (row.is_active === 1) {
-    const next = db
-      .prepare('SELECT id FROM api_credentials ORDER BY created_at LIMIT 1')
-      .get() as { id: string } | undefined
-    if (next) {
-      setActiveProvider(next.id)
-    } else {
-      // No providers left — clear the settings pointer
-      db.prepare(`DELETE FROM settings WHERE key = 'ai.currentProvider'`).run()
-    }
-  }
-}
-
-/**
  * Sets the active provider, ensuring exactly one row has is_active=1.
  * Also writes the settings.ai.currentProvider key for redundancy.
  */
@@ -298,16 +271,4 @@ export function listProviderCredentials(): ProviderCredentialRow[] {
        ORDER BY is_active DESC, created_at ASC`,
     )
     .all() as ProviderCredentialRow[]
-}
-
-/**
- * Strips API keys from api_credentials (sets api_key_enc = NULL).
- * Used by backup export when includeApiKey=false (default).
- */
-export function stripApiKeys(): void {
-  const db = getDb()
-  const now = Date.now()
-  db.prepare(
-    `UPDATE api_credentials SET api_key_enc = NULL, key_iv_hint = 'stripped', updated_at = ?`,
-  ).run(now)
 }

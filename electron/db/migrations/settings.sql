@@ -4,8 +4,8 @@
 -- file loader — see S4.4 decision in docs/dev/PROGRESS.md).
 --
 -- Two new tables: settings (key/value preferences) and api_credentials
--- (safeStorage-encrypted API keys). The settings table holds appearance,
--- layout, disclaimer, and current-provider pointers — never plaintext secrets.
+-- (safeStorage-encrypted API keys). Current UI uses fixed AI configuration
+-- slots; plaintext secrets never cross IPC.
 -- api_credentials holds the encrypted key BLOB only; the plaintext key never
 -- touches disk, logs, or IPC return values (08-settings-data §7.1, §8.3).
 --
@@ -16,11 +16,10 @@
 --  - Forward-only, idempotent DDL (CREATE IF NOT EXISTS).
 
 -- ---------------------------------------------------------------------------
--- settings (SET-02 / SET-05) — key/value preferences store
+-- settings — key/value preferences store
 -- ---------------------------------------------------------------------------
--- Holds appearance.* (theme/fontFamily/fontSize/lineHeight/illusStyle),
--- layout.preset, ai.currentProvider, disclaimer.accepted(+At), and any future
--- flat preference. Values are JSON strings or scalars; serialised by the app.
+-- Holds future flat preferences. Values are JSON strings or scalars; serialized
+-- by the app.
 CREATE TABLE IF NOT EXISTS settings (
   key         TEXT PRIMARY KEY,          -- e.g. 'appearance.theme', 'disclaimer.accepted'
   value       TEXT NOT NULL,             -- JSON or scalar string
@@ -30,11 +29,10 @@ CREATE TABLE IF NOT EXISTS settings (
 -- ---------------------------------------------------------------------------
 -- api_credentials (SET-01) — encrypted provider credentials
 -- ---------------------------------------------------------------------------
--- Each row = one provider configuration (DeepSeek default, user-added extras).
+-- Each row = one fixed provider configuration slot.
 -- api_key_enc is the raw Buffer returned by Electron safeStorage.encryptString;
 -- it is OS-keychain-bound (macOS Keychain / Windows DPAPI / Linux libsecret).
 -- base_url and model are non-sensitive metadata stored in plaintext for UI.
--- Backup export defaults to STRIPPING api_key_enc (NULL) for safety (§7.3.3).
 CREATE TABLE IF NOT EXISTS api_credentials (
   id            TEXT PRIMARY KEY,            -- e.g. 'deepseek-default'
   provider      TEXT NOT NULL,               -- 'deepseek' | 'openai' | 'anthropic' | 'qwen' | custom
