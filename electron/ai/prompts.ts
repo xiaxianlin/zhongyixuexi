@@ -251,9 +251,9 @@ ${input.text}
 // ============================================================================
 
 export interface ParseChapterInput {
-  /** Chapter title from the EPUB TOC / spine. */
+  /** Chapter title from the source content. */
   title: string
-  /** Chapter body as plain text (HTML stripped, whitespace normalized). */
+  /** Chapter body as plain text. */
   text: string
 }
 

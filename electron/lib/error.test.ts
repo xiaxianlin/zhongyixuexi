@@ -3,9 +3,9 @@ import { AppError, serializeError } from './error'
 
 describe('AppError / serializeError', () => {
   it('serializes an AppError with code and details', () => {
-    expect(serializeError(new AppError('PARSE', 'bad epub', { at: 3 }))).toEqual({
+    expect(serializeError(new AppError('PARSE', 'bad source', { at: 3 }))).toEqual({
       code: 'PARSE',
-      message: 'bad epub',
+      message: 'bad source',
       details: { at: 3 },
     })
   })

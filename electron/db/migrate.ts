@@ -30,8 +30,8 @@ const MIGRATIONS: Migration[] = [
           id            TEXT PRIMARY KEY,
           title         TEXT NOT NULL,
           author        TEXT,
-          source_format TEXT NOT NULL,        -- 'epub' (pdf later)
-          source_file   TEXT NOT NULL,        -- relative path under files/
+          source_format TEXT NOT NULL,        -- e.g. 'builtin'
+          source_file   TEXT NOT NULL,        -- source identifier
           cover         TEXT,                 -- relative path under covers/, nullable
           category      TEXT,
           imported_at   INTEGER NOT NULL,
