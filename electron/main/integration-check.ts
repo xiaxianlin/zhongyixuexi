@@ -5,7 +5,7 @@
  * directly and verifies the list → tree → FTS → search → cascade-delete chain.
  */
 import { randomUUID } from 'node:crypto'
-import { listBooks, getChapterTree, deleteBook } from '../services/library'
+import { listBooks, getChapterTree } from '../services/library'
 import { searchParagraphs } from '../services/search'
 import { getActiveApiKey } from '../services/settings'
 import { deepseek } from '../ai/deepseek'
@@ -61,6 +61,14 @@ function insertTestBook(): string {
   return bookId
 }
 
+function deleteTestBook(bookId: string): void {
+  const db = getDb()
+  db.transaction(() => {
+    db.prepare('DELETE FROM books WHERE id = ?').run(bookId)
+    db.exec("INSERT INTO fts_paragraphs(fts_paragraphs) VALUES('rebuild')")
+  })()
+}
+
 export async function runIntegrationCheck(): Promise<void> {
   const aiDebug = process.env.ZYXX_AI_DEBUG
   if (aiDebug === 'short') {
@@ -70,7 +78,7 @@ export async function runIntegrationCheck(): Promise<void> {
 
   // pre-clean leftover test books
   for (const b of listBooks().filter((x) => x.title === TEST_TITLE)) {
-    deleteBook(b.id)
+    deleteTestBook(b.id)
   }
   assert(ftsMatchCount() === 0, `fts not clean before insert: ${ftsMatchCount()}`)
 
@@ -95,7 +103,7 @@ export async function runIntegrationCheck(): Promise<void> {
     assert(!sr.degraded, 'search unexpectedly degraded')
     console.log('[integration] search ok:', sr.hits.length, 'hits, total', sr.total)
   } finally {
-    deleteBook(bookId)
+    deleteTestBook(bookId)
   }
 
   assert(listBooks().filter((b) => b.id === bookId).length === 0, 'book still present after delete')

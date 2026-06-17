@@ -1,13 +1,9 @@
-import { app } from 'electron'
-import { resolve } from 'node:path'
-import { unlinkSync } from 'node:fs'
 import { getDb } from '../db/connection'
-import { AppError } from '../lib/error'
 
 /**
  * Library service (LIB module).
  *
- * Book list / detail, chapter-tree assembly, and transactional cascading delete.
+ * Book list / detail and chapter-tree assembly.
  * All queries go through the better-sqlite3 singleton from getDb(); the
  * connection initializer enforces PRAGMA foreign_keys=ON (00-arch §5.1) so the
  * ON DELETE CASCADE declared on chapters/paragraphs/etc. actually fires.
@@ -231,67 +227,4 @@ export function buildChapterTree(flatRows: ChapterRow[]): ChapterNode[] {
   }
 
   return roots
-}
-
-// ---------- delete ----------
-
-/**
- * Transactionally deletes a book and everything that belongs to it.
- *
- * Cascade plan (00-arch §5.3 / 02-library §7.4):
- *  1. Manually clear fts_paragraphs first. Reason: deleting the books row
- *     triggers FK ON DELETE CASCADE on chapters → paragraphs, but **SQLite
- *     foreign-key actions do NOT fire row-level triggers** (fts_paragraphs's
- *     AFTER DELETE sync trigger). So the FTS shadow rows would be orphaned if
- *     we relied on cascade alone. We delete them explicitly here, keyed on the
- *     paragraphs rowid that FTS5 content_rowid references.
- *  2. DELETE FROM books — CASCADE then wipes chapters, paragraphs and any
- *     future child tables (reading_progress, notes, cards, ai_cache, …) as long
- *     as they declared ON DELETE CASCADE.
- *
- * File-system side effects (original epub + cover) run AFTER the transaction
- * commits and are best-effort: a missing/locked file only logs a warning and
- * never rolls back the already-committed DB delete.
- */
-export function deleteBook(bookId: string): void {
-  const db = getDb()
-
-  const book = db
-    .prepare('SELECT source_file, cover FROM books WHERE id = ?')
-    .get(bookId) as { source_file: string; cover: string | null } | undefined
-  if (!book) {
-    throw new AppError('NOT_FOUND', `book ${bookId} not found`)
-  }
-
-  const tx = db.transaction(() => {
-    // FK ON DELETE CASCADE removes chapters + paragraphs (+ future child tables).
-    // Note: FK cascade does NOT fire the paragraphs_ad trigger (00-arch §5.3), so
-    // FTS is not updated by the cascade — we rebuild it explicitly below.
-    db.prepare('DELETE FROM books WHERE id = ?').run(bookId)
-    // Rebuild the FTS index from the now-reduced content table. Both a plain
-    // DELETE on fts_paragraphs and the per-row 'delete' command corrupted the
-    // trigram external-content index (SQLITE_CORRUPT_VTAB); a full rebuild is
-    // correct and cheap at book scale.
-    db.exec("INSERT INTO fts_paragraphs(fts_paragraphs) VALUES('rebuild')")
-  })
-
-  tx()
-
-  // 3. best-effort file cleanup (DB already committed)
-  const userData = app.getPath('userData')
-  const safeUnlink = (rel: string | null | undefined): void => {
-    if (!rel) return
-    try {
-      const abs = resolve(userData, rel)
-      // path-traversal guard: must stay under userData
-      if (abs.startsWith(userData)) {
-        unlinkSync(abs)
-      }
-    } catch (e) {
-      // file missing / locked / permission — do not fail the delete
-      console.warn('[library] deleteBook: unlink failed for', rel, e)
-    }
-  }
-  safeUnlink(book.source_file)
-  safeUnlink(book.cover)
 }
