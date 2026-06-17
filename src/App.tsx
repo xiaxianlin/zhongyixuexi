@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from 'react'
 import { useSessionStore } from '@/stores/session'
-import { useAiStore, attachAiProgressListener } from '@/stores/ai'
+import { useAiStore } from '@/stores/ai'
 import { useSearchStore } from '@/stores/search'
 import { LibraryView } from '@/modules/library/LibraryView'
 import { SearchPanel } from '@/modules/search/SearchPanel'
@@ -29,9 +29,7 @@ export default function App() {
   const quickSearchInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    const off = attachAiProgressListener()
     void refreshAiStatus()
-    return off
   }, [refreshAiStatus])
 
   const showForceSetup = aiStatus !== null && !aiStatus.configured

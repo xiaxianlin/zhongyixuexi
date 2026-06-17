@@ -254,10 +254,10 @@ const CURRENT_SCHEMA = `
 
   CREATE TABLE IF NOT EXISTS ai_cache (
     id TEXT PRIMARY KEY,
-    scope TEXT NOT NULL,
+    scope TEXT NOT NULL CHECK (scope = 'paragraph'),
     scope_id TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    paragraph_id TEXT,
+    kind TEXT NOT NULL CHECK (kind = 'modern'),
+    paragraph_id TEXT NOT NULL,
     prompt_hash TEXT NOT NULL,
     response TEXT NOT NULL,
     model TEXT NOT NULL,

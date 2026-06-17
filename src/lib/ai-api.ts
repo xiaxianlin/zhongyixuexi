@@ -6,13 +6,11 @@
  * structured errors as IpcError (src/lib/ipc.ts). Mirrors the channels
  * registered in electron/ipc/ai.ts.
  *
- * Progress events arrive via subscribe('ai:progress', cb) (non-channel event).
  */
-import { invokeRaw, subscribe, type IpcError } from './ipc'
+import { invokeRaw, type IpcError } from './ipc'
 import type {
   ModernResultDTO,
   AiStatusDTO,
-  AiProgressPayload,
   AiSubCode,
 } from '@/modules/ai/types'
 
@@ -27,22 +25,10 @@ export function aiSubCodeFrom(e: unknown): AiSubCode {
 
 export type { IpcError }
 
-/** ai:* — status, modern interpretation, RAG Q&A, invalidate. */
+/** ai:* — status and paragraph interpretation. */
 export const aiApi = {
   status: () => invokeRaw<AiStatusDTO>('ai:status'),
 
   generateModern: (paragraphId: string, opts: { force?: boolean } = {}) =>
     invokeRaw<ModernResultDTO>('ai:generateModern', { paragraphId, ...opts }),
-
-  generateModernBatch: (chapterId: string) =>
-    invokeRaw<{ done: number; total: number; errors: string[] }>('ai:generateModernBatch', {
-      chapterId,
-    }),
-
-  invalidate: (scopeId: string, kind: 'modern' | 'qa' | 'annotation') =>
-    invokeRaw<{ invalidated: number }>('ai:invalidate', { scopeId, kind }),
-
-  /** Subscribe to ai:progress events. Returns an unsubscribe function. */
-  onProgress: (cb: (p: AiProgressPayload) => void): (() => void) =>
-    subscribe('ai:progress', (p) => cb(p as AiProgressPayload)),
 }

@@ -1,18 +1,7 @@
 /**
- * AI IPC (S5.1..S5.6 / 07-ai.md §5). Thin pass-throughs to the ai service.
+ * AI IPC. Thin pass-throughs to the ai service.
  * Every handler returns via the {__ok} envelope from registry.handle. Channel
  * names follow the module:action convention.
- *
- * Long-task progress: ai:generateModernBatch sends 'ai:progress' events via
- * event.sender.send() as it walks the chapter's paragraphs. Single-segment
- * generation (ai:generateModern, ai:ask) completes within one
- * HTTP round-trip and does not emit progress.
- *
- * Renderer→main typed wrappers live in src/lib/ai-api.ts.
- *
- * Registration line for the main agent to add to electron/ipc/index.ts:
- *   import { registerAiHandlers } from './ai'
- *   registerAiHandlers()
  */
 import { handle } from './registry'
 import * as ai from '../services/ai'
@@ -25,17 +14,5 @@ export function registerAiHandlers(): void {
   handle('ai:generateModern', (_event, payload: unknown) => {
     const { paragraphId, force } = payload as { paragraphId: string; force?: boolean }
     return ai.generateModern(paragraphId, { force })
-  })
-
-  // AI-01 batch: whole-chapter modern interpretation, emitting ai:progress.
-  handle('ai:generateModernBatch', async (event, payload: unknown) => {
-    const { chapterId } = payload as { chapterId: string }
-    return ai.generateModernBatch(chapterId, (p) => event.sender.send('ai:progress', p))
-  })
-
-  // Manual cache invalidation (triggers regenerate on next call).
-  handle('ai:invalidate', (_event, payload: unknown) => {
-    const { scopeId, kind } = payload as { scopeId: string; kind: 'modern' | 'qa' | 'annotation' }
-    return ai.invalidate(scopeId, kind)
   })
 }

@@ -9,8 +9,6 @@ import { describe, it, expect } from 'vitest'
 import {
   RED_LINE_PROMPT,
   buildModernPrompt,
-  buildQaPrompt,
-  buildAnnotationPrompt,
 } from './prompts'
 
 function systemContent(msgs: { role: string; content: string }[]): string {
@@ -27,8 +25,6 @@ describe('red-line presence (layer 1)', () => {
   it('is prepended to every template', () => {
     const cases = [
       buildModernPrompt({ text: '人参' }).messages,
-      buildQaPrompt({ query: 'q', contexts: [] }).messages,
-      buildAnnotationPrompt({ text: '人参' }).messages,
     ]
     for (const msgs of cases) {
       expect(systemContent(msgs)).toContain('严格禁止')
@@ -53,28 +49,5 @@ describe('buildModernPrompt', () => {
     const a = buildModernPrompt({ text: '人参' })
     const b = buildModernPrompt({ text: '人参' })
     expect(a.messages).toEqual(b.messages)
-  })
-})
-
-describe('buildQaPrompt', () => {
-  it('numbers contexts 1..k and injects paragraphId', () => {
-    const { messages } = buildQaPrompt({
-      query: '人参补什么',
-      contexts: [
-        { n: 1, paragraphId: 'p1', bookTitle: '本经', chapterTitle: '上品', snippet: '人参补五脏' },
-        { n: 2, paragraphId: 'p2', bookTitle: '本经', chapterTitle: '上品', snippet: '安精神' },
-      ],
-    })
-    const user = messages.find((m) => m.role === 'user')!.content
-    expect(user).toContain('[1]')
-    expect(user).toContain('p1')
-    expect(user).toContain('[2]')
-    expect(user).toContain('p2')
-    expect(user).toContain('人参补什么')
-  })
-  it('uses temperature 0.5 and no JSON mode (natural language)', () => {
-    const p = buildQaPrompt({ query: 'q', contexts: [] })
-    expect(p.temperature).toBe(0.5)
-    expect(p).not.toHaveProperty('response_format')
   })
 })

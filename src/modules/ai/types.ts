@@ -24,32 +24,10 @@ export interface ModernResultDTO {
   tokens: number
 }
 
-export interface QaCiteDTO {
-  n: number
-  paragraphId: string
-  snippet: string
-}
-
-export interface QaAnswerDTO {
-  answer: string
-  cites: QaCiteDTO[]
-  fromCache: boolean
-  model: string
-  tokens: number
-  scrubbed: boolean
-}
-
 export interface AiStatusDTO {
   configured: boolean
   provider: string | null
   model: string | null
-}
-
-export interface AiProgressPayload {
-  jobId: string
-  phase: string
-  current: number
-  total: number
 }
 
 /** AI error sub-code, mirrored from electron/ai/errors.ts AiSubCode. */
