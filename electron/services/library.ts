@@ -22,12 +22,11 @@ export interface BookListItem {
   author: string | null
   cover: string | null
   category: string | null
-  source_format: string
   chapter_count: number
   paragraph_count: number
   /** 0..1 reading progress. */
   progress: number
-  imported_at: number
+  updated_at: number
 }
 
 export interface ChapterListItem {
@@ -44,9 +43,6 @@ export interface BookDetail {
   author: string | null
   cover: string | null
   category: string | null
-  source_format: string
-  source_file: string
-  imported_at: number
   updated_at: number
   chapter_count: number
   paragraph_count: number
@@ -75,7 +71,7 @@ export interface ChapterRow {
 
 /**
  * All live books (deleted_at IS NULL) with aggregated chapter_count,
- * paragraph_count and reading progress. Ordered by imported_at desc.
+ * paragraph_count and reading progress.
  */
 export function listBooks(): BookListItem[] {
   const db = getDb()
@@ -87,8 +83,7 @@ export function listBooks(): BookListItem[] {
          b.author,
          b.cover,
          b.category,
-         b.source_format,
-         b.imported_at,
+         b.updated_at,
          COALESCE(s.chapter_count, 0)   AS chapter_count,
          COALESCE(s.paragraph_count, 0) AS paragraph_count,
          COALESCE(rp.percent, 0)        AS progress
@@ -104,7 +99,7 @@ export function listBooks(): BookListItem[] {
        ) s ON s.book_id = b.id
        LEFT JOIN reading_progress rp ON rp.book_id = b.id
        WHERE b.deleted_at IS NULL
-       ORDER BY b.imported_at DESC`,
+       ORDER BY b.updated_at DESC, b.title ASC`,
     )
     .all() as BookListItem[]
   return rows
@@ -115,8 +110,7 @@ export function getBook(bookId: string): BookDetail | null {
   const db = getDb()
   const book = db
     .prepare(
-      `SELECT id, title, author, cover, category, source_format, source_file,
-              imported_at, updated_at
+      `SELECT id, title, author, cover, category, updated_at
        FROM books
        WHERE id = ? AND deleted_at IS NULL`,
     )
@@ -127,9 +121,6 @@ export function getBook(bookId: string): BookDetail | null {
         author: string | null
         cover: string | null
         category: string | null
-        source_format: string
-        source_file: string
-        imported_at: number
         updated_at: number
       }
     | undefined

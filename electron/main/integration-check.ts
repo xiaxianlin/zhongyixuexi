@@ -40,10 +40,9 @@ function insertTestBook(): string {
   )
   db.transaction(() => {
     db.prepare(
-      `INSERT INTO books (id, title, author, source_format, source_file, cover, category,
-                          imported_at, parse_version, updated_at, deleted_at)
-       VALUES (?, ?, ?, 'manual', 'manual', NULL, NULL, ?, 1, ?, NULL)`,
-    ).run(bookId, TEST_TITLE, '佚名', now, now)
+      `INSERT INTO books (id, title, author, cover, category, updated_at, deleted_at)
+       VALUES (?, ?, ?, NULL, NULL, ?, NULL)`,
+    ).run(bookId, TEST_TITLE, '佚名', now)
     db.prepare(
       `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content_hash, created_at, deleted_at)
        VALUES (?, ?, NULL, 0, NULL, '上品', NULL, ?, NULL)`,
@@ -76,7 +75,7 @@ export async function runIntegrationCheck(): Promise<void> {
     return
   }
 
-  const builtinBooks = listBooks().filter((book) => book.source_format === 'builtin')
+  const builtinBooks = listBooks()
   assert(builtinBooks.length >= 2, `builtin books missing: ${builtinBooks.length}`)
   assert(
     builtinBooks.some((book) => book.title === '黄帝八十一难经' && book.chapter_count === 81),

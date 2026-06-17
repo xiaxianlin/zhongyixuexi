@@ -1,27 +1,14 @@
-import type { DB } from './connection'
 import { getDb, resetDbFiles } from './connection'
 
-const SCHEMA_ID = '2026-06-current-builtin-study-v1'
-const SCHEMA_VERSION = 1
-
-const META_TABLE = `
-  CREATE TABLE IF NOT EXISTS schema_meta (
-    key   TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-  );
-`
+const CURRENT_SCHEMA_VERSION = 2
 
 const CURRENT_SCHEMA = `
   CREATE TABLE IF NOT EXISTS books (
     id            TEXT PRIMARY KEY,
     title         TEXT NOT NULL,
     author        TEXT,
-    source_format TEXT NOT NULL,
-    source_file   TEXT NOT NULL,
     cover         TEXT,
     category      TEXT,
-    imported_at   INTEGER NOT NULL,
-    parse_version INTEGER NOT NULL DEFAULT 1,
     updated_at    INTEGER NOT NULL,
     deleted_at    INTEGER
   );
@@ -189,55 +176,19 @@ const CURRENT_SCHEMA = `
     WHERE is_active = 1;
 `
 
-function hasAppTables(db: DB): boolean {
-  const row = db
-    .prepare(
-      `SELECT 1 AS found
-       FROM sqlite_master
-       WHERE type IN ('table', 'view')
-         AND name NOT LIKE 'sqlite_%'
-         AND name <> 'schema_meta'
-       LIMIT 1`,
-    )
-    .get() as { found: number } | undefined
-  return row != null
-}
-
-function schemaId(db: DB): string | undefined {
-  try {
-    const row = db.prepare('SELECT value FROM schema_meta WHERE key = ?').get('schema_id') as
-      | { value?: string }
-      | undefined
-    return row?.value
-  } catch {
-    return undefined
-  }
-}
-
-function writeMeta(db: DB): void {
-  const upsertMeta = db.prepare(
-    `INSERT INTO schema_meta (key, value) VALUES (?, ?)
-     ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
-  )
-  upsertMeta.run('schema_id', SCHEMA_ID)
-  upsertMeta.run('version', String(SCHEMA_VERSION))
-}
-
 export function prepareDatabase(): number {
   let db = getDb()
-  db.exec(META_TABLE)
 
-  const currentSchemaId = schemaId(db)
-  if (currentSchemaId !== SCHEMA_ID && (currentSchemaId != null || hasAppTables(db))) {
+  const currentVersion = db.pragma('user_version', { simple: true }) as number
+  if (currentVersion !== CURRENT_SCHEMA_VERSION) {
     resetDbFiles()
     db = getDb()
-    db.exec(META_TABLE)
   }
 
   db.transaction(() => {
     db.exec(CURRENT_SCHEMA)
-    writeMeta(db)
+    db.pragma(`user_version = ${CURRENT_SCHEMA_VERSION}`)
   })()
 
-  return SCHEMA_VERSION
+  return CURRENT_SCHEMA_VERSION
 }

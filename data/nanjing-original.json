@@ -1,5207 +1,2676 @@
 {
-  "schemaVersion": 1,
-  "generator": {
-    "name": "nanjing-json-upgrader",
-    "version": "1.0.0",
-    "generatedAt": "2026-06-17T10:50:44+00:00"
-  },
   "book": {
     "id": "516737e1-25f1-5439-96d5-bc79f63a59ee",
     "title": "黄帝八十一难经",
     "author": null,
     "category": "难经",
-    "language": "zh-Hans",
-    "sourceFormat": "epub",
-    "importedAt": "2026-06-17T10:50:44+00:00"
-  },
-  "source": {
-    "path": "books/黄帝八十一难.epub",
-    "sha256": "2c0ec62499beb0de54113caa70540983bc25f194a38a62f9502c2e648a24afa0",
-    "format": "epub",
-    "entries": [
-      "OEBPS/Text/Chapter_3.xhtml"
-    ]
-  },
-  "parse": {
-    "parser": "nanjing-json-upgrader",
-    "parserVersion": "1.0.0",
-    "params": {
-      "chapterHeading": "沿用旧 JSON 的 81 个“一难”至“八十一难”章节。",
-      "paragraphSplit": "沿用旧 JSON 中已切好的段落。",
-      "textNormalization": [
-        "去除段落首尾空白"
-      ]
-    }
+    "language": "zh-Hans"
   },
   "quality": {
-    "status": "ok",
     "chapterCount": 81,
-    "paragraphCount": 179,
-    "warnings": []
+    "paragraphCount": 179
   },
   "chapters": [
     {
       "id": "2e8549d8-bafa-5b83-bfd9-e87f0a3c5cdf",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 0,
       "level": "篇",
       "title": "一难",
-      "canonicalTitle": "一难",
-      "collection": "难经",
-      "sequence": 1,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 1000,
-        "endLine": 1001
-      },
       "contentHash": "22dbc8e860fc64c2",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "e420526e-f948-5e73-96d5-d74c1267965b",
-          "chapterId": "2e8549d8-bafa-5b83-bfd9-e87f0a3c5cdf",
           "orderIndex": 0,
           "text": "曰：十二经皆有动脉，独取寸口，以决五脏六腑死生吉凶之法，何谓也？\n然：寸口者，脉之大会，手太阴之脉动也。人一呼，脉行三寸；一吸，脉行三寸；呼吸定息，脉行六寸。人一日一夜，凡一万三千五百息，脉行五十度，周于身，漏水下百刻，营卫行阳二十五度，行阴亦二十五度，为一周也，故五十度复会于手太阴。寸口者，五脏六腑之所终始，故法取于寸口也。",
-          "blockType": "p",
           "parseHash": "22dbc8e860fc64c2",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 1001,
-            "endLine": 1001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "66f4a25e-0ead-5eb3-850b-c91a9d65f82d",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 1,
       "level": "篇",
       "title": "二难",
-      "canonicalTitle": "二难",
-      "collection": "难经",
-      "sequence": 2,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 2000,
-        "endLine": 2001
-      },
       "contentHash": "1ed03d16b51a1821",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "bb55aee8-35f2-5540-be89-242c062cd82c",
-          "chapterId": "66f4a25e-0ead-5eb3-850b-c91a9d65f82d",
           "orderIndex": 0,
           "text": "曰：脉有尺寸，何谓也？\n然：尺寸者，脉之大要会也。从关至尺是尺内，阴之所治也；从关至鱼际是寸内，阳之所治也。故分寸为尺，分尺为寸。故阴得尺内一寸，阳得寸内九分。尺寸终始，一寸九分，故曰尺寸也。",
-          "blockType": "p",
           "parseHash": "1ed03d16b51a1821",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 2001,
-            "endLine": 2001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "9fd6e9b2-c79b-5b4e-b0a6-4fdaba2100bd",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 2,
       "level": "篇",
       "title": "三难",
-      "canonicalTitle": "三难",
-      "collection": "难经",
-      "sequence": 3,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 3000,
-        "endLine": 3001
-      },
       "contentHash": "b95c31ca42af6d14",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "1ab1ae6d-a324-5036-aa26-21eb6ffefb89",
-          "chapterId": "9fd6e9b2-c79b-5b4e-b0a6-4fdaba2100bd",
           "orderIndex": 0,
           "text": "曰：脉有太过，有不及，有阴阳相乘，有覆有溢，有关有格，何谓也？\n然：关之前者，阳之动也，脉当见九分而浮。过者，法曰太过；减者，法曰不及；遂上鱼为溢，为外关内格，此阴乘之脉也。关之后者，阴之动也，脉当见一寸而沉。过者，法曰太过；减者，法曰不及。遂入尺为覆，为内关外格，此阳乘之脉也。故曰覆溢，是其真脏之脉，人不病而死也。",
-          "blockType": "p",
           "parseHash": "b95c31ca42af6d14",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 3001,
-            "endLine": 3001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "fb9f5dca-9cdd-55f7-9a3e-838090540374",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 3,
       "level": "篇",
       "title": "四难",
-      "canonicalTitle": "四难",
-      "collection": "难经",
-      "sequence": 4,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 4000,
-        "endLine": 4004
-      },
       "contentHash": "1a556d598c47ebf3",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "16e65568-5faf-5b9a-aa25-e3ec0d48e28e",
-          "chapterId": "fb9f5dca-9cdd-55f7-9a3e-838090540374",
           "orderIndex": 0,
           "text": "曰：脉有阴阳之法，何谓也？\n然：呼出心与肺，吸入肾与肝；呼吸之间，脾受谷味也，其脉在中。浮者阳也，沉者阴也，故曰阴阳也。",
-          "blockType": "p",
           "parseHash": "e1ef08e5fc75dd81",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 4001,
-            "endLine": 4001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "2d372012-2d46-5720-82e9-5340a8af6faa",
-          "chapterId": "fb9f5dca-9cdd-55f7-9a3e-838090540374",
           "orderIndex": 1,
           "text": "心肺俱浮，何以别之？\n然：浮而大散者，心也；浮而短涩者，肺也。",
-          "blockType": "p",
           "parseHash": "b1bbbe68ca8d4c43",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 4002,
-            "endLine": 4002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "c4060f94-22e2-5547-8a36-28c0803436a1",
-          "chapterId": "fb9f5dca-9cdd-55f7-9a3e-838090540374",
           "orderIndex": 2,
           "text": "肾肝俱沉，何以别之？\n然：牢而长者，肝也；按之濡，举指来实者，肾也；脾者中州，故其脉在中，是阴阳之法也。脉有一阴一阳、一阴二阳、一阴三阳，有一阳一阴、一阳二阴、一阳三阴。",
-          "blockType": "p",
           "parseHash": "daa2586ecccf3d56",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 4003,
-            "endLine": 4003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "086f90b6-efd1-52f3-a80b-50d38d69445b",
-          "chapterId": "fb9f5dca-9cdd-55f7-9a3e-838090540374",
           "orderIndex": 3,
           "text": "如此之言，寸口有六脉俱动邪？\n然：此言者非有六脉俱动也，谓浮、沉、长、短、滑、涩也。浮者阳也，滑者阳也，长者阳也；沉者阴也，短者阴也，涩者阴也。所谓一阴一阳者，谓脉来沉而滑也；一阴二阳者，谓脉来沉滑而长也；一阴三阳者，谓脉来浮滑而长，时一沉也。所谓一阳一阴者，谓脉来浮而涩也；一阳二阴者，谓脉来长而沉涩也；一阳三阴者，谓脉来沉涩而短，时一浮也。各以其经所在，名病顺逆也。",
-          "blockType": "p",
           "parseHash": "823d3affdeb98d2e",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 4004,
-            "endLine": 4004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "4615a0fc-4162-5e4e-98cd-86dd3404acfc",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 4,
       "level": "篇",
       "title": "五难",
-      "canonicalTitle": "五难",
-      "collection": "难经",
-      "sequence": 5,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 5000,
-        "endLine": 5001
-      },
       "contentHash": "9572e88878c17a49",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "f2dc4e13-6082-5d67-8363-d23c1e41426f",
-          "chapterId": "4615a0fc-4162-5e4e-98cd-86dd3404acfc",
           "orderIndex": 0,
           "text": "曰：脉有轻重，何谓也？\n然：初持脉，如三菽之重，与皮毛相得者，肺部也；如六菽之重，与血脉相得者，心部也；如九菽之重，与肌肉相得者，脾部也；如十二菽之重，与筋平者，肝部也；按之至骨，举指来疾者，肾部也，故曰轻重也。",
-          "blockType": "p",
           "parseHash": "9572e88878c17a49",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 5001,
-            "endLine": 5001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "b5509050-e6c8-5d65-abcd-1423cf0b87cd",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 5,
       "level": "篇",
       "title": "六难",
-      "canonicalTitle": "六难",
-      "collection": "难经",
-      "sequence": 6,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 6000,
-        "endLine": 6001
-      },
       "contentHash": "f6bbe640204e0bb4",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "a1a147d7-9c57-50eb-8daa-dbef4c7d4bf3",
-          "chapterId": "b5509050-e6c8-5d65-abcd-1423cf0b87cd",
           "orderIndex": 0,
           "text": "曰：脉有阴盛阳虚、阳盛阴虚，何谓也？\n然：浮之损小，沉之实大，故曰阴盛阳虚；沉之损小，浮之实大，故曰阳盛阴虚，是阴阳虚实之意也。",
-          "blockType": "p",
           "parseHash": "f6bbe640204e0bb4",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 6001,
-            "endLine": 6001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "d1dc9a77-b9be-51e6-a725-3ee0fee89e61",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 6,
       "level": "篇",
       "title": "七难",
-      "canonicalTitle": "七难",
-      "collection": "难经",
-      "sequence": 7,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 7000,
-        "endLine": 7002
-      },
       "contentHash": "fb92281263e519fb",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "5472963c-25e3-5ee5-a665-556404e6d252",
-          "chapterId": "d1dc9a77-b9be-51e6-a725-3ee0fee89e61",
           "orderIndex": 0,
           "text": "曰：经言“少阳之至，乍大乍小，乍短乍长；阳明之至，浮大而短；太阳之至，洪大而长；太阴之至，紧大而长；少阴之至，紧细而微；厥阴之至，沉短而敦”，此六者，是平脉耶？将病脉耶？\n然：皆王脉也。",
-          "blockType": "p",
           "parseHash": "f44c778f28cc30a3",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 7001,
-            "endLine": 7001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "0eaa4db2-51be-51ed-a637-f80a2e41cea4",
-          "chapterId": "d1dc9a77-b9be-51e6-a725-3ee0fee89e61",
           "orderIndex": 1,
           "text": "其气以何月，各王几日？\n然：冬至之后，初得甲子，少阳王；复得甲子，阳明王；复得甲子，太阳王；复得甲子，少阴王；复得甲子，太阴王；复得甲子，厥阴王。王各六十日，六六三百六十日，以成一岁。此三阳三阴之王时日大要也。",
-          "blockType": "p",
           "parseHash": "4c2b9fcc401e1786",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 7002,
-            "endLine": 7002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "477ee143-19a5-52eb-9fbf-126d01dda11a",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 7,
       "level": "篇",
       "title": "八难",
-      "canonicalTitle": "八难",
-      "collection": "难经",
-      "sequence": 8,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 8000,
-        "endLine": 8001
-      },
       "contentHash": "8625089e99127180",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "9d19c484-ff6b-5cb7-a33d-937e13f7af50",
-          "chapterId": "477ee143-19a5-52eb-9fbf-126d01dda11a",
           "orderIndex": 0,
           "text": "曰：寸口脉平而死者，何谓也？\n然：诸十二经脉者，皆系于生气之原。所谓生气之原者，谓十二经之根本也，谓肾间动气也。此五脏六腑之本，十二经脉之根，呼吸之门，三焦之原，一名“守邪之神”。故气者，人之根本也，根绝则茎叶枯矣；寸口脉平而死者，生气独绝于内也。",
-          "blockType": "p",
           "parseHash": "8625089e99127180",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 8001,
-            "endLine": 8001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "44fb3ebe-2747-54b4-994f-ec541b9a9bc2",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 8,
       "level": "篇",
       "title": "九难",
-      "canonicalTitle": "九难",
-      "collection": "难经",
-      "sequence": 9,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 9000,
-        "endLine": 9001
-      },
       "contentHash": "d150af7450de8eef",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "a86f8971-7290-5222-9268-a67e8d4d9cc2",
-          "chapterId": "44fb3ebe-2747-54b4-994f-ec541b9a9bc2",
           "orderIndex": 0,
           "text": "曰：何以别知脏腑之病耶？\n然：数者腑也，迟者脏也。数则为热，迟则为寒。诸阳为热，诸阴为寒，故以别知脏腑之病也。",
-          "blockType": "p",
           "parseHash": "d150af7450de8eef",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 9001,
-            "endLine": 9001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "a29e1e24-e8ce-54a2-b400-d2a222306902",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 9,
       "level": "篇",
       "title": "十难",
-      "canonicalTitle": "十难",
-      "collection": "难经",
-      "sequence": 10,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 10000,
-        "endLine": 10001
-      },
       "contentHash": "d7f6be81f8ea35e6",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "e68ac86b-0a7b-5192-9752-0ecc5bceff44",
-          "chapterId": "a29e1e24-e8ce-54a2-b400-d2a222306902",
           "orderIndex": 0,
           "text": "曰：一脉为十变者，何谓也？\n然：五邪刚柔相逢之意也。假令心脉急甚者，肝邪干心也；心脉微急者，胆邪干小肠也；心脉大甚者，心邪自干心也；心脉微大者，小肠邪自干小肠也；心脉缓甚者，脾邪干心也；心脉微缓者，胃邪干小肠也；心脉涩甚者，肺邪干心也；心脉微涩者，大肠邪干小肠也；心脉沉甚者，肾邪干心也；心脉微沉者，膀胱邪干小肠也。五脏各有刚柔邪，故令一脉辄变为十也。",
-          "blockType": "p",
           "parseHash": "d7f6be81f8ea35e6",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 10001,
-            "endLine": 10001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "5ea4eb49-043d-5aac-ba67-c2fde3a8c171",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 10,
       "level": "篇",
       "title": "十一难",
-      "canonicalTitle": "十一难",
-      "collection": "难经",
-      "sequence": 11,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 11000,
-        "endLine": 11001
-      },
       "contentHash": "f4e1278a743f97cd",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "89a82e31-999b-56aa-a888-b4305eca7c26",
-          "chapterId": "5ea4eb49-043d-5aac-ba67-c2fde3a8c171",
           "orderIndex": 0,
           "text": "曰：经言“脉不满五十动而一止，一脏无气”者，何脏也？\n然：人吸者随阴入，呼者因阳出。今吸不能至肾，至肝而还，故知一脏无气者，肾气先尽也。",
-          "blockType": "p",
           "parseHash": "f4e1278a743f97cd",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 11001,
-            "endLine": 11001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "3619ab50-09a5-5945-82ce-0f2018a07adf",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 11,
       "level": "篇",
       "title": "十二难",
-      "canonicalTitle": "十二难",
-      "collection": "难经",
-      "sequence": 12,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 12000,
-        "endLine": 12001
-      },
       "contentHash": "d358ec982113113d",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "f377e9fe-f71f-5229-973e-3bdf23303c9f",
-          "chapterId": "3619ab50-09a5-5945-82ce-0f2018a07adf",
           "orderIndex": 0,
           "text": "曰：经言“五脏脉已绝于内，用针者反实其外；五脏脉已绝于外，用针者反实其内”，内外之绝，何以别之？\n然：五脏脉已绝于内者，肾肝气已绝于内也，而医反补其心肺；五脏脉已绝于外者，心肺气已绝于外也，而医反补其肾肝。阳绝补阴，阴绝补阳，是谓实实虚虚，损不足而益有余。如此死者，医杀之耳。",
-          "blockType": "p",
           "parseHash": "d358ec982113113d",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 12001,
-            "endLine": 12001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "f559b281-ed02-5131-8b9f-44e9231760a0",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 12,
       "level": "篇",
       "title": "十三难",
-      "canonicalTitle": "十三难",
-      "collection": "难经",
-      "sequence": 13,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 13000,
-        "endLine": 13001
-      },
       "contentHash": "883c370f327812e8",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "72756944-8d15-598c-b34f-4cbc926f82d9",
-          "chapterId": "f559b281-ed02-5131-8b9f-44e9231760a0",
           "orderIndex": 0,
           "text": "曰：经言“见其色而不得其脉，反得相胜之脉者，即死；得相生之脉者，病即自已”，色之与脉当参相应，为之奈何？\n然：五脏有五色，皆见于面，亦当与寸口、尺内相应。假令色青，其脉当弦而急；色赤，其脉浮大而散；色黄，其脉中缓而大；色白，其脉浮涩而短；色黑，其脉沉濡而滑。此所谓五色之与脉，当参相应也。脉数，尺之皮肤亦数；脉急，尺之皮肤亦急；脉缓，尺之皮肤亦缓；脉涩，尺之皮肤亦涩；脉滑，尺之皮肤亦滑。五脏各有声、色、臭、味，当与寸口、尺内相应，其不应者病也。假令色青，其脉浮涩而短，若大而缓为相胜；浮大而散，若小而滑为相生也。经言“知一为下工，知二为中工，知三为上工。上工者十全九，中工者十全七，下工者十全六”，此之谓也。",
-          "blockType": "p",
           "parseHash": "883c370f327812e8",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 13001,
-            "endLine": 13001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "9c7db23c-3746-50b7-b79a-233638f042af",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 13,
       "level": "篇",
       "title": "十四难",
-      "canonicalTitle": "十四难",
-      "collection": "难经",
-      "sequence": 14,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 14000,
-        "endLine": 14013
-      },
       "contentHash": "596dc821c868fdaf",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "83fd6db0-46b5-5dc8-b928-30d770781175",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 0,
           "text": "曰：脉有损至，何谓也？\n然：至之脉，一呼再至曰平，三至曰离经，四至曰夺精，五至曰死，六至曰命绝，此至之脉也。",
-          "blockType": "p",
           "parseHash": "e24a8d79b1d1eb5b",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14001,
-            "endLine": 14001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "68f2fb09-c280-51d7-b385-d4c74046e15a",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 1,
           "text": "何谓损？",
-          "blockType": "p",
           "parseHash": "f79989a2e960c969",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14002,
-            "endLine": 14002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "c6d218b8-b288-58d8-b1fa-b71a06d6560f",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 2,
           "text": "一呼一至曰离经，再呼一至曰夺精，三呼一至曰死，四呼一至曰命绝，此损之脉也。",
-          "blockType": "p",
           "parseHash": "c2c63d4f71febfcc",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14003,
-            "endLine": 14003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "70a542fd-d326-5aa6-af6f-a977384f6ace",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 3,
           "text": "至脉从下上，损脉从上下也。",
-          "blockType": "p",
           "parseHash": "e2599bb677fdf1a4",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14004,
-            "endLine": 14004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "165414ff-fec7-5829-8373-214c2bbd311c",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 4,
           "text": "损脉之为病奈何？\n然：一损损于皮毛，皮聚而毛落；二损损于血脉，血脉虚少，不能荣于五脏六腑；三损损于肌肉，肌肉消瘦，饮食不能为肌肤；四损损于筋，筋缓不能自收持；五损损于骨，骨痿不能起于床。反此者，至脉之病也。从上下者，骨痿不能起于床者死；从下上者，皮聚而毛落者死。",
-          "blockType": "p",
           "parseHash": "739d6c6ed4cd6439",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14005,
-            "endLine": 14005
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "75c6c34d-dbe5-5d19-842c-5e73a2c22b65",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 5,
           "text": "治损之法奈何？\n然：损其肺者，益其气；损其心者，调其荣卫；损其脾者，调其饮食，适其寒温；损其肝者，缓其中；损其肾者，益其精，此治损之法也。",
-          "blockType": "p",
           "parseHash": "d30602c462191c58",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14006,
-            "endLine": 14006
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "9153fe74-9782-5876-8580-280fe246a4af",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 6,
           "text": "脉有一呼再至，一吸再至；有一呼三至，一吸三至；有一呼四至，一吸四至；有一呼五至，一吸五至；一呼六至，一吸六至；有一呼一至，一吸一至；有再呼一至，再吸一至；有呼吸再至。脉来如此，何以别知其病也？\n然：脉来一呼再至，一吸再至，不大不小，曰平。一呼三至，一吸三至，为适得病，前大后小，即头痛目眩；前小后大，即胸满短气。",
-          "blockType": "p",
           "parseHash": "628880c56d45fef2",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14007,
-            "endLine": 14007
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "6cfd5f86-17cb-5805-8798-84751c2e93d0",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 7,
           "text": "一呼四至，一吸四至，病欲甚，脉洪大者，苦烦满；沉细者，腹中痛；滑者，伤热；涩者，中雾露。",
-          "blockType": "p",
           "parseHash": "c4faae78ec513a23",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14008,
-            "endLine": 14008
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "07048461-20d0-5f81-ba2d-9fd6aa59b5c5",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 8,
           "text": "一呼五至，一吸五至，其人当困，沉细夜加，浮大昼加；不大不小，虽困可治；其有大小者，为难治。",
-          "blockType": "p",
           "parseHash": "24ea29d4b6928a2a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14009,
-            "endLine": 14009
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "9b812679-33ce-5c94-8098-f5ed3c4e558c",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 9,
           "text": "一呼六至，一吸六至，为死脉也，沉细夜死，浮大昼死。",
-          "blockType": "p",
           "parseHash": "c8574689336bf6d5",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14010,
-            "endLine": 14010
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "ef9494f6-e01b-5e85-a3ae-331866a8e269",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 10,
           "text": "一呼一至，一吸一至，名曰损，人虽能行，犹当着床，所以然者，血气皆不足故也。",
-          "blockType": "p",
           "parseHash": "215ae6394929c707",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14011,
-            "endLine": 14011
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "22981c73-d7e1-5deb-8632-1bcbb63550b8",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 11,
           "text": "再呼一至，再吸一至，名曰无魂，无魂者当死也，人虽能行，名曰行尸。",
-          "blockType": "p",
           "parseHash": "72f901407838e8bb",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14012,
-            "endLine": 14012
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "77502721-01b3-552c-a9bd-d76502d3898b",
-          "chapterId": "9c7db23c-3746-50b7-b79a-233638f042af",
           "orderIndex": 12,
           "text": "上部有脉，下部无脉，其人当吐，不吐者死；上部无脉，下部有脉，虽困，无能为害也。所以然者，人之有尺，譬如树之有根，枝叶虽枯槁，根本将自生。脉有根本，人有元气，故知不死。",
-          "blockType": "p",
           "parseHash": "0c712ddd2455fbdc",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 14013,
-            "endLine": 14013
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 14,
       "level": "篇",
       "title": "十五难",
-      "canonicalTitle": "十五难",
-      "collection": "难经",
-      "sequence": 15,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 15000,
-        "endLine": 15015
-      },
       "contentHash": "7f9ecbe05311637b",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "6a883e67-9649-525b-a939-d47d9dec6384",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 0,
           "text": "曰：经言“春脉弦，夏脉钩，秋脉毛，冬脉石”，是王脉耶？将病脉也？\n然：弦、钩、毛、石者，四时之脉也。",
-          "blockType": "p",
           "parseHash": "bb34c187917d3060",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15001,
-            "endLine": 15001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "e7e0297f-fbda-59f8-8797-8925ba4ebc1f",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 1,
           "text": "春脉弦者，肝，东方，木也，万物始生，未有枝叶，故其脉之来，濡弱而长，故曰弦。",
-          "blockType": "p",
           "parseHash": "84359a6b69ebdab6",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15002,
-            "endLine": 15002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "74aae737-94ba-5644-86f9-75b6b2b5f942",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 2,
           "text": "夏脉钩者，心，南方，火也，万物之所茂，垂枝布叶，皆下曲如钩，故其脉之来疾去迟，故曰钩。",
-          "blockType": "p",
           "parseHash": "e57226f4238963b0",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15003,
-            "endLine": 15003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "d2b1a5e2-0c8f-517b-87c1-cd79dcaa6b66",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 3,
           "text": "秋脉毛者，肺，西方，金也，万物之所终，草木华叶，皆秋而落，其枝独在，若毫毛也，故其脉之来，轻虚以浮，故曰毛。",
-          "blockType": "p",
           "parseHash": "b8ac3135cba61fd9",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15004,
-            "endLine": 15004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "79b001df-3e22-59b4-a81f-9d8515b52555",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 4,
           "text": "冬脉石者，肾，北方，水也，万物之所藏也，盛冬之时，水凝如石，故其脉之来，沉濡而滑，故曰石。",
-          "blockType": "p",
           "parseHash": "1af02e352777bed9",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15005,
-            "endLine": 15005
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "ebe218b6-698e-5577-a6fa-036d1cbee787",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 5,
           "text": "此四时之脉也。",
-          "blockType": "p",
           "parseHash": "56d1d88c175ca68a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15006,
-            "endLine": 15006
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "8b29a99b-64a9-5d08-bb1e-92ec83aca9dc",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 6,
           "text": "如有变，奈何？\n然：春脉弦，反者为病。",
-          "blockType": "p",
           "parseHash": "d93175715a92ca33",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15007,
-            "endLine": 15007
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "374bb2bb-6748-5b07-a78a-b36640fe18e8",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 7,
           "text": "何谓反？\n然：其气来实强，是谓太过，病在外；气来虚微，是谓不及，病在内。气来厌厌聂聂，如循榆叶，曰平；益实而滑，如循长竿，曰病；急而劲益强，如新张弓弦，曰死。春脉微弦曰平，弦多胃气少曰病，但弦无胃气曰死。春以胃气为本。",
-          "blockType": "p",
           "parseHash": "9d9413eeb0d2ab17",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15008,
-            "endLine": 15008
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "3ab89db0-60a2-52a1-89fb-ca8971b32871",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 8,
           "text": "夏脉钩，反者为病。",
-          "blockType": "p",
           "parseHash": "ca060a442ba047cf",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15009,
-            "endLine": 15009
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "7c2bb4da-ee2f-5f75-9065-de195f445170",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 9,
           "text": "何谓反？\n然：其气来实强，是谓太过，病在外；气来虚微，是谓不及，病在内。其脉来累累如环，如循琅玕，曰平；来而益数，如鸡举足者，曰病；前曲后居，如操带钩，曰死。夏脉微钩曰平，钩多胃气少曰病，但钩无胃气曰死。夏以胃气为本。",
-          "blockType": "p",
           "parseHash": "26caf3252e592e9c",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15010,
-            "endLine": 15010
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "74aabebd-7227-5e2f-8b44-5810b13a1201",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 10,
           "text": "秋脉毛，反者为病。",
-          "blockType": "p",
           "parseHash": "5d41ec16ddb05f6f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15011,
-            "endLine": 15011
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "b80d8645-daaf-5d3b-89d3-21ffbfae9c6e",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 11,
           "text": "何谓反？\n然：其气来实强，是谓太过，病在外；气来虚微，是谓不及，病在内。其脉来蔼蔼如车盖，按之益大，曰平；不上不下，如循鸡羽，曰病；按之萧索，如风吹毛，曰死。秋脉微毛曰平，毛多胃气少曰病，但毛无胃气曰死。秋以胃气为本。",
-          "blockType": "p",
           "parseHash": "77be6060854de25c",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15012,
-            "endLine": 15012
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "1250f35d-d399-5697-9584-1273d6fa1188",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 12,
           "text": "冬脉石，反者为病。",
-          "blockType": "p",
           "parseHash": "0487c9bc8485791e",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15013,
-            "endLine": 15013
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "4a9396fd-8050-5f76-a5d3-89f1bc4091a5",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 13,
           "text": "何谓反？\n然：其气来实强，是谓太过，病在外；气来虚微，是谓不及，病在内。脉来上大下锐，濡滑如雀之喙，曰平；啄啄连属，其中微曲，曰病；来如解索，去如弹石，曰死。冬脉微石曰平，石多胃气少曰病，但石无胃气曰死。冬以胃气为本。",
-          "blockType": "p",
           "parseHash": "ea645cf31412f045",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15014,
-            "endLine": 15014
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "83f64301-c394-5f55-86d3-b1921b495f4c",
-          "chapterId": "840b8e78-30ef-5be2-943e-c3bfc32c6cbd",
           "orderIndex": 14,
           "text": "胃者，水谷之海，主禀四时，故皆以胃气为本，是谓四时之变病，死生之要会也。脾者，中州也，其平和不可得见，衰乃见耳。来如雀之啄，如水之下漏，是脾衰之见也。",
-          "blockType": "p",
           "parseHash": "ec17f907fc0a0851",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 15015,
-            "endLine": 15015
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "beb93c1e-35da-584c-ae82-a4555caf00f0",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 15,
       "level": "篇",
       "title": "十六难",
-      "canonicalTitle": "十六难",
-      "collection": "难经",
-      "sequence": 16,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 16000,
-        "endLine": 16006
-      },
       "contentHash": "3be69b376ae8130e",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "b41af478-02cb-5933-974e-2629ad8abfc9",
-          "chapterId": "beb93c1e-35da-584c-ae82-a4555caf00f0",
           "orderIndex": 0,
           "text": "曰：脉有三部九候，有阴阳，有轻重，有六十首，一脉变为四时。离圣久远，各自是其法，何以别之？\n然：是其病，有内外证。",
-          "blockType": "p",
           "parseHash": "ff3ee0596252b0c4",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 16001,
-            "endLine": 16001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "a6f1b3be-f0dd-5225-886d-b43912e089b4",
-          "chapterId": "beb93c1e-35da-584c-ae82-a4555caf00f0",
           "orderIndex": 1,
           "text": "其病为之奈何？\n然：假令得肝脉，其外证：善洁，面青，善怒；其内证：脐左有动气，按之牢若痛；其病：四肢满，闭癃，溲便难，转筋。有是者肝也，无是者非也。",
-          "blockType": "p",
           "parseHash": "fba3ecffd57605cb",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 16002,
-            "endLine": 16002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "6886e548-a6a7-510e-aa52-3872ed36b6a1",
-          "chapterId": "beb93c1e-35da-584c-ae82-a4555caf00f0",
           "orderIndex": 2,
           "text": "假令得心脉，其外证：面赤，口干，喜笑；其内证：脐上有动气，按之牢若痛；其病：烦心、心痛，掌中热而啘。有是者心也，无是者非也。",
-          "blockType": "p",
           "parseHash": "6aa73ae3fd6d0937",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 16003,
-            "endLine": 16003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "6594b72e-ba0c-579e-bee7-4a1fb9e8186c",
-          "chapterId": "beb93c1e-35da-584c-ae82-a4555caf00f0",
           "orderIndex": 3,
           "text": "假令得脾脉，其外证：面黄，善噫，善思，善味；其内证：当脐有动气，按之牢若痛；其病：腹胀满，食不消，体重节痛，怠惰嗜卧，四肢不收。有是者脾也，无是者非也。",
-          "blockType": "p",
           "parseHash": "93302a25eac36c4f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 16004,
-            "endLine": 16004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "d2774a8b-c281-5993-bc95-f93055c9bd76",
-          "chapterId": "beb93c1e-35da-584c-ae82-a4555caf00f0",
           "orderIndex": 4,
           "text": "假令得肺脉，其外证：面白，善嚏，悲愁不乐，欲哭；其内证：脐右有动气，按之牢若痛；其病：喘咳，洒淅寒热。有是者肺也，无是者非也。",
-          "blockType": "p",
           "parseHash": "825757c4c316e06f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 16005,
-            "endLine": 16005
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "c70e3b78-3bb9-5f56-b266-d4d8121aa31b",
-          "chapterId": "beb93c1e-35da-584c-ae82-a4555caf00f0",
           "orderIndex": 5,
           "text": "假令得肾脉，其外证：面黑，善恐欠；其内证：脐下有动气，按之牢若痛；其病：逆气，小腹急痛，泄如下重，足胫寒而逆。有是者肾也，无是者非也。",
-          "blockType": "p",
           "parseHash": "c1d7e250c0baeb60",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 16006,
-            "endLine": 16006
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "ef0716de-229d-5419-b5a1-12d22cb819ed",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 16,
       "level": "篇",
       "title": "十七难",
-      "canonicalTitle": "十七难",
-      "collection": "难经",
-      "sequence": 17,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 17000,
-        "endLine": 17002
-      },
       "contentHash": "3635448538c489d0",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "fd68c551-5442-59b8-a6e0-89b7de8b085e",
-          "chapterId": "ef0716de-229d-5419-b5a1-12d22cb819ed",
           "orderIndex": 0,
           "text": "曰：经言“病或有死，或有不治自愈，或连年月不已”，其死生存亡，可切脉而知之耶？\n然：可尽知也。",
-          "blockType": "p",
           "parseHash": "efe80609d5b0c706",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 17001,
-            "endLine": 17001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "85046299-8879-53de-a650-6100d986ad72",
-          "chapterId": "ef0716de-229d-5419-b5a1-12d22cb819ed",
           "orderIndex": 1,
           "text": "诊病若闭目不欲见人者，脉当得肝脉强急而长，而反得肺脉浮短而涩者，死也。病若开目而渴，心下牢者，脉当得紧实而数，而反得沉涩而微者，死也。病若吐血，复鼽衄血者，脉当沉细，而反浮大而牢者，死也。病若谵言妄语，身当有热，脉当洪大，而手足厥逆，脉沉细而微者，死也。病若大腹而泄者，脉当微细而涩；反紧大而滑者，死也。",
-          "blockType": "p",
           "parseHash": "4df011185da72a43",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 17002,
-            "endLine": 17002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "c38fe561-eede-5a3f-9e9d-1d646440b0f8",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 17,
       "level": "篇",
       "title": "十八难",
-      "canonicalTitle": "十八难",
-      "collection": "难经",
-      "sequence": 18,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 18000,
-        "endLine": 18005
-      },
       "contentHash": "7a0389dd4974161d",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "5d609088-4bc9-5ea9-9795-c9c98c209400",
-          "chapterId": "c38fe561-eede-5a3f-9e9d-1d646440b0f8",
           "orderIndex": 0,
           "text": "曰：脉有三部，部有四经，手有太阴、阳明，足有太阳、少阴，为上下部，何谓也？\n然：手太阴、阳明，金也；足少阴、太阳，水也。金生水，水流下行而不能上，故在下部也。足厥阴、少阳，木也，生手太阳、少阴火，火炎上行而不能下，故为上部。手心主、少阳火，生足太阴、阳明土，土主中宫，故在中部也。此皆五行子母更相生养者也。",
-          "blockType": "p",
           "parseHash": "41a2df9266150eae",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 18001,
-            "endLine": 18001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "6911b9a0-b9e2-5aa4-92af-9534a5ee7098",
-          "chapterId": "c38fe561-eede-5a3f-9e9d-1d646440b0f8",
           "orderIndex": 1,
           "text": "脉有三部九候，各何主之？\n然：三部者，寸、关、尺也；九候者，浮、中、沉也。上部法天，主胸上至头之有疾也；中部法人，主膈以下至脐之有疾也；下部法地，主脐以下至足之有疾也。审而刺之者也。",
-          "blockType": "p",
           "parseHash": "21549115e9d5318e",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 18002,
-            "endLine": 18002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "9afac467-eba4-5ec6-a4fa-68283184ac0e",
-          "chapterId": "c38fe561-eede-5a3f-9e9d-1d646440b0f8",
           "orderIndex": 2,
           "text": "人病有沉滞久积聚，可切脉而知之耶？\n然：诊在右胁有积气，得肺脉结，脉结甚则积甚，结微则气微。",
-          "blockType": "p",
           "parseHash": "5af0260411964fb9",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 18003,
-            "endLine": 18003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "e06aab1c-15bd-5d0c-af82-e8cef8ef664d",
-          "chapterId": "c38fe561-eede-5a3f-9e9d-1d646440b0f8",
           "orderIndex": 3,
           "text": "诊不得肺脉，而右胁有积气者，何也？\n然：肺脉虽不见，右手脉当沉伏。",
-          "blockType": "p",
           "parseHash": "a329d9a570c48f05",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 18004,
-            "endLine": 18004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "0e79ef71-c435-5ec4-91dd-77e53afd2b23",
-          "chapterId": "c38fe561-eede-5a3f-9e9d-1d646440b0f8",
           "orderIndex": 4,
           "text": "其外痼疾同法耶？将异也？\n然：结者，脉来去时一止，无常数，名曰结也。伏者，脉行筋下也；浮者，脉在肉上行也。左右表里，法皆如此。假令脉结伏者，内无积聚；脉浮结者，外无痼疾。有积聚，脉不结伏；有痼疾，脉不浮结，为脉不应病，病不应脉，是为死病也。",
-          "blockType": "p",
           "parseHash": "734ab232fbd78ec5",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 18005,
-            "endLine": 18005
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "f71246e2-9008-52e7-be69-b6f9ae9958af",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 18,
       "level": "篇",
       "title": "十九难",
-      "canonicalTitle": "十九难",
-      "collection": "难经",
-      "sequence": 19,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 19000,
-        "endLine": 19002
-      },
       "contentHash": "a95b434c2b784423",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "8e269ad3-98e6-5a74-998c-31d4c406928b",
-          "chapterId": "f71246e2-9008-52e7-be69-b6f9ae9958af",
           "orderIndex": 0,
           "text": "曰：经言“脉有逆顺，男女有恒而反”者，何谓也？\n然：男子生于寅，寅为木，阳也；女子生于申，申为金，阴也。故男脉在关上，女脉在关下。是以男子尺脉恒弱，女子尺脉恒盛，是其常也。反者，男得女脉，女得男脉也。",
-          "blockType": "p",
           "parseHash": "a874b365b845c91d",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 19001,
-            "endLine": 19001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "b029bb24-30a3-5a54-98b3-baa296ebf151",
-          "chapterId": "f71246e2-9008-52e7-be69-b6f9ae9958af",
           "orderIndex": 1,
           "text": "其为病何如？\n然：男得女脉为不足，病在内。左得之，病在左；右得之，病在右，随脉言之也。女得男脉为太过，病在四肢。左得之，病在左；右得之，病在右，随脉言之。此之谓也。",
-          "blockType": "p",
           "parseHash": "1300c29a90458ea7",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 19002,
-            "endLine": 19002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "f94020f1-4f27-58cf-8c5d-4dd160685946",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 19,
       "level": "篇",
       "title": "二十难",
-      "canonicalTitle": "二十难",
-      "collection": "难经",
-      "sequence": 20,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 20000,
-        "endLine": 20001
-      },
       "contentHash": "fdb1fb752118928a",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "c70a7513-5606-5abf-99d8-b9b1f9a436fe",
-          "chapterId": "f94020f1-4f27-58cf-8c5d-4dd160685946",
           "orderIndex": 0,
           "text": "曰：经言“脉有伏匿”，伏匿于何脏而言伏匿耶？\n然：谓阴阳更相乘，更相伏也。脉居阴部而反阳脉见者，为阳乘阴也，虽阳脉时沉涩而短，此谓阳中伏阴也；脉居阳部而反阴脉见者，为阴乘阳也，虽阳脉时浮滑而长，此谓阴中伏阳也。重阳者狂，重阴者癫。脱阳者见鬼，脱阴者目盲。",
-          "blockType": "p",
           "parseHash": "fdb1fb752118928a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 20001,
-            "endLine": 20001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "e57bfa3c-a3ba-5a2a-b47f-74f27624566f",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 20,
       "level": "篇",
       "title": "二十一难",
-      "canonicalTitle": "二十一难",
-      "collection": "难经",
-      "sequence": 21,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 21000,
-        "endLine": 21001
-      },
       "contentHash": "3bfce83685214744",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "deee0a65-c454-5e53-8720-c4674bcfb167",
-          "chapterId": "e57bfa3c-a3ba-5a2a-b47f-74f27624566f",
           "orderIndex": 0,
           "text": "曰：经言“人形病，脉不病，曰生；脉病，形不病，曰死”，何谓也？\n然：人形病，脉不病，非有不病者也，谓息数不应脉数也。此大法。",
-          "blockType": "p",
           "parseHash": "3bfce83685214744",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 21001,
-            "endLine": 21001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "cabe049c-91a7-5b3c-932a-e94b85d77d31",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 21,
       "level": "篇",
       "title": "二十二难",
-      "canonicalTitle": "二十二难",
-      "collection": "难经",
-      "sequence": 22,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 22000,
-        "endLine": 22001
-      },
       "contentHash": "7b25fa711e8dd86f",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "5ea9fd35-fafe-51af-849c-07fa120e3bfe",
-          "chapterId": "cabe049c-91a7-5b3c-932a-e94b85d77d31",
           "orderIndex": 0,
           "text": "曰：经言“脉有是动，有所生病”，一脉辄变为二病者，何也？\n然：经言是动者，气也；所生病者，血也。邪在气，气为是动；邪在血，血为所生病。气主呴之，血主濡之。气留而不行者，为气先病也；血壅而不濡者，为血后病也。故先为是动，后所生病也。",
-          "blockType": "p",
           "parseHash": "7b25fa711e8dd86f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 22001,
-            "endLine": 22001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "04df091c-3692-5f60-a293-01646da97f15",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 22,
       "level": "篇",
       "title": "二十三难",
-      "canonicalTitle": "二十三难",
-      "collection": "难经",
-      "sequence": 23,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 23000,
-        "endLine": 23003
-      },
       "contentHash": "e1bd9f5720722771",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "424dee6d-eb14-5b32-ab1e-10a3404d1889",
-          "chapterId": "04df091c-3692-5f60-a293-01646da97f15",
           "orderIndex": 0,
           "text": "曰：手足三阴三阳，脉之度数，可晓以不？\n然：手三阳之脉，从手至头，长五尺，五六合三丈。手三阴之脉，从手至胸中，长三尺五寸，三六一丈八尺，五六三尺，合二丈一尺。足三阳之脉，从足至头，长八尺，六八四丈八尺。足三阴之脉，从足至胸，长六尺五寸，六六三丈六尺，五六三尺，合三丈九尺。人两足跷脉，从足至目，长七尺五寸，二七一丈四尺，二五一尺，合一丈五尺。督脉、任脉，各长四尺五寸，二四八尺，二五一尺，合九尺。凡脉长一十六丈二尺，此所谓经脉长短之数也。",
-          "blockType": "p",
           "parseHash": "bbeef5de74857c4d",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 23001,
-            "endLine": 23001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "2aa681cb-f391-5978-8c95-ecf48d82b9f3",
-          "chapterId": "04df091c-3692-5f60-a293-01646da97f15",
           "orderIndex": 1,
           "text": "经脉十二，络脉十五，何始何穷也？\n然：经脉者，行血气，通阴阳，以荣于身者也。其始从中焦，注手太阴、阳明，阳明注足阳明、太阴，太阴注手少阴、太阳，太阳注足太阳、少阴，少阴注手心主、少阳，少阳注足少阳、厥阴，厥阴复还注手太阴。别络十五，皆因其原，如环无端，转相灌溉，朝于寸口、人迎，以处百病，而决死生也。",
-          "blockType": "p",
           "parseHash": "930ad0317b39738a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 23002,
-            "endLine": 23002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "96499ce9-b2bd-5703-8865-4a420c4b8467",
-          "chapterId": "04df091c-3692-5f60-a293-01646da97f15",
           "orderIndex": 2,
           "text": "经云“明知始终，阴阳定矣”，何谓也？\n然：终始者，脉之纪也。寸口、人迎，阴阳之气通于朝使，如环无端，故曰始也。终者，三阴三阳之脉绝，绝则死，死各有形，故曰终也。",
-          "blockType": "p",
           "parseHash": "9dc3799aaccfdd3f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 23003,
-            "endLine": 23003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "9c62d0cb-80f9-5222-bb66-7c69c9df4ab5",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 23,
       "level": "篇",
       "title": "二十四难",
-      "canonicalTitle": "二十四难",
-      "collection": "难经",
-      "sequence": 24,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 24000,
-        "endLine": 24006
-      },
       "contentHash": "300baca05ef9d4bb",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "23a2a55a-d348-5891-9ca0-e82fd8f2668e",
-          "chapterId": "9c62d0cb-80f9-5222-bb66-7c69c9df4ab5",
           "orderIndex": 0,
           "text": "曰：手足三阴三阳气已绝，何以为候？可知其吉凶不？\n然：足少阴气绝则骨枯。少阴者，冬脉也，伏行而温于骨髓。故骨髓不温，即肉不着骨；骨肉不相亲，即肉濡而却；肉濡而却，故齿长而枯，发无润泽；无润泽者，骨先死。戊日笃，己日死。",
-          "blockType": "p",
           "parseHash": "2582ab8e4baa36f6",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 24001,
-            "endLine": 24001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "a0715962-7f0f-57b9-99f2-6829ff78676c",
-          "chapterId": "9c62d0cb-80f9-5222-bb66-7c69c9df4ab5",
           "orderIndex": 1,
           "text": "足太阴气绝，则脉不营其口唇。口唇者，肌肉之本也。脉不营，则肌肉不滑泽；肌肉不滑泽，则人中满；人中满，则唇反；唇反，则肉先死。甲日笃，乙日死。",
-          "blockType": "p",
           "parseHash": "5b5997262c1bb4ad",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 24002,
-            "endLine": 24002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "cb6e1b5f-7f4c-5e76-aacb-cbb091334893",
-          "chapterId": "9c62d0cb-80f9-5222-bb66-7c69c9df4ab5",
           "orderIndex": 2,
           "text": "足厥阴气绝，即筋缩引卵与舌卷。厥阴者，肝脉也。肝者，筋之合也。筋者，聚于阴器而络于舌本。故脉不营，则筋缩急，筋缩急即引卵与舌，故舌卷卵缩。此筋先死。庚日笃，辛日死。",
-          "blockType": "p",
           "parseHash": "0d30a850fd6fac83",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 24003,
-            "endLine": 24003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "4089738d-6374-5e51-8626-4b9998d46817",
-          "chapterId": "9c62d0cb-80f9-5222-bb66-7c69c9df4ab5",
           "orderIndex": 3,
           "text": "手太阴气绝，即皮毛焦。太阴者，肺也，行气，温于皮毛者也。气弗营，则皮毛焦；皮毛焦，则津液去；津液去，则皮节伤；皮节伤，则皮枯毛折；毛折者，则毛先死。丙日笃，丁日死。",
-          "blockType": "p",
           "parseHash": "335cabfa233434b4",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 24004,
-            "endLine": 24004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "e0bfebfe-d0cf-5f09-9567-5a9218fa2fab",
-          "chapterId": "9c62d0cb-80f9-5222-bb66-7c69c9df4ab5",
           "orderIndex": 4,
           "text": "手少阴气绝，则脉不通；脉不通，则血不流；血不流，则色泽去，故面色黑如黧，此血先死。壬日笃，癸日死。",
-          "blockType": "p",
           "parseHash": "d5f295a4a84f8432",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 24005,
-            "endLine": 24005
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "83459cf7-087b-5d28-9d6f-b0da4cb790fc",
-          "chapterId": "9c62d0cb-80f9-5222-bb66-7c69c9df4ab5",
           "orderIndex": 5,
           "text": "三阴气俱绝者，则目眩转、目瞑。目瞑者为失志，失志者则志先死，死则目瞑也。六阳气俱绝者，则阴与阳相离，阴阳相离则腠理泄，绝汗乃出，大如贯珠，转出不流，即气先死。旦占夕死，夕占旦死。",
-          "blockType": "p",
           "parseHash": "e8067c0f72cc8991",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 24006,
-            "endLine": 24006
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "bd64528d-d477-5382-93e0-3fb8f8fb709f",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 24,
       "level": "篇",
       "title": "二十五难",
-      "canonicalTitle": "二十五难",
-      "collection": "难经",
-      "sequence": 25,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 25000,
-        "endLine": 25001
-      },
       "contentHash": "fa236b659ec26ab4",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "04121261-5873-57be-9c61-de1e241aa301",
-          "chapterId": "bd64528d-d477-5382-93e0-3fb8f8fb709f",
           "orderIndex": 0,
           "text": "曰：有十二经，五脏六腑十一耳，其一经者，何等经也？\n然：一经者，手少阴与心主别脉也。心主与三焦为表里，俱有名而无形，故言经有十二也。",
-          "blockType": "p",
           "parseHash": "fa236b659ec26ab4",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 25001,
-            "endLine": 25001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "98efdd7f-68c4-5368-a44d-4eafc138a63b",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 25,
       "level": "篇",
       "title": "二十六难",
-      "canonicalTitle": "二十六难",
-      "collection": "难经",
-      "sequence": 26,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 26000,
-        "endLine": 26001
-      },
       "contentHash": "8bb8bbf656004b32",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "0d051f91-052f-5b4d-8ca6-2d91b699c0f4",
-          "chapterId": "98efdd7f-68c4-5368-a44d-4eafc138a63b",
           "orderIndex": 0,
           "text": "曰：经有十二，络有十五，余三络者，是何等络也？\n然：有阳络，有阴络，有脾之大络。阳络者，阳跷之络也。阴络者，阴跷之络也。故络有十五焉。",
-          "blockType": "p",
           "parseHash": "8bb8bbf656004b32",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 26001,
-            "endLine": 26001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "0ddc5db3-fad7-5d03-9c0a-938d9a6c31de",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 26,
       "level": "篇",
       "title": "二十七难",
-      "canonicalTitle": "二十七难",
-      "collection": "难经",
-      "sequence": 27,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 27000,
-        "endLine": 27002
-      },
       "contentHash": "80f79de1f54901e4",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "7cd2ae8f-7f4e-5efe-9614-ed3fc60edcff",
-          "chapterId": "0ddc5db3-fad7-5d03-9c0a-938d9a6c31de",
           "orderIndex": 0,
           "text": "曰：脉有奇经八脉者，不拘于十二经，何也？\n然：有阳维，有阴维，有阳跷，有阴跷，有冲，有督，有任，有带之脉。凡此八脉者，皆不拘于经，故曰奇经八脉也。",
-          "blockType": "p",
           "parseHash": "da695047c5658e7e",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 27001,
-            "endLine": 27001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "9d7be5bd-4fbc-5a5e-8879-019d7d902863",
-          "chapterId": "0ddc5db3-fad7-5d03-9c0a-938d9a6c31de",
           "orderIndex": 1,
           "text": "经有十二，络有十五，凡二十七，气相随上下。何独不拘于经也？\n然：圣人图设沟渠，通利水道，以备不虞。天雨降下，沟渠溢满，当此之时，霶霈妄行，圣人不能复图也。此络脉满溢，诸经不能复拘也。",
-          "blockType": "p",
           "parseHash": "0acfe96bea4ef4b5",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 27002,
-            "endLine": 27002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "9df83c65-a0fd-5013-97c6-528185a0dba4",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 27,
       "level": "篇",
       "title": "二十八难",
-      "canonicalTitle": "二十八难",
-      "collection": "难经",
-      "sequence": 28,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 28000,
-        "endLine": 28001
-      },
       "contentHash": "1e5487f3c7acacf3",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "28230edb-3c56-5451-81cd-f500b17c4756",
-          "chapterId": "9df83c65-a0fd-5013-97c6-528185a0dba4",
           "orderIndex": 0,
           "text": "曰：其奇经八脉者，既不拘于十二经，皆何起何继也？\n然：督脉者，起于下极之俞，并于脊里，上至风府，入属于脑。任脉者，起于中极之下，以上毛际，循腹里，上关元，至咽喉。冲脉者，起于气冲，并足阳明之经，夹脐上行，至胸中而散也。带脉者，起于季胁，回身一周。阳跷脉者，起于跟中，循外踝上行，入风池。阴跷脉者，亦起于跟中，循内踝上行，至咽喉，交贯冲脉。阳维、阴维者，维络于身，溢蓄，不能环流灌溉诸经者也。故阳维起于诸阳会也，阴维起于诸阴交也。比于圣人图设沟渠，沟渠满溢，流于深湖，故圣人不能拘通也。而人脉隆盛，入于八脉，而不环周，故十二经亦有不能拘之。其受邪气，畜则肿热，砭射之也。",
-          "blockType": "p",
           "parseHash": "1e5487f3c7acacf3",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 28001,
-            "endLine": 28001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "23ba15f3-0ace-5863-b4b7-9b5d6209c429",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 28,
       "level": "篇",
       "title": "二十九难",
-      "canonicalTitle": "二十九难",
-      "collection": "难经",
-      "sequence": 29,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 29000,
-        "endLine": 29001
-      },
       "contentHash": "2d84263365f22227",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "05b21645-6265-58dc-a80d-bfd109ce2d27",
-          "chapterId": "23ba15f3-0ace-5863-b4b7-9b5d6209c429",
           "orderIndex": 0,
           "text": "曰：奇经之为病，何如？\n然：阳维维于阳，阴维维于阴，阴阳不能自相维，则怅然失志，溶溶不能自收持。阳维为病苦寒热，阴维为病若心痛。阴跷为病，阳缓而阴急，阳跷为病，阴缓而阳急。冲之为病，逆气而里急。督之为病，脊强而厥。任之为病，其内苦结，男子为七疝，妇子为瘕聚。带之为病，腹满，腰溶溶若坐水中。此奇经八脉之为病也。",
-          "blockType": "p",
           "parseHash": "2d84263365f22227",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 29001,
-            "endLine": 29001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "a2e49a4e-cb1c-5fd6-86fb-44bc0438dadd",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 29,
       "level": "篇",
       "title": "三十难",
-      "canonicalTitle": "三十难",
-      "collection": "难经",
-      "sequence": 30,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 30000,
-        "endLine": 30001
-      },
       "contentHash": "5655f8db8662a001",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "d010d47a-6cc5-5b04-b08a-bd894fd80ee6",
-          "chapterId": "a2e49a4e-cb1c-5fd6-86fb-44bc0438dadd",
           "orderIndex": 0,
           "text": "曰：营气之行，常与卫气相随不？\n然：经言“人受气于谷，谷入于胃，乃传于五脏六腑”，五脏六腑皆受于气，其清者为营，浊者为卫，荣行脉中，卫行脉外，营周不息，五十而复大会，阴阳相贯，如环之无端，故知营卫相随也。",
-          "blockType": "p",
           "parseHash": "5655f8db8662a001",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 30001,
-            "endLine": 30001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "6fffb350-4955-572e-bc4b-4dd870bed039",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 30,
       "level": "篇",
       "title": "三十一难",
-      "canonicalTitle": "三十一难",
-      "collection": "难经",
-      "sequence": 31,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 31000,
-        "endLine": 31001
-      },
       "contentHash": "84ffbe6ac29d4f6b",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "4e8ffcdd-f408-5074-89ed-a2ccca1d5bce",
-          "chapterId": "6fffb350-4955-572e-bc4b-4dd870bed039",
           "orderIndex": 0,
           "text": "曰；三焦者，何禀何生？何始何终？其治常在何许？可晓以不？\n然：三焦者，水谷之道路，气之所终始也。上焦者，在心下，下膈，在胃上口，主内而不出，其治在膻中（玉堂下一寸六分，直两乳间陷者是）。中焦者，在胃中脘，不上不下，主腐熟水谷，其治在脐傍。下焦者，当膀胱上口，主分别清浊，主出而不内，以传导也，其治在脐下一寸。故名曰三焦，其府在气街。",
-          "blockType": "p",
           "parseHash": "84ffbe6ac29d4f6b",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 31001,
-            "endLine": 31001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "0672586c-e697-5f68-9d9d-984f76cf97c8",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 31,
       "level": "篇",
       "title": "三十二难",
-      "canonicalTitle": "三十二难",
-      "collection": "难经",
-      "sequence": 32,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 32000,
-        "endLine": 32001
-      },
       "contentHash": "1881da00d41d44fe",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "9d21de51-45b6-57da-9031-34ba5cff9b6f",
-          "chapterId": "0672586c-e697-5f68-9d9d-984f76cf97c8",
           "orderIndex": 0,
           "text": "曰；五脏俱等，而心肺独在膈上者，何也？\n然：心者血，肺者气，血为荣，气为卫，相随上下，谓之荣卫，通行经络，营周于外，故令心肺独在膈上也。",
-          "blockType": "p",
           "parseHash": "1881da00d41d44fe",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 32001,
-            "endLine": 32001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "0b060202-ecd0-5d1d-b0f3-76f7e9eb4f17",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 32,
       "level": "篇",
       "title": "三十三难",
-      "canonicalTitle": "三十三难",
-      "collection": "难经",
-      "sequence": 33,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 33000,
-        "endLine": 33001
-      },
       "contentHash": "29d9b6d9cd1a036a",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "2e35deed-bcc6-5c03-a7c1-07037f316d7f",
-          "chapterId": "0b060202-ecd0-5d1d-b0f3-76f7e9eb4f17",
           "orderIndex": 0,
           "text": "曰：肝青象木，肺白象金。肝得水而沉，木得水而浮；肺得水而浮，金得水而沉。其意何也？\n然：肝者，非为纯木也，乙角也，庚之柔。大言阴与阳，小言夫与妇。释其微阳，而吸其微阴之气，其意乐金，又行阴道多，故令肝得水而沉也。肺者，非为纯金也，辛商也，丙之柔。大言阴与阳，小言夫与妇。释其微阴，婚而就火，其意乐火，又行阳道多，故令肺得水而浮也。肺熟而复沉，肝熟而复浮者，何也？故知辛当归庚，乙当归甲也。",
-          "blockType": "p",
           "parseHash": "29d9b6d9cd1a036a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 33001,
-            "endLine": 33001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "fa9c1ccc-e9ea-52c5-962f-156ff42cfa13",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 33,
       "level": "篇",
       "title": "三十四难",
-      "canonicalTitle": "三十四难",
-      "collection": "难经",
-      "sequence": 34,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 34000,
-        "endLine": 34002
-      },
       "contentHash": "48646407ecc298a6",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "f96175e1-dccd-58d7-92a2-4ae97f6978f4",
-          "chapterId": "fa9c1ccc-e9ea-52c5-962f-156ff42cfa13",
           "orderIndex": 0,
           "text": "曰：五脏各有声、色、臭、味、液，皆可晓知以不？\n然：《十变》言：肝色青，其臭臊，其味酸，其声呼，其液泣；心色赤，其臭焦，其味苦，其声言，其液汗；脾色黄，其臭香，其味甘，其声歌，其液涎；肺色白，其臭腥，其味辛，其声哭，其液涕；肾色黑，其臭腐，其味咸，其声呻，其液唾。是五脏声、色、臭、味、液也。",
-          "blockType": "p",
           "parseHash": "afc0a0782cb171ae",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 34001,
-            "endLine": 34001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "08d1b8f3-ea40-57e8-b0f2-4078d83dd45e",
-          "chapterId": "fa9c1ccc-e9ea-52c5-962f-156ff42cfa13",
           "orderIndex": 1,
           "text": "五脏有七神，各何所藏邪？\n然：脏者，人之神气所舍藏也。故肝藏魂，肺藏魄，心藏神，脾藏意与智，肾藏精与志也。",
-          "blockType": "p",
           "parseHash": "84fe8b71d1f21d3b",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 34002,
-            "endLine": 34002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "578738a4-a031-5dde-abf5-9537c285c030",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 34,
       "level": "篇",
       "title": "三十五难",
-      "canonicalTitle": "三十五难",
-      "collection": "难经",
-      "sequence": 35,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 35000,
-        "endLine": 35002
-      },
       "contentHash": "dab7b6e20d150b5b",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "c631112d-63ec-5e5d-b8a3-cda53a98195f",
-          "chapterId": "578738a4-a031-5dde-abf5-9537c285c030",
           "orderIndex": 0,
           "text": "曰：五脏各有所腑皆相近，而心肺独去大肠、小肠远者，何也？\n然：经言“心营、肺卫通行阳气，故居在上；大肠、小肠传阴气而下，故居在下”，所以相去而远也。",
-          "blockType": "p",
           "parseHash": "e630d505c11f0537",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 35001,
-            "endLine": 35001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "36ad5966-d357-5967-90f1-d5e6021743ec",
-          "chapterId": "578738a4-a031-5dde-abf5-9537c285c030",
           "orderIndex": 1,
           "text": "又，诸腑皆阳也，清净之处。今大肠、小肠、胃与膀胱，皆受不净，其意何也？\n然：诸腑者谓是，非也。经言“小肠者，受盛之腑也；大肠者，传泻行道之腑也；胆者，清净之腑也；胃者，水谷之腑也；膀胱者，津液之腑也”，一腑犹无两名，故知非也。小肠者，心之腑；大肠者，肺之腑；胆者，肝之腑；胃者，脾之腑；膀胱者，肾之腑。小肠谓赤肠，大肠谓白肠，胆者谓青肠，胃者谓黄肠，膀胱者谓黑肠，下焦之所治也。",
-          "blockType": "p",
           "parseHash": "b30078f8eef57e1d",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 35002,
-            "endLine": 35002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "c9e9d270-054c-5808-9caf-9b0107778307",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 35,
       "level": "篇",
       "title": "三十六难",
-      "canonicalTitle": "三十六难",
-      "collection": "难经",
-      "sequence": 36,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 36000,
-        "endLine": 36001
-      },
       "contentHash": "31b7a519371bb048",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "281a23ad-7461-5491-a79e-398e53506ca3",
-          "chapterId": "c9e9d270-054c-5808-9caf-9b0107778307",
           "orderIndex": 0,
           "text": "曰：脏各有一耳，肾独有两者，何也？\n然：肾两者，非皆肾也，其左者为肾，右者为命门。命门者，诸神精之所舍，原气之所系也，男子以藏精，女子以系胞。故知肾有一也。",
-          "blockType": "p",
           "parseHash": "31b7a519371bb048",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 36001,
-            "endLine": 36001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "b24d424e-4bec-5d0b-ae14-5d4f1f25f815",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 36,
       "level": "篇",
       "title": "三十七难",
-      "canonicalTitle": "三十七难",
-      "collection": "难经",
-      "sequence": 37,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 37000,
-        "endLine": 37002
-      },
       "contentHash": "4fd7b59526e000b1",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "d7e4d9e9-d4b8-57ed-94a4-f13e58d93467",
-          "chapterId": "b24d424e-4bec-5d0b-ae14-5d4f1f25f815",
           "orderIndex": 0,
           "text": "曰：五脏之气，于何发起，通于何许，可晓以不？\n然：五脏者，常内阅于上七窍也。故肺气通于鼻，鼻和则知香臭矣；肝气通于目，目和则知黑白矣；脾气通于口，口和则知谷味矣；心气通于舌，舌和则知五味矣；肾气通于耳，耳和则知五音矣。五脏不和，则七窍不通；六腑不和，则留结为痈。邪在六腑，则阳脉不和；阳脉不和，则气留之；气留之，则阳脉盛矣。邪在五腑，则阴脉不和；阴脉不和，则血留之；血留之，则阴脉盛矣。阴气太盛，则阳气不得相营也，故曰格；阳气太盛，则阴气不得相营也，故曰关；阴阳俱盛，不得相营也，故曰关格。关格者，不得尽其命而死矣。",
-          "blockType": "p",
           "parseHash": "50f20747136c5c2f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 37001,
-            "endLine": 37001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "ad4b860d-400d-59c4-a601-6e6331953a14",
-          "chapterId": "b24d424e-4bec-5d0b-ae14-5d4f1f25f815",
           "orderIndex": 1,
           "text": "经言“气独行于五脏，不营于六腑”者，何也？\n然：夫气之所行也，如水之流，不得息也。故阴脉营于五脏，阳脉营于六腑，如环无端，莫知其纪，终而复始，其不覆溢，人气内温于脏腑，外濡于腠理。",
-          "blockType": "p",
           "parseHash": "afc72bd8ff6a3a67",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 37002,
-            "endLine": 37002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "741ddcb7-8b3b-56f5-8df4-9fe287f51a08",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 37,
       "level": "篇",
       "title": "三十八难",
-      "canonicalTitle": "三十八难",
-      "collection": "难经",
-      "sequence": 38,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 38000,
-        "endLine": 38001
-      },
       "contentHash": "ea9613e47eb3541d",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "893afc06-3f40-59f5-80ee-5c5c6a7dadaf",
-          "chapterId": "741ddcb7-8b3b-56f5-8df4-9fe287f51a08",
           "orderIndex": 0,
           "text": "曰：脏唯有五，腑独有六者，何也？\n然：所以腑有六者，谓三焦也，有原气之别焉，主持诸气，有名而无形，其经属手少阳，此外腑也，故言腑有六焉。",
-          "blockType": "p",
           "parseHash": "ea9613e47eb3541d",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 38001,
-            "endLine": 38001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "21fdb872-53ba-5dce-9dd8-97288c1bcb3d",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 38,
       "level": "篇",
       "title": "三十九难",
-      "canonicalTitle": "三十九难",
-      "collection": "难经",
-      "sequence": 39,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 39000,
-        "endLine": 39002
-      },
       "contentHash": "a44ac4be3621b7c4",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "f787b2a0-a7cb-5dec-8f87-1ac726b4d716",
-          "chapterId": "21fdb872-53ba-5dce-9dd8-97288c1bcb3d",
           "orderIndex": 0,
           "text": "曰：经言“腑有五，脏有六”者，何也？\n然：六腑者，正有五腑也。五脏亦有六脏者，谓肾有两脏也，其左为肾，右为命门。命门者，谓精神之所舍也，男子以藏精，女子以系胞，其气与肾通，故言脏有六也。",
-          "blockType": "p",
           "parseHash": "9d12527619bc82db",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 39001,
-            "endLine": 39001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "b269265c-abe8-541a-9d65-d542175260f6",
-          "chapterId": "21fdb872-53ba-5dce-9dd8-97288c1bcb3d",
           "orderIndex": 1,
           "text": "腑有五者，何也？\n然：五脏各一腑，三焦亦是一腑，然不属于五脏，故言腑有五焉。",
-          "blockType": "p",
           "parseHash": "6e6636e4d6703047",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 39002,
-            "endLine": 39002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "1bde164a-ef6d-5fe3-bc62-0e654048954a",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 39,
       "level": "篇",
       "title": "四十难",
-      "canonicalTitle": "四十难",
-      "collection": "难经",
-      "sequence": 40,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 40000,
-        "endLine": 40001
-      },
       "contentHash": "4262365a504f33ab",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "cb508d34-50ea-523c-a2e9-2965f78421a1",
-          "chapterId": "1bde164a-ef6d-5fe3-bc62-0e654048954a",
           "orderIndex": 0,
           "text": "曰：经言“肝主色，心主臭，脾主味，肺主声，肾主液”，鼻者，肺之候，而反知香臭；耳者，肾之候，而反闻声，其意何也？\n然：肺者，西方金也，金生于巳，巳者南方火，火者心，心主臭，故令鼻知香臭；肾者，北方水也，水生于申，申者西方金，金者肺，肺主声，故令耳闻声。",
-          "blockType": "p",
           "parseHash": "4262365a504f33ab",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 40001,
-            "endLine": 40001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "d1d4d289-3771-50a5-847c-4b13121fced0",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 40,
       "level": "篇",
       "title": "四十一难",
-      "canonicalTitle": "四十一难",
-      "collection": "难经",
-      "sequence": 41,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 41000,
-        "endLine": 41001
-      },
       "contentHash": "464551eab75e9d43",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "cb8c4756-fdc6-51f9-9301-081a24f4a7cf",
-          "chapterId": "d1d4d289-3771-50a5-847c-4b13121fced0",
           "orderIndex": 0,
           "text": "曰：肝独有两叶，以何应也？\n然：肝者，东方木也。木者，春也，万物始生，其尚幼小，意无所亲，去太阴尚近，离太阳不远，犹有两心，故有两叶，亦应木叶也。",
-          "blockType": "p",
           "parseHash": "464551eab75e9d43",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 41001,
-            "endLine": 41001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "02ceef8b-f72c-5e03-b260-14cfb6773a67",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 41,
       "level": "篇",
       "title": "四十二难",
-      "canonicalTitle": "四十二难",
-      "collection": "难经",
-      "sequence": 42,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 42000,
-        "endLine": 42004
-      },
       "contentHash": "ee609816b0f167fc",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "d77ada27-445c-52d5-9ade-48b5e5153d45",
-          "chapterId": "02ceef8b-f72c-5e03-b260-14cfb6773a67",
           "orderIndex": 0,
           "text": "曰：人肠胃长短，受水谷多少，各几何？\n然：胃，大一尺五寸，径五寸，长二尺六寸，横屈，受水谷三斗五升，其中常留谷二斗，水一斗五升。小肠，大二寸半，径八分、分之少半，长三丈二尺，受谷二斗四升，水六升三合、合之大半。回肠，大四寸，径一寸半，长二丈一尺，受谷一斗，水七升半。广肠，大八寸，径二寸半，长二尺八寸，受谷九升三合八分合之一。故肠胃凡长五丈八尺四寸，合受水谷八斗七升六合八分合之一。此肠胃长短，受水谷之数也。",
-          "blockType": "p",
           "parseHash": "5c7a90dafc95af43",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 42001,
-            "endLine": 42001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "46302a90-e27b-54b7-8700-52de9ba4cad3",
-          "chapterId": "02ceef8b-f72c-5e03-b260-14cfb6773a67",
           "orderIndex": 1,
           "text": "肝，重四斤四两，左三叶，右四叶，凡七叶，主藏魂。心，重十二两，中有七孔三毛，盛精汁三合，主藏神。脾，重二斤三两，扁广三寸，长五寸，有散膏半斤，主裹血，温五脏，主藏意。肺，重三斤三两，六叶两耳，凡八叶，主藏魄。肾，有两枚，重一斤一两，主藏志。",
-          "blockType": "p",
           "parseHash": "e1fccd940955b56c",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 42002,
-            "endLine": 42002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "84ddd712-7630-5a1b-9a80-d39f53ad79e5",
-          "chapterId": "02ceef8b-f72c-5e03-b260-14cfb6773a67",
           "orderIndex": 2,
           "text": "胆在肝之短叶间，重三两三铢，盛精汁三合。胃，重二斤二两，纡曲屈伸，长二尺六寸，大一尺五寸，径五寸，盛谷二斗，水一斗五升。小肠，重二斤十四两，长三丈二尺，广二寸半，径八分分之少半，左回叠积十六曲，盛谷二斗四升，水六升三合合之大半。大肠，重二斤十二两，长二丈一尺，广四寸，径一寸，当脐右回十六曲，盛谷一斗，水七升半。膀胱，重九两二铢，纵广九寸，盛溺九升九合。",
-          "blockType": "p",
           "parseHash": "60eb5439d3b887e3",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 42003,
-            "endLine": 42003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "ebb054dc-02db-56d4-917d-733463623862",
-          "chapterId": "02ceef8b-f72c-5e03-b260-14cfb6773a67",
           "orderIndex": 3,
           "text": "口广二寸半，唇至齿长九分，齿以后至会厌深三寸半，大容五合。舌重十两，长七寸，广二寸半。咽门重十两，广二寸半，至胃长一尺六寸。喉咙重十二两，广二寸，长一尺二寸，九节。肛门重十二两，大八寸，径二寸大半，长二尺八寸，受谷九升三合八分合之一。",
-          "blockType": "p",
           "parseHash": "c5261e5fb398e0e1",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 42004,
-            "endLine": 42004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "49577062-136e-59c7-ab33-5d217b2e0577",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 42,
       "level": "篇",
       "title": "四十三难",
-      "canonicalTitle": "四十三难",
-      "collection": "难经",
-      "sequence": 43,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 43000,
-        "endLine": 43001
-      },
       "contentHash": "fb6b569659c5f87a",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "01235994-9c8b-5c9e-a764-18c377d6ef5e",
-          "chapterId": "49577062-136e-59c7-ab33-5d217b2e0577",
           "orderIndex": 0,
           "text": "曰：人不食饮，七日而死者，何也？\n然：人胃中当留谷二斗，水一斗五升。故平人日再至圊，一行二升半，日中五升，七日五七三斗五升，而水谷尽矣。故平人不食饮七日而死者，水谷津液俱尽，即死矣。",
-          "blockType": "p",
           "parseHash": "fb6b569659c5f87a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 43001,
-            "endLine": 43001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "ecf2e5a6-c7c6-5887-b04b-95718f207158",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 43,
       "level": "篇",
       "title": "四十四难",
-      "canonicalTitle": "四十四难",
-      "collection": "难经",
-      "sequence": 44,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 44000,
-        "endLine": 44001
-      },
       "contentHash": "7643829a0f3431d5",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "4b839d04-790e-5191-8b20-f126e1e84994",
-          "chapterId": "ecf2e5a6-c7c6-5887-b04b-95718f207158",
           "orderIndex": 0,
           "text": "曰：七冲门何在？\n然：唇为飞门，齿为户门，会厌为吸门，胃为贲门，太仓下口为幽门，大肠、小肠会为阑门，下极为魄门，故曰七冲门也。",
-          "blockType": "p",
           "parseHash": "7643829a0f3431d5",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 44001,
-            "endLine": 44001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "663ba173-8064-537a-b749-b4010459ca39",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 44,
       "level": "篇",
       "title": "四十五难",
-      "canonicalTitle": "四十五难",
-      "collection": "难经",
-      "sequence": 45,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 45000,
-        "endLine": 45001
-      },
       "contentHash": "d5eeb1ea8870f292",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "79580ad4-2d58-533e-9b0f-0432dfaacb98",
-          "chapterId": "663ba173-8064-537a-b749-b4010459ca39",
           "orderIndex": 0,
           "text": "曰：经言八会者，何也？\n然：腑会太仓，脏会季胁，筋会阳陵泉，髓会绝骨，血会膈俞，骨会大杼，脉会太渊，气会三焦外一筋直两乳内也。热病在内者，取其会之气穴也。",
-          "blockType": "p",
           "parseHash": "d5eeb1ea8870f292",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 45001,
-            "endLine": 45001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "e9b345c7-0433-5474-944b-1bb0b4986862",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 45,
       "level": "篇",
       "title": "四十六难",
-      "canonicalTitle": "四十六难",
-      "collection": "难经",
-      "sequence": 46,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 46000,
-        "endLine": 46001
-      },
       "contentHash": "123bc1980df82c5e",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "71509195-e2c4-5dd7-922b-9935658cbfcf",
-          "chapterId": "e9b345c7-0433-5474-944b-1bb0b4986862",
           "orderIndex": 0,
           "text": "曰：老人卧而不寐，少壮寐而不寤者，何也？\n然：经言“少壮者，血气盛，肌肉滑，气道通，营卫之行不失于常，故昼日精，夜不寤也。老人血气衰，肌肉不滑，营卫之道涩，故昼日不能精，夜不得寐也”，故知老人不得寐也。",
-          "blockType": "p",
           "parseHash": "123bc1980df82c5e",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 46001,
-            "endLine": 46001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "4dea9f5c-a909-54d4-8da7-110ddfdea313",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 46,
       "level": "篇",
       "title": "四十七难",
-      "canonicalTitle": "四十七难",
-      "collection": "难经",
-      "sequence": 47,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 47000,
-        "endLine": 47001
-      },
       "contentHash": "3cab8325cde1632e",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "1c65013f-8878-5b8d-a177-7137ae153b65",
-          "chapterId": "4dea9f5c-a909-54d4-8da7-110ddfdea313",
           "orderIndex": 0,
           "text": "曰：人面独能耐寒者，何也？\n然：人头者，诸阳之会也。诸阴脉皆至颈、胸中而还，独诸阳脉皆上至头耳，故令面耐寒也。",
-          "blockType": "p",
           "parseHash": "3cab8325cde1632e",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 47001,
-            "endLine": 47001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "13a48c3f-065a-5f79-a7b8-a5bc43d1fbb0",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 47,
       "level": "篇",
       "title": "四十八难",
-      "canonicalTitle": "四十八难",
-      "collection": "难经",
-      "sequence": 48,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 48000,
-        "endLine": 48001
-      },
       "contentHash": "6cc60bd1f3b19e06",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "c8a684d3-6673-5c20-b690-f2b10fb4eefb",
-          "chapterId": "13a48c3f-065a-5f79-a7b8-a5bc43d1fbb0",
           "orderIndex": 0,
           "text": "曰：人有三虚三实，何谓也？\n然：有脉之虚实，有病之虚实，有诊之虚实也。脉之虚实者，濡者为虚，紧牢者为实。病之虚实者，出者为虚，入者为实；言者为虚，不言者为实；缓者为虚，急者为实。诊之虚实者，濡者为虚，牢者为实；痒者为虚，痛者为实；外痛内快，为外实内虚；内痛外快，为内实外虚。故曰虚实也。",
-          "blockType": "p",
           "parseHash": "6cc60bd1f3b19e06",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 48001,
-            "endLine": 48001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 48,
       "level": "篇",
       "title": "四十九难",
-      "canonicalTitle": "四十九难",
-      "collection": "难经",
-      "sequence": 49,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 49000,
-        "endLine": 49018
-      },
       "contentHash": "a9e8956e97011c9a",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "8e333037-c105-5d3d-b48b-022a6bbf31a6",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 0,
           "text": "曰：有正经自病，有五邪所伤，何以别之？\n然：经言“忧愁思虑，则伤心；形寒饮冷，则伤肺；恚怒气逆，上而不下，则伤肝；饮食劳倦，则伤脾；久坐湿地，强力入水，则伤肾”，是正经之自病也。",
-          "blockType": "p",
           "parseHash": "d8945706cc7f5e23",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49001,
-            "endLine": 49001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "66297980-9ee2-550e-9d1b-4ab78badf66b",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 1,
           "text": "何谓五邪？\n然：有中风，有伤暑，有饮食劳倦，有伤寒，有中湿，此之谓五邪。",
-          "blockType": "p",
           "parseHash": "f772030fb3acf73f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49002,
-            "endLine": 49002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "d4e53f70-a327-5597-8d46-5c0f87b26457",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 2,
           "text": "假令心病，何以知中风得之？\n然：其色当赤。",
-          "blockType": "p",
           "parseHash": "8f4d65794808c92c",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49003,
-            "endLine": 49003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "d5b61b78-0563-50d0-90d5-291367ea4202",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 3,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49004,
-            "endLine": 49004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "a956f390-19cc-5d7d-93a8-5a3a4ed1adb3",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 4,
           "text": "肝主色，自入为青，入心为赤，入脾为黄，入肺为白，入肾为黑。肝为心邪，故知当赤色。其病身热，胁下满痛，其脉浮大而弦。",
-          "blockType": "p",
           "parseHash": "ebc410ff6a35fb47",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49005,
-            "endLine": 49005
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "3580ac71-77b0-56f1-823b-f35254bf1e50",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 5,
           "text": "何以知伤暑得之？\n然：当恶焦臭。",
-          "blockType": "p",
           "parseHash": "1b8d4545970ea389",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49006,
-            "endLine": 49006
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "595f1509-f93d-567a-8342-4c02fa0a49d2",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 6,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49007,
-            "endLine": 49007
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "20daf106-d361-5c33-a9b1-9b6aea54f9a2",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 7,
           "text": "心主臭，自入为焦臭，入脾为香臭，入肝为臊臭，入肾为腐臭，入肺为腥臭。故知心病，伤暑得之，当恶焦臭。其病身热而烦，心痛，其脉浮大而散。",
-          "blockType": "p",
           "parseHash": "b08153a62decccf1",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49008,
-            "endLine": 49008
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "33772d26-42a1-563f-b623-d97fefecb4ed",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 8,
           "text": "何以知饮食劳倦得之？\n然：当喜苦味也。虚为不欲食，实为欲食。",
-          "blockType": "p",
           "parseHash": "16273326062d14f2",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49009,
-            "endLine": 49009
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "6699bbf9-4223-51c5-854c-057ffbbc1db8",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 9,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49010,
-            "endLine": 49010
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "77e501e4-240c-5435-a5f0-92d8f50656ff",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 10,
           "text": "脾主味，入肝为酸，人心为苦，入肺为辛，入肾为咸，自入为甘。故知脾邪入心，为喜苦味也。其病身热而体重，嗜卧，四肢不收，其脉浮大而缓。",
-          "blockType": "p",
           "parseHash": "0a3fbb22e30225f5",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49011,
-            "endLine": 49011
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "2af32410-6f25-5a3c-b368-7821e7d056b2",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 11,
           "text": "何以知伤寒得之？\n然：当谵言妄语。",
-          "blockType": "p",
           "parseHash": "5772896a9ed36ca3",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49012,
-            "endLine": 49012
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "2048fa8f-c63c-5a39-a6a5-4e9386be7be5",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 12,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49013,
-            "endLine": 49013
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "e1d87be8-9371-5612-b63f-edf29cef6c42",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 13,
           "text": "肺主声，入肝为呼，入心为言，入脾为歌，入肾为呻，自入为哭。故知肺邪入心，为谵言妄语也。其病身热，洒洒恶寒，甚则喘咳，其脉浮大而涩。",
-          "blockType": "p",
           "parseHash": "4095618c33d48087",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49014,
-            "endLine": 49014
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "7895631a-dc53-5e51-909a-ded87f2f3bd9",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 14,
           "text": "何以知中湿得之？\n然：当喜汗出不可止。",
-          "blockType": "p",
           "parseHash": "f7791c8b7f04654b",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49015,
-            "endLine": 49015
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "06b2b90d-db36-55db-9cfd-e6008638e164",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 15,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49016,
-            "endLine": 49016
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "d81fe2cf-bbc8-5226-adcd-381b5a3a0f77",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 16,
           "text": "肾主液，入肝为泣，入心为汗，入脾为涎，入肺为涕，自入为唾。故知肾邪入心，为汗出不可止也。其病身热，而小腹痛，足胫寒而逆，其脉沉濡而大。",
-          "blockType": "p",
           "parseHash": "cd3c4df1d8061af6",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49017,
-            "endLine": 49017
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "6bf9e6bf-5284-52d0-a157-ae82403ba78c",
-          "chapterId": "af6a5dea-68f5-5cd1-8fc8-574e90390ec3",
           "orderIndex": 17,
           "text": "此五邪之法也。",
-          "blockType": "p",
           "parseHash": "e09d7ab473a04bac",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 49018,
-            "endLine": 49018
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "cfa42aa3-f8ce-5f0c-9891-8d32fd868515",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 49,
       "level": "篇",
       "title": "五十难",
-      "canonicalTitle": "五十难",
-      "collection": "难经",
-      "sequence": 50,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 50000,
-        "endLine": 50003
-      },
       "contentHash": "bf0852108481c5b9",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "4d7ab265-d8b4-59e2-9b89-2b94f99ac70b",
-          "chapterId": "cfa42aa3-f8ce-5f0c-9891-8d32fd868515",
           "orderIndex": 0,
           "text": "曰：病有虚邪，有实邪，有贼邪，有微邪，有正邪，何以别之？\n然：从后来者为虚邪，从前来者为实邪，从所不胜来者为贼邪，从所胜来者为微邪，自病者为正邪。",
-          "blockType": "p",
           "parseHash": "fe5ca31f7f0a2df4",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 50001,
-            "endLine": 50001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "836d765e-648c-561b-b2fe-d3c1fb4b9901",
-          "chapterId": "cfa42aa3-f8ce-5f0c-9891-8d32fd868515",
           "orderIndex": 1,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 50002,
-            "endLine": 50002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "8bf5cbc9-2ba2-5a48-a684-dcb2adec5ec9",
-          "chapterId": "cfa42aa3-f8ce-5f0c-9891-8d32fd868515",
           "orderIndex": 2,
           "text": "假令心病，中风得之为虚邪，伤暑得之为正邪，饮食劳倦得之为实邪，伤寒得之为微邪，中湿得之为贼邪。",
-          "blockType": "p",
           "parseHash": "f97001d140dc795f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 50003,
-            "endLine": 50003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "3ab739b7-13af-5f4c-b2e8-6917843ccc76",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 50,
       "level": "篇",
       "title": "五十一难",
-      "canonicalTitle": "五十一难",
-      "collection": "难经",
-      "sequence": 51,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 51000,
-        "endLine": 51003
-      },
       "contentHash": "747e6729ca4e9bc2",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "f66ea0f6-82c2-5137-b5e0-22d441f16b13",
-          "chapterId": "3ab739b7-13af-5f4c-b2e8-6917843ccc76",
           "orderIndex": 0,
           "text": "曰：病有欲得温者，有欲得寒者；有欲得见人者，有不欲得见人者，而各不同，病在何脏腑也？\n然：病欲得寒，而欲见人者，病在腑也；病欲得温，而不欲见人者，病在脏也。",
-          "blockType": "p",
           "parseHash": "e4456be758a31070",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 51001,
-            "endLine": 51001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "86f71a6c-6d9a-5778-9781-2a6d19eeabc0",
-          "chapterId": "3ab739b7-13af-5f4c-b2e8-6917843ccc76",
           "orderIndex": 1,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 51002,
-            "endLine": 51002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "f4fb93a7-bdb1-5e92-b251-a3e912093240",
-          "chapterId": "3ab739b7-13af-5f4c-b2e8-6917843ccc76",
           "orderIndex": 2,
           "text": "腑者，阳也，阳病欲得寒，又欲见人；脏者，阴也，阴病欲得温，又欲闭户独处，恶闻人声。故以别知脏腑之病也。",
-          "blockType": "p",
           "parseHash": "8527286a1c15b182",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 51003,
-            "endLine": 51003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "75bfe6f1-6cec-53bb-9551-6be8b1951e0b",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 51,
       "level": "篇",
       "title": "五十二难",
-      "canonicalTitle": "五十二难",
-      "collection": "难经",
-      "sequence": 52,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 52000,
-        "endLine": 52002
-      },
       "contentHash": "7f5ef558ffb617b0",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "00e5d8bf-08d1-53a7-ae9d-54f917e1f238",
-          "chapterId": "75bfe6f1-6cec-53bb-9551-6be8b1951e0b",
           "orderIndex": 0,
           "text": "曰：脏腑发病，根本等不？\n然：不等也。",
-          "blockType": "p",
           "parseHash": "98e43c54b98f15bf",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 52001,
-            "endLine": 52001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "1c7cc5d1-6c8a-5d87-97f1-40d4a7881617",
-          "chapterId": "75bfe6f1-6cec-53bb-9551-6be8b1951e0b",
           "orderIndex": 1,
           "text": "其不等奈何？\n然：脏病者，止而不移，其病不离其处；腑病者，仿佛贲响，上下行流，居处无常。故以此知脏腑根本不同也。",
-          "blockType": "p",
           "parseHash": "67fdb081185b7172",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 52002,
-            "endLine": 52002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "e5f55272-f6e8-5a05-b4b4-caba1b14925a",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 52,
       "level": "篇",
       "title": "五十三难",
-      "canonicalTitle": "五十三难",
-      "collection": "难经",
-      "sequence": 53,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 53000,
-        "endLine": 53001
-      },
       "contentHash": "fdb9823a6b0cc891",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "1b5140f7-54ef-5592-b72b-bd00a58f40df",
-          "chapterId": "e5f55272-f6e8-5a05-b4b4-caba1b14925a",
           "orderIndex": 0,
           "text": "曰：经言“七传者死，间脏者生”，何谓也？\n然：七传者，传其所胜也；间脏者，传其子也。何以言之？假令心病传肺，肺传肝，肝传脾，脾传肾，肾传心，一脏不再伤，故言七传者死也。间脏者，传其所生也。假令心病传脾，脾传肺，肺传肾，肾传肝，肝传心，是母子相传，竟而复始，如环无端，故曰生也。",
-          "blockType": "p",
           "parseHash": "fdb9823a6b0cc891",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 53001,
-            "endLine": 53001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "27b72db6-4dc6-54e5-bbc6-5b9b478ef38a",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 53,
       "level": "篇",
       "title": "五十四难",
-      "canonicalTitle": "五十四难",
-      "collection": "难经",
-      "sequence": 54,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 54000,
-        "endLine": 54001
-      },
       "contentHash": "bd36f0b058f4b96c",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "c6cd760d-e3e3-5b12-8468-80c9bf4fc008",
-          "chapterId": "27b72db6-4dc6-54e5-bbc6-5b9b478ef38a",
           "orderIndex": 0,
           "text": "曰：脏病难治，腑病易治，何谓也？\n然：脏病所以难治者，传其所胜也；腑病易治者，传其子也。与七传、间脏同法也。",
-          "blockType": "p",
           "parseHash": "bd36f0b058f4b96c",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 54001,
-            "endLine": 54001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "8b446ad0-c904-5b73-94ff-c9454f015c3b",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 54,
       "level": "篇",
       "title": "五十五难",
-      "canonicalTitle": "五十五难",
-      "collection": "难经",
-      "sequence": 55,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 55000,
-        "endLine": 55001
-      },
       "contentHash": "53387178c64cb814",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "7b62cb98-8312-588c-99ed-920853adb170",
-          "chapterId": "8b446ad0-c904-5b73-94ff-c9454f015c3b",
           "orderIndex": 0,
           "text": "曰：病有积有聚，何以别之？\n然：积者，阴气也；聚者，阳气也。故阴沉而伏，阳浮而动。气之所积，名曰积；气之所聚，名曰聚。故积者，五脏所生；聚者，六腑所成也。积者，阴气也，其始发有常处，其痛不离其部，上下有所终始，左右有所穷处；聚者，阳气也，其始发无根本，上下无所留止，其痛无常处，谓之聚。故以是别知积聚也。",
-          "blockType": "p",
           "parseHash": "53387178c64cb814",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 55001,
-            "endLine": 55001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 55,
       "level": "篇",
       "title": "五十六难",
-      "canonicalTitle": "五十六难",
-      "collection": "难经",
-      "sequence": 56,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 56000,
-        "endLine": 56016
-      },
       "contentHash": "009c6af20a4a0613",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "2f55cacc-e3f5-5464-8d6a-7954821986b4",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 0,
           "text": "曰：五脏之积，各有名乎？以何月何日得之？\n然：肝之积，名曰肥气，在左胁下，如覆杯，有头足。久不愈，令人发咳逆、痎疟，连岁不已。以季夏戊己日得之。",
-          "blockType": "p",
           "parseHash": "847881c7ced9dd2c",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56001,
-            "endLine": 56001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "f523c369-feec-53a2-969d-944c4da8a7e7",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 1,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56002,
-            "endLine": 56002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "1f356a7a-8770-531b-ac54-d73ba05d610f",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 2,
           "text": "肺病传于肝，肝当传脾，脾季夏适王，王者不受邪，肝复欲还肺，肺不肯受，故留结为积。故知肥气以季夏戊己日得之。",
-          "blockType": "p",
           "parseHash": "c0270da19fc7d9c9",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56003,
-            "endLine": 56003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "96489eaf-d2b6-52a4-9c7f-73762888d04f",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 3,
           "text": "心之积，名曰伏梁，起脐上，大如臂，上至心下。久不愈，令人病烦心。以秋庚辛日得之。",
-          "blockType": "p",
           "parseHash": "aaad8619b23b3ddd",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56004,
-            "endLine": 56004
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "fe428289-18cc-5c05-9d39-3355e87402a2",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 4,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56005,
-            "endLine": 56005
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "07468831-62d3-5ea8-bea0-e307a7de3acb",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 5,
           "text": "肾病传心，心当传肺，肺以秋适王，王者不受邪，心复欲还肾，肾不肯受，故留结为积。故知伏梁以秋庚辛日得之。",
-          "blockType": "p",
           "parseHash": "9225e8dd9c2034de",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56006,
-            "endLine": 56006
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "9d3df3ad-b56a-5d90-83c2-45027d2eb4b6",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 6,
           "text": "脾之积，名曰痞气，在胃脘，覆大如盘。久不愈，令人四肢不收，发黄疸，饮食不为肌肤。以冬壬癸日得之。",
-          "blockType": "p",
           "parseHash": "2fe5149dde62b011",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56007,
-            "endLine": 56007
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "b56cf3be-1ae1-55fe-8c31-334890ab8f5d",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 7,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56008,
-            "endLine": 56008
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "6779dbd9-bef7-56f0-8c7c-991d2b98c919",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 8,
           "text": "肝病传脾，脾当传肾，肾以冬适王，王者不受邪，脾复欲还肝，肝不肯受，故留结为积。故知痞气以冬壬癸日得之。",
-          "blockType": "p",
           "parseHash": "e4646488dd9d69d3",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56009,
-            "endLine": 56009
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "d9686d45-a3e4-5dc6-a4c3-00d4713890a2",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 9,
           "text": "肺之积，名曰息贲，在右胁下，覆大如杯。久不已，令人洒淅寒热，喘咳，发肺壅。以春甲乙日得之。",
-          "blockType": "p",
           "parseHash": "d5c8a9e0040885bb",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56010,
-            "endLine": 56010
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "6a101177-5c7a-5f28-ac1e-69cefeddc118",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 10,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56011,
-            "endLine": 56011
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "8b4bbea0-3fb8-5242-8928-80a78b56fa03",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 11,
           "text": "心病传肺，肺当传肝，肝以春适王，王者不受邪，肺复欲还心，心不肯受，故留结为积。故知息贲以春甲乙日得之。",
-          "blockType": "p",
           "parseHash": "fd3739e8da48103a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56012,
-            "endLine": 56012
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "ec2aa0c8-e5ed-576a-8d78-de81b4fbb3f2",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 12,
           "text": "肾之积，名曰贲豚，发于少腹，上至心下，若豚状，或上或下无时。久不已，令人喘逆，骨痿少气。以夏丙丁日得之。",
-          "blockType": "p",
           "parseHash": "c8ad583327d1bbcf",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56013,
-            "endLine": 56013
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "ec04aff3-2b78-582f-a7d6-fd357059e902",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 13,
           "text": "何以言之？",
-          "blockType": "p",
           "parseHash": "0e33096929801a24",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56014,
-            "endLine": 56014
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "981172cd-0b1f-5158-9436-de942bede905",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 14,
           "text": "脾病传肾，肾当传心，心以夏适王，王者不受邪，肾复欲还脾，脾不肯受，故留结为积。故知贲豚以夏丙丁日得之。",
-          "blockType": "p",
           "parseHash": "2a4eb25ac44e0963",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56015,
-            "endLine": 56015
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "fa453c46-42c3-5f3e-8872-31d5d2842448",
-          "chapterId": "d7ab58e1-4ba3-5490-b3b2-5612a7ef96a1",
           "orderIndex": 15,
           "text": "此五积之要法也。",
-          "blockType": "p",
           "parseHash": "0df82d6d3eba3c1b",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 56016,
-            "endLine": 56016
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "06f1dd1e-8d15-5254-b082-479c3c5a2f4c",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 56,
       "level": "篇",
       "title": "五十七难",
-      "canonicalTitle": "五十七难",
-      "collection": "难经",
-      "sequence": 57,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 57000,
-        "endLine": 57001
-      },
       "contentHash": "ddbeb3ab6471e39b",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "89762310-c6ab-5361-a72e-14bf724b3607",
-          "chapterId": "06f1dd1e-8d15-5254-b082-479c3c5a2f4c",
           "orderIndex": 0,
           "text": "曰：泄凡有几？皆有名不？\n然：泄凡有五，其名不同。有胃泄，有脾泄，有大肠泄，有小肠泄，有大瘕泄，名曰后重。胃泄者，饮食不化，色黄。脾泄者，腹胀满，泄注，食即呕吐逆。大肠泄者，食已窘迫，大便色白，肠鸣切痛。小肠泄者，溲而便脓血，少腹痛。大瘕泄者，里急后重，数至圊而不能便，茎中痛。此五泄之要法也。",
-          "blockType": "p",
           "parseHash": "ddbeb3ab6471e39b",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 57001,
-            "endLine": 57001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "4525a8c7-4b85-5528-9113-5581c14ba76c",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 57,
       "level": "篇",
       "title": "五十八难",
-      "canonicalTitle": "五十八难",
-      "collection": "难经",
-      "sequence": 58,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 58000,
-        "endLine": 58003
-      },
       "contentHash": "4d9967d2faf2edc8",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "64131196-8fac-5fab-ad72-47f0e54b055e",
-          "chapterId": "4525a8c7-4b85-5528-9113-5581c14ba76c",
           "orderIndex": 0,
           "text": "曰：伤寒有几？其脉有变不？\n然：伤寒有五，有中风，有伤寒，有湿温，有热病，有温病，其所苦各不同。中风之脉，阳浮而滑，阴濡而弱；湿温之脉，阳濡而弱，阴小而急；伤寒之脉，阴阳俱盛而紧涩；热病之脉，阴阳俱浮，浮之而滑，沉之散涩；温病之脉，行在诸经，不知何经之动也，各随其经所在而取之。",
-          "blockType": "p",
           "parseHash": "fbb5ef6adceef559",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 58001,
-            "endLine": 58001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "2cfa6476-393a-562c-ba9c-c8d30ca61978",
-          "chapterId": "4525a8c7-4b85-5528-9113-5581c14ba76c",
           "orderIndex": 1,
           "text": "伤寒有汗出而愈，下之而死者；有汗出而死，下之而愈者，何也？\n然：阳虚阴盛，汗出而愈，下之即死；阳盛阴虚，汗出而死，下之而愈。",
-          "blockType": "p",
           "parseHash": "348b5ebdf84948f2",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 58002,
-            "endLine": 58002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "fe8f60ea-0818-58da-bf24-832403175f7f",
-          "chapterId": "4525a8c7-4b85-5528-9113-5581c14ba76c",
           "orderIndex": 2,
           "text": "寒热之病，候之如何也？\n然：皮寒热者，皮不可近席，毛发焦，鼻槁，不得汗；肌寒热者，皮肤痛，唇舌槁，无汗；骨寒热者，病无所安，汗注不休，齿本槁痛。",
-          "blockType": "p",
           "parseHash": "4b37731be8570f31",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 58003,
-            "endLine": 58003
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "5f022a92-0b7b-58f6-beaa-3fed4a84a2a7",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 58,
       "level": "篇",
       "title": "五十九难",
-      "canonicalTitle": "五十九难",
-      "collection": "难经",
-      "sequence": 59,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 59000,
-        "endLine": 59001
-      },
       "contentHash": "19a6f1cbd4598d9b",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "992c2135-b956-536a-b064-78a7f2509e1a",
-          "chapterId": "5f022a92-0b7b-58f6-beaa-3fed4a84a2a7",
           "orderIndex": 0,
           "text": "曰：狂癫之病，何以别之？\n然：狂疾之始发，少卧而不饥，自高贤也，自辨智也，自倨贵也，妄笑好歌乐，妄行不休是也；癫疾始发，意不乐，僵仆直视，其脉三部阴阳俱盛是也。",
-          "blockType": "p",
           "parseHash": "19a6f1cbd4598d9b",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 59001,
-            "endLine": 59001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "77b266b7-7f7b-5b25-a343-249e042caf07",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 59,
       "level": "篇",
       "title": "六十难",
-      "canonicalTitle": "六十难",
-      "collection": "难经",
-      "sequence": 60,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 60000,
-        "endLine": 60001
-      },
       "contentHash": "b09895cf73ae8ad8",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "74d3f785-afd1-5b86-8e67-3632a62e88a0",
-          "chapterId": "77b266b7-7f7b-5b25-a343-249e042caf07",
           "orderIndex": 0,
           "text": "曰：头、心之病，有厥痛，有真痛，何谓也？\n然：手三阳之脉，受风寒，伏留而不去者，则名厥头痛；入连在脑者，名真头痛。其五脏气相干，名厥心痛；其痛甚，但在心，手足青者，即名真心痛。其真心痛者，旦发夕死，夕发旦死。",
-          "blockType": "p",
           "parseHash": "b09895cf73ae8ad8",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 60001,
-            "endLine": 60001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "a0122f5b-cab8-530d-822e-152275b42f8d",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 60,
       "level": "篇",
       "title": "六十一难",
-      "canonicalTitle": "六十一难",
-      "collection": "难经",
-      "sequence": 61,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 61000,
-        "endLine": 61001
-      },
       "contentHash": "80c9719ee8aac470",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "8ea5495f-9d3c-5519-a25c-500193e309bb",
-          "chapterId": "a0122f5b-cab8-530d-822e-152275b42f8d",
           "orderIndex": 0,
           "text": "曰：经言“望而知之谓之神，闻而知之谓之圣，问而知之谓之工，切脉而知之谓之巧”，何谓也？\n然：望而知之者，望见其五色，以知其病。闻而知之者，闻其五音，以别其病。问而知之者，问其所欲五味，以知其病所起所在也。切脉而知之者，诊其寸口，视其虚实，以知其病，病在何脏腑也。经言“以外知之曰圣，以内知之曰神”，此之谓也。",
-          "blockType": "p",
           "parseHash": "80c9719ee8aac470",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 61001,
-            "endLine": 61001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "93f661dd-5177-5c9a-a235-24909ed5576d",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 61,
       "level": "篇",
       "title": "六十二难",
-      "canonicalTitle": "六十二难",
-      "collection": "难经",
-      "sequence": 62,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 62000,
-        "endLine": 62001
-      },
       "contentHash": "7c794508e9f0c96f",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "c58324b0-04d0-51b5-83ca-245955c5be8f",
-          "chapterId": "93f661dd-5177-5c9a-a235-24909ed5576d",
           "orderIndex": 0,
           "text": "曰：脏井荥有五，腑独有六者，何谓也？\n然：腑者，阳也，三焦行于诸阳，故置一俞，名曰原。腑有六者，亦与三焦共一气也。",
-          "blockType": "p",
           "parseHash": "7c794508e9f0c96f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 62001,
-            "endLine": 62001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "393daa01-8d6f-5885-9deb-628b11ca54b3",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 62,
       "level": "篇",
       "title": "六十三难",
-      "canonicalTitle": "六十三难",
-      "collection": "难经",
-      "sequence": 63,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 63000,
-        "endLine": 63001
-      },
       "contentHash": "979175f81634d704",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "9aef96f5-aaed-5f7a-940a-fd8078e24bda",
-          "chapterId": "393daa01-8d6f-5885-9deb-628b11ca54b3",
           "orderIndex": 0,
           "text": "曰：《十变》言五脏六腑荥合，皆以井为始者，何也？\n然：井者，东方春也，万物之始生。诸蚑行喘息，蜎飞蠕动，当生之物，莫不以春生。故岁数始于春，日数始于甲，故以井为始也。",
-          "blockType": "p",
           "parseHash": "979175f81634d704",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 63001,
-            "endLine": 63001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "ab26c6a9-568c-5fac-afdd-87d42d3a0b36",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 63,
       "level": "篇",
       "title": "六十四难",
-      "canonicalTitle": "六十四难",
-      "collection": "难经",
-      "sequence": 64,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 64000,
-        "endLine": 64001
-      },
       "contentHash": "f59539acaecb259f",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "29eee123-00e2-5d38-93ea-ba3469faae4b",
-          "chapterId": "ab26c6a9-568c-5fac-afdd-87d42d3a0b36",
           "orderIndex": 0,
           "text": "曰：《十变》又言“阴井木，阳井金；阴荥火，阳荥水；阴输土，阳输木；阴经金，阳经火；阴合水，阳合土”，阴阳皆不同，其意何也？\n然：是刚柔之事也。阴井乙木，阳井庚金。阳井庚，庚者，乙之刚也；阴井乙，乙者，庚之柔也。乙为木，故言阴井木也；庚为金，故言阳井金也。余皆仿此。",
-          "blockType": "p",
           "parseHash": "f59539acaecb259f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 64001,
-            "endLine": 64001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "3f6ffbb8-ed0e-574a-ba84-fac43ca9dfe8",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 64,
       "level": "篇",
       "title": "六十五难",
-      "canonicalTitle": "六十五难",
-      "collection": "难经",
-      "sequence": 65,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 65000,
-        "endLine": 65001
-      },
       "contentHash": "d0aa16d1d0b83696",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "64a8f44f-9921-506c-8289-adef7b30afe5",
-          "chapterId": "3f6ffbb8-ed0e-574a-ba84-fac43ca9dfe8",
           "orderIndex": 0,
           "text": "曰：经言“所出为井，所入为合”，其法奈何？\n然：所出为井，井者，东方春也，万物之始生，故言所出为井也。所入为合，合者，北方冬也，阳气入藏，故言所入为合也。",
-          "blockType": "p",
           "parseHash": "d0aa16d1d0b83696",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 65001,
-            "endLine": 65001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "943f46b0-ddbe-5867-92c1-62c1cf3fa729",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 65,
       "level": "篇",
       "title": "六十六难",
-      "canonicalTitle": "六十六难",
-      "collection": "难经",
-      "sequence": 66,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 66000,
-        "endLine": 66002
-      },
       "contentHash": "22c7c0ddc6a7ed95",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "406ed7bf-ec78-5464-8eba-a605a43cd939",
-          "chapterId": "943f46b0-ddbe-5867-92c1-62c1cf3fa729",
           "orderIndex": 0,
           "text": "曰：经言“肺之原，出于太渊；心之原，出于太陵；肝之原，出于太冲；脾之原，出于大白；肾之原，出于太溪；少阴之原，出于兑骨；胆之原，出于丘墟；胃之原，出于冲阳；三焦之原，出于阳池；膀胱之原，出于京骨；大肠之原，出于合谷；小肠之原，出于腕骨”，十二经皆以输为原者，何也？\n然：五脏输者，三焦之所行，气之所留止也。",
-          "blockType": "p",
           "parseHash": "46265051df4fea55",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 66001,
-            "endLine": 66001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "aeefe5ea-3c1b-5766-b302-764f89d69240",
-          "chapterId": "943f46b0-ddbe-5867-92c1-62c1cf3fa729",
           "orderIndex": 1,
           "text": "三焦所行之输为原者，何也？\n然：脐下肾间动气者，人之生命也，十二经之根本也，故名曰原。三焦者，原气之别使也，主通行三气，经历于五脏六腑。原者，三焦之尊号也，故所止辄为原。五脏六腑之有病者，皆取其原也。",
-          "blockType": "p",
           "parseHash": "7a655be9f5d690cc",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 66002,
-            "endLine": 66002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "a866a2e4-e004-5cde-ba03-e065e96c1854",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 66,
       "level": "篇",
       "title": "六十七难",
-      "canonicalTitle": "六十七难",
-      "collection": "难经",
-      "sequence": 67,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 67000,
-        "endLine": 67001
-      },
       "contentHash": "2ceceaf3df581765",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "11608fd9-d5b9-5614-a180-206fc153d357",
-          "chapterId": "a866a2e4-e004-5cde-ba03-e065e96c1854",
           "orderIndex": 0,
           "text": "曰：五脏募皆在阴，而俞皆在阳者，何谓也？\n然：阴病行阳，阳病行阴，故令募在阴，俞在阳。",
-          "blockType": "p",
           "parseHash": "2ceceaf3df581765",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 67001,
-            "endLine": 67001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "64157039-c696-5005-ad38-3b341817a8ed",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 67,
       "level": "篇",
       "title": "六十八难",
-      "canonicalTitle": "六十八难",
-      "collection": "难经",
-      "sequence": 68,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 68000,
-        "endLine": 68001
-      },
       "contentHash": "53537c7baea326e8",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "1da5edfe-adf4-593c-b38e-ff6f76a834d5",
-          "chapterId": "64157039-c696-5005-ad38-3b341817a8ed",
           "orderIndex": 0,
           "text": "曰：五脏六腑皆有井、荥、输、经、合，皆何所主？\n然：经言“所出为井，所流为荥，所注为输，所行为经，所入为合。井主心下满，荥主身热，输主体重节痛，经主喘咳寒热，合主逆气而泄”，此五脏六腑井、荥、输、经、合所主病也。",
-          "blockType": "p",
           "parseHash": "53537c7baea326e8",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 68001,
-            "endLine": 68001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "d3ff9603-3835-5dc0-a5c0-973b346d125e",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 68,
       "level": "篇",
       "title": "六十九难",
-      "canonicalTitle": "六十九难",
-      "collection": "难经",
-      "sequence": 69,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 69000,
-        "endLine": 69001
-      },
       "contentHash": "8ca5db73270716f0",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "fd7d3c37-0ab2-5637-ac3b-a82c0dbd8069",
-          "chapterId": "d3ff9603-3835-5dc0-a5c0-973b346d125e",
           "orderIndex": 0,
           "text": "曰：经言“虚者补之，实者泻之，不实不虚，以经取之”，何谓也？\n然：虚者补其母，实者泻其子，当先补之，然后泻之。不实不虚，以经取之者，是正经自生病，不中他邪也，当自取其经，故言以经取之。",
-          "blockType": "p",
           "parseHash": "8ca5db73270716f0",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 69001,
-            "endLine": 69001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "a0df1b9d-9a7d-51fe-b341-b28eef99faa1",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 69,
       "level": "篇",
       "title": "七十难",
-      "canonicalTitle": "七十难",
-      "collection": "难经",
-      "sequence": 70,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 70000,
-        "endLine": 70002
-      },
       "contentHash": "23664ee1a48c3117",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "d1cad15b-6ae4-57ef-95f8-92e98ba006cd",
-          "chapterId": "a0df1b9d-9a7d-51fe-b341-b28eef99faa1",
           "orderIndex": 0,
           "text": "曰：经言“春夏刺浅，秋冬刺深”者，何谓也？\n然：春夏者，阳气在上，人气亦在上，故当浅取之；秋冬者，阳气在下，人气亦在下，故当深取之。",
-          "blockType": "p",
           "parseHash": "d687375fbae7fa13",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 70001,
-            "endLine": 70001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "f727c6f7-a2d8-52d7-a02d-3bbf5f1e75a8",
-          "chapterId": "a0df1b9d-9a7d-51fe-b341-b28eef99faa1",
           "orderIndex": 1,
           "text": "春夏各致一阴，秋冬各致一阳者，何谓也？\n然：春夏温，必致一阴者，初下针，沉之至肾肝之部，得气，引持之阴也。秋冬寒，必致一阳者，初内针，浅而浮之至心肺之部，得气，推内之阳也。是谓春夏必致一阴，秋冬必致一阳。",
-          "blockType": "p",
           "parseHash": "ce29a83a674fd72f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 70002,
-            "endLine": 70002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "cc81b639-550b-587f-a716-3ad6d58896c4",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 70,
       "level": "篇",
       "title": "七十一难",
-      "canonicalTitle": "七十一难",
-      "collection": "难经",
-      "sequence": 71,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 71000,
-        "endLine": 71001
-      },
       "contentHash": "629d8a710bdc0ead",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "8a6c0833-716b-55b8-a888-3c8b83fcdd5f",
-          "chapterId": "cc81b639-550b-587f-a716-3ad6d58896c4",
           "orderIndex": 0,
           "text": "曰：经言“刺荣无伤卫，刺卫无伤荣”，何谓也？\n然：针阳者，卧针而刺之；刺阴者，先以左手摄按所针荥输之处，气散乃内针。是谓刺荣无伤卫，刺卫无伤荣也。",
-          "blockType": "p",
           "parseHash": "629d8a710bdc0ead",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 71001,
-            "endLine": 71001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "93abb81f-13a3-5c63-b931-c341b57fcefe",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 71,
       "level": "篇",
       "title": "七十二难",
-      "canonicalTitle": "七十二难",
-      "collection": "难经",
-      "sequence": 72,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 72000,
-        "endLine": 72001
-      },
       "contentHash": "276f9bd9b0fa2446",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "5d4db152-ebb1-5169-a281-a0df129f118c",
-          "chapterId": "93abb81f-13a3-5c63-b931-c341b57fcefe",
           "orderIndex": 0,
           "text": "曰：经言“能知迎随之气，可令调之；调气之方，必在阴阳”，何谓也？\n然：所谓迎随者，知荣卫之流行，经脉之往来也。随其逆顺而取之，故曰迎随。调气之方，必在阴阳者，知其内外表里，随其阴阳而调之，故曰“调气之方，必在阴阳”。",
-          "blockType": "p",
           "parseHash": "276f9bd9b0fa2446",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 72001,
-            "endLine": 72001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "d8799047-7986-5873-b0d7-bc731b0c08aa",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 72,
       "level": "篇",
       "title": "七十三难",
-      "canonicalTitle": "七十三难",
-      "collection": "难经",
-      "sequence": 73,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 73000,
-        "endLine": 73001
-      },
       "contentHash": "138120835130c913",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "25e3d405-655d-5842-8c45-16f249efb347",
-          "chapterId": "d8799047-7986-5873-b0d7-bc731b0c08aa",
           "orderIndex": 0,
           "text": "曰：诸井者，肌肉浅薄，气少不足使也，刺之奈何？\n然：诸井者，木也；荥者，火也。火者，木之子，当刺井者，以荥泻之。故经言“补者不可以为泻，泻者不可以为补”，此之谓也。",
-          "blockType": "p",
           "parseHash": "138120835130c913",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 73001,
-            "endLine": 73001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "bd3d59fc-5849-5239-a371-905885ef9de0",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 73,
       "level": "篇",
       "title": "七十四难",
-      "canonicalTitle": "七十四难",
-      "collection": "难经",
-      "sequence": 74,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 74000,
-        "endLine": 74002
-      },
       "contentHash": "524f8c26c5cf0f2a",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "7b7858a5-20f3-5652-bc13-3b495f5f114c",
-          "chapterId": "bd3d59fc-5849-5239-a371-905885ef9de0",
           "orderIndex": 0,
           "text": "曰；经言“春刺井，夏刺荥，季夏刺输，秋刺经，冬刺合”者，何谓也？\n然：春刺井者，邪在肝；夏刺荥者，邪在心；季夏刺输者，邪在脾；秋刺经者，邪在肺；冬刺合者，邪在肾。",
-          "blockType": "p",
           "parseHash": "02b0f197eadd4a2a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 74001,
-            "endLine": 74001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         },
         {
           "id": "4439a90e-541d-532d-8380-420d832f29fe",
-          "chapterId": "bd3d59fc-5849-5239-a371-905885ef9de0",
           "orderIndex": 1,
           "text": "其肝、心、脾、肺、肾，而系于春、夏、秋、冬者，何也？\n然：五脏一病，辄有五也。假令肝病，色青者肝也，臊臭者肝也，喜酸者肝也，喜呼者肝也，喜泣者肝也，其病众多，不可尽言也。四时有数，而并系于春、夏、秋、冬者也。针之要妙，在于秋毫者也。",
-          "blockType": "p",
           "parseHash": "24d6a72d0d59ca6a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 74002,
-            "endLine": 74002
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "fa8c195e-9ac1-52fd-a654-dca7308d3cc7",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 74,
       "level": "篇",
       "title": "七十五难",
-      "canonicalTitle": "七十五难",
-      "collection": "难经",
-      "sequence": 75,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 75000,
-        "endLine": 75001
-      },
       "contentHash": "01adba6898cb9898",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "8e9712ef-3f0d-5579-bdbc-3198e4883bb5",
-          "chapterId": "fa8c195e-9ac1-52fd-a654-dca7308d3cc7",
           "orderIndex": 0,
           "text": "曰：经言“东方实，西方虚；泻南方，补北方”，何谓也？\n然：金、木、水、火、土，当更相平。东方木也，西方金也。木欲实，金当平之；火欲实，水当平之；土欲实，木当平之；金欲实，火当平之；水欲实，土当平之。东方肝也，则知肝实；西方肺也，则知肺虚。泻南方火，补北方水。南方火，火者，木之子也；北方水，水者，木之母也。水胜火，子能令母实，母能令子虚，故泻火补水，欲令金不得平木也。经曰“不能治其虚，何问其余”，此之谓也。",
-          "blockType": "p",
           "parseHash": "01adba6898cb9898",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 75001,
-            "endLine": 75001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "da392d69-1547-5876-a4de-484e8e26c22e",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 75,
       "level": "篇",
       "title": "七十六难",
-      "canonicalTitle": "七十六难",
-      "collection": "难经",
-      "sequence": 76,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 76000,
-        "endLine": 76001
-      },
       "contentHash": "8d70c8186efaa18a",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "45497460-52d4-541a-8edf-09ef29ac801b",
-          "chapterId": "da392d69-1547-5876-a4de-484e8e26c22e",
           "orderIndex": 0,
           "text": "曰：何谓补泻？当补之时，何所取气？当泻之时，何所置气？\n然：当补之时，从卫取气；当泻之时，从荣置气。其阳气不足，阴气有余，当先补其阳，而后泻其阴；阴气不足，阳气有余，当先补其阴，而后泻其阳，营卫通行，此其要也。",
-          "blockType": "p",
           "parseHash": "8d70c8186efaa18a",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 76001,
-            "endLine": 76001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "61814645-a458-5887-ba56-09e4e8463b2e",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 76,
       "level": "篇",
       "title": "七十七难",
-      "canonicalTitle": "七十七难",
-      "collection": "难经",
-      "sequence": 77,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 77000,
-        "endLine": 77001
-      },
       "contentHash": "dac518a98fc5a403",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "06936d64-aa6b-526f-8e31-c81732cd727b",
-          "chapterId": "61814645-a458-5887-ba56-09e4e8463b2e",
           "orderIndex": 0,
           "text": "曰：经言“上工治未病，中工治已病”，何谓也？\n然：所谓治未病者，见肝之病，则知肝当传之与脾，故先实其脾气，无令得受肝之邪，故曰治未病焉。中工者，见肝之病，不晓相传，但一心治肝，故曰治已病也。",
-          "blockType": "p",
           "parseHash": "dac518a98fc5a403",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 77001,
-            "endLine": 77001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "1e0f1280-282a-5b84-bca3-0bccc50028d8",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 77,
       "level": "篇",
       "title": "七十八难",
-      "canonicalTitle": "七十八难",
-      "collection": "难经",
-      "sequence": 78,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 78000,
-        "endLine": 78001
-      },
       "contentHash": "c11519bf42bbf7fe",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "44ce6a10-b663-5953-87a6-a4148ad04405",
-          "chapterId": "1e0f1280-282a-5b84-bca3-0bccc50028d8",
           "orderIndex": 0,
           "text": "曰：针有补泻，何谓也？\n然：补泻之法，非必呼吸出内针也。知为针者，信其左；不知为针者，信其右。当刺之时，先以左手厌按所针荥输之处，弹而努之，爪而下之，其气之来，如动脉之状，顺针而刺之。得气，因推而内之，是谓补；动而伸之，是谓泻。不得气，乃与，男外女内；不得气，是为十死不治也。",
-          "blockType": "p",
           "parseHash": "c11519bf42bbf7fe",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 78001,
-            "endLine": 78001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "97fac818-44f8-5875-9c48-c853bf5afff3",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 78,
       "level": "篇",
       "title": "七十九难",
-      "canonicalTitle": "七十九难",
-      "collection": "难经",
-      "sequence": 79,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 79000,
-        "endLine": 79001
-      },
       "contentHash": "58ab11ed255f51e5",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "3a9da16b-a5da-5968-ad46-4d7e4b7b15a4",
-          "chapterId": "97fac818-44f8-5875-9c48-c853bf5afff3",
           "orderIndex": 0,
           "text": "曰：经言“迎而夺之，安得无虚？随而济之，安得无实？虚之与实，若得若失；实之与虚，若有若无”，何谓也？\n然：迎而夺之者，泻其子也；随而济之者，补其母也。假令心病，泻手心主输，是谓迎而夺之者也；补手心主井，是谓随而济之者也。所谓实之与虚者，牢濡之意也。气来实牢者为得，濡虚者为失，故曰若得若失也。",
-          "blockType": "p",
           "parseHash": "58ab11ed255f51e5",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 79001,
-            "endLine": 79001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "bf2b8052-1313-5322-a436-af7117415975",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 79,
       "level": "篇",
       "title": "八十难",
-      "canonicalTitle": "八十难",
-      "collection": "难经",
-      "sequence": 80,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 80000,
-        "endLine": 80001
-      },
       "contentHash": "0151ed776c1af092",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "37e19721-15ea-5bad-8c79-5a879c150564",
-          "chapterId": "bf2b8052-1313-5322-a436-af7117415975",
           "orderIndex": 0,
           "text": "曰：经言“有见如入，有见如出”者，何谓也？\n然：所谓“有见如入，有见如出”者，谓左手见气来至，乃内针，针入，见气尽，乃出针。是谓“有见如入，有见如出”也。",
-          "blockType": "p",
           "parseHash": "0151ed776c1af092",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 80001,
-            "endLine": 80001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]
     },
     {
       "id": "a0c63f23-b532-5cbd-9190-ba1131fda099",
-      "bookId": "516737e1-25f1-5439-96d5-bc79f63a59ee",
       "parentId": null,
       "orderIndex": 80,
       "level": "篇",
       "title": "八十一难",
-      "canonicalTitle": "八十一难",
-      "collection": "难经",
-      "sequence": 81,
-      "sourceRange": {
-        "startPage": 1,
-        "endPage": 1,
-        "startLine": 81000,
-        "endLine": 81001
-      },
       "contentHash": "c792db77fc065a4f",
       "quality": {
-        "flag": "ok",
-        "notes": []
+        "flag": "ok"
       },
       "paragraphs": [
         {
           "id": "a6b190b1-d04e-5c9f-be3e-b25552066f1d",
-          "chapterId": "a0c63f23-b532-5cbd-9190-ba1131fda099",
           "orderIndex": 0,
           "text": "曰：经言“无实实虚虚，损不足而益有余”，是寸口脉耶？将病自有虚实耶？其损益奈何？\n然：是病，非谓寸口脉也，谓病自有虚实也。假令肝实而肺虚，肝者木也，肺者金也，金木当更相平，当知金平木。假令肺实而肝虚，微少气，用针不补其肝，而反重实其肺，故曰“实实虚虚，损不足而益有余”。此者，中工之所害也。",
-          "blockType": "p",
           "parseHash": "c792db77fc065a4f",
-          "sourceRange": {
-            "startPage": 1,
-            "endPage": 1,
-            "startLine": 81001,
-            "endLine": 81001
-          },
           "quality": {
-            "flag": "ok",
-            "notes": []
+            "flag": "ok"
           }
         }
       ]

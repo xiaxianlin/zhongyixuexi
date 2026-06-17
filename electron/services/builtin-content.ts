@@ -9,17 +9,11 @@ import { normalize } from './content-normalize'
 const BUILTIN_FILES = ['nanjing-original.json', 'huangdi-neijing-original.json'] as const
 
 interface BuiltinDataFile {
-  schemaVersion: number
   book: {
     id: string
     title: string
     author: string | null
     category: string | null
-    sourceFormat: string
-  }
-  source?: {
-    path?: string
-    format?: string
   }
   quality?: {
     chapterCount?: number
@@ -105,8 +99,7 @@ function validateBuiltinFile(file: BuiltinDataFile, fileName: string): void {
 }
 
 /**
- * Seeds bundled classical content on app startup. Development keeps only the
- * latest bundled data: a changed book is deleted and inserted again.
+ * Seeds bundled classical content on app startup.
  */
 export function seedBuiltinContent(): SeedBuiltinResult {
   const files = BUILTIN_FILES.map((fileName) => ({
@@ -120,10 +113,8 @@ export function seedBuiltinContent(): SeedBuiltinResult {
 
   const insertBook = db.prepare(
     `INSERT INTO books
-       (id, title, author, source_format, source_file, cover, category,
-        imported_at, parse_version, updated_at, deleted_at)
-     VALUES (@id, @title, @author, 'builtin', @sourceFile, NULL, @category,
-             @importedAt, @parseVersion, @updatedAt, NULL)`,
+       (id, title, author, cover, category, updated_at, deleted_at)
+     VALUES (@id, @title, @author, NULL, @category, @updatedAt, NULL)`,
   )
 
   const insertChapter = db.prepare(
@@ -143,15 +134,14 @@ export function seedBuiltinContent(): SeedBuiltinResult {
   )
 
   const tx = db.transaction(() => {
-    for (const { fileName, data } of files) {
+    for (const { data } of files) {
       const bookId = data.book.id
-      const version = builtinVersion(data)
       bookIds.push(bookId)
 
       const existing = db
-        .prepare('SELECT id, parse_version FROM books WHERE id = ?')
-        .get(bookId) as { id: string; parse_version: number } | undefined
-      if (existing?.parse_version === version) continue
+        .prepare('SELECT id FROM books WHERE id = ? AND deleted_at IS NULL')
+        .get(bookId) as { id: string } | undefined
+      if (existing) continue
 
       inserted = true
       const bookParams = {
@@ -159,13 +149,9 @@ export function seedBuiltinContent(): SeedBuiltinResult {
         title: data.book.title,
         author: data.book.author,
         category: data.book.category,
-        sourceFile: `builtin:data/${fileName}`,
-        parseVersion: version,
-        importedAt: now,
         updatedAt: now,
       }
 
-      if (existing) db.prepare('DELETE FROM books WHERE id = ?').run(bookId)
       insertBook.run(bookParams)
 
       for (const chapter of data.chapters) {
@@ -202,28 +188,4 @@ export function seedBuiltinContent(): SeedBuiltinResult {
 
   tx()
   return { inserted, bookIds }
-}
-
-function builtinVersion(data: BuiltinDataFile): number {
-  const payload = JSON.stringify({
-    schemaVersion: data.schemaVersion,
-    book: data.book,
-    source: data.source,
-    quality: data.quality,
-    chapters: data.chapters.map((chapter) => ({
-      id: chapter.id,
-      parentId: chapter.parentId,
-      orderIndex: chapter.orderIndex,
-      level: chapter.level,
-      title: chapter.title,
-      contentHash: chapter.contentHash,
-      paragraphs: chapter.paragraphs.map((paragraph) => ({
-        id: paragraph.id,
-        orderIndex: paragraph.orderIndex,
-        text: normalize(paragraph.text),
-        parseHash: paragraph.parseHash,
-      })),
-    })),
-  })
-  return parseInt(sha256Hex16(payload).slice(0, 8), 16)
 }

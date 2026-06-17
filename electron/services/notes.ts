@@ -16,7 +16,7 @@ export interface ParagraphNoteCard {
   updated_at: number
 }
 
-function backfillFromParagraph(
+function resolveParagraphContext(
   paragraphId: string,
 ): { chapter_id: string | null; book_id: string | null } {
   const db = getDb()
@@ -40,7 +40,7 @@ export function createNote(input: CreateNoteInput): ParagraphNoteCard {
   const now = Date.now()
   const id = randomUUID()
   const content = input.content?.trim() ?? ''
-  const filled = backfillFromParagraph(paragraphId)
+  const paragraphContext = resolveParagraphContext(paragraphId)
 
   db.prepare(
     `INSERT INTO notes (id, content, book_id, chapter_id, paragraph_id, created_at, updated_at, deleted_at)
@@ -48,8 +48,8 @@ export function createNote(input: CreateNoteInput): ParagraphNoteCard {
   ).run(
     id,
     content,
-    input.book_id ?? filled.book_id,
-    input.chapter_id ?? filled.chapter_id,
+    input.book_id ?? paragraphContext.book_id,
+    input.chapter_id ?? paragraphContext.chapter_id,
     paragraphId,
     now,
     now,

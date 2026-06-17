@@ -10,11 +10,10 @@ export interface BookListItem {
   author: string | null
   cover: string | null
   category: string | null
-  source_format: string
   chapter_count: number
   paragraph_count: number
   progress: number
-  imported_at: number
+  updated_at: number
 }
 
 export interface ChapterNode {

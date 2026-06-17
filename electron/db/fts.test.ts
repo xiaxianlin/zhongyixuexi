@@ -18,9 +18,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const source = readFileSync(join(__dirname, 'schema.ts'), 'utf8')
 
 describe('schema.ts fts_paragraphs schema', () => {
-  it('declares the current schema id and version', () => {
-    expect(source).toContain('SCHEMA_ID')
-    expect(source).toContain('SCHEMA_VERSION')
+  it('declares the current schema version through SQLite user_version', () => {
+    expect(source).toContain('CURRENT_SCHEMA_VERSION')
+    expect(source).toContain('user_version')
   })
 
   it('creates the fts_paragraphs external-content FTS5 table', () => {

@@ -2,7 +2,7 @@
  * Learning dashboard aggregation.
  *
  * The current product no longer has review cards or quizzes. "Learning" is the
- * user's real reading/study footprint: imported classics, paragraphs read,
+ * user's real reading/study footprint: built-in classics, paragraphs read,
  * analyses generated, and notes written.
  */
 
