@@ -23,9 +23,8 @@ import { writeFileSync, mkdirSync } from 'node:fs'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
 import {
-  joinActiveAnalysis,
+  activeAnalysisSql,
   mapParagraphAnalysisView,
-  selectActiveAnalysisColumns,
   type ParagraphAnalysisSqlRow,
 } from './paragraph-analysis'
 
@@ -1333,14 +1332,15 @@ export function exportParagraphCombined(
   input: ExportParagraphInput,
 ): { title: string; md: string; html: string } {
   const db = getDb()
+  const activeAnalysis = activeAnalysisSql()
   const para = db
     .prepare(
       `SELECT p.id,
               p.chapter_id,
               p.text,
-              ${selectActiveAnalysisColumns()}
+              ${activeAnalysis.columns}
        FROM paragraphs p
-       ${joinActiveAnalysis()}
+       ${activeAnalysis.join}
        WHERE p.id = ? AND p.deleted_at IS NULL`,
     )
     .get(input.paragraph_id) as

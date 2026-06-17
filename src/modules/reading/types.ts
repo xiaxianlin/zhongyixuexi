@@ -26,12 +26,16 @@ export interface ParagraphDTO {
 
 export interface ParagraphAnalysisMeta {
   id: string
+  kind: ParagraphAnalysisKind
   version: number
   source: string
   model: string | null
+  meta: Record<string, unknown> | null
   created_at: number
   updated_at: number
 }
+
+export type ParagraphAnalysisKind = 'modern'
 
 export interface ChapterDTO {
   id: string
@@ -114,6 +118,7 @@ export interface ParagraphAnalysisHistoryDTO extends ParagraphAnalysisMeta {
   summary: string | null
   prompt_hash: string | null
   cache_id: string | null
+  meta: Record<string, unknown> | null
 }
 
 export interface TermLookupDTO {

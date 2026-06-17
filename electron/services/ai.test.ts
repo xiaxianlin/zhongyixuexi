@@ -66,9 +66,11 @@ describe('modernJsonToInterpretation', () => {
   it('maps modern JSON into the unified paragraph interpretation view', () => {
     const meta = {
       id: 'analysis-1',
+      kind: 'modern' as const,
       version: 2,
       source: 'ai',
       model: 'deepseek-chat',
+      meta: null,
       created_at: 1710000000000,
       updated_at: 1710000001000,
     }

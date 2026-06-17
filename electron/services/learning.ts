@@ -18,9 +18,8 @@ import { randomUUID } from 'node:crypto'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
 import {
-  joinActiveAnalysis,
+  activeAnalysisSql,
   mapParagraphAnalysisView,
-  selectActiveAnalysisColumns,
   type ParagraphAnalysisSqlRow,
   type ParagraphAnalysisView,
 } from './paragraph-analysis'
@@ -735,15 +734,16 @@ export function generateQuiz(input: QuizGenInput): { session_id: string; questio
     scopeParams.push(input.book_id)
   }
 
+  const activeAnalysis = activeAnalysisSql()
   const paragraphRows = db
     .prepare(
       `SELECT p.id,
          p.chapter_id,
          (SELECT book_id FROM chapters WHERE id = p.chapter_id) AS book_id,
          p.text,
-         ${selectActiveAnalysisColumns()}
+         ${activeAnalysis.columns}
        FROM paragraphs p
-       ${joinActiveAnalysis()}
+       ${activeAnalysis.join}
        WHERE ${scopeWhere}
        ORDER BY RANDOM()
        LIMIT ?`,

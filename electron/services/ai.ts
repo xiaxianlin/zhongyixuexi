@@ -50,15 +50,18 @@ import {
   findCache,
   writeCache,
   invalidateCache,
+  type AiCacheKind as StoredAiCacheKind,
 } from '../ai/cache'
 import { aiError } from '../ai/errors'
 import { createHash } from 'node:crypto'
 import {
-  getActiveParagraphAnalysisMeta,
-  hasActiveParagraphAnalysis,
-  syncLegacyParagraphAnalysisColumns,
+  DEFAULT_PARAGRAPH_ANALYSIS_KIND,
+  buildParagraphAnalysisInput,
+  ensureActiveParagraphAnalysisWithLegacySync,
+  type ParagraphAnalysisKind,
   type ParagraphAnalysisMeta,
-  writeActiveParagraphAnalysis,
+  type ParagraphInterpretationView,
+  writeActiveParagraphAnalysisWithLegacySync,
 } from './paragraph-analysis'
 
 /**
@@ -67,6 +70,8 @@ import {
  * locally so the existing findCache/writeCache calls type-check.
  */
 type AiCacheKind = 'modern' | 'qa' | 'cards' | 'annotation' | 'parse'
+const MODERN_CACHE_KIND: Extract<StoredAiCacheKind, ParagraphAnalysisKind> =
+  DEFAULT_PARAGRAPH_ANALYSIS_KIND
 
 // ============================================================================
 // DTOs (self-contained; renderer mirrors in src/modules/ai/types.ts)
@@ -76,19 +81,12 @@ export interface ModernResultDTO {
   paragraphId: string
   fromCache: boolean
   analysisMeta: ParagraphAnalysisMeta | null
-  interpretation: ModernInterpretationDTO
+  interpretation: ParagraphInterpretationView
   sentences: ModernSentence[]
   analysis: string
   summary: string
   model: string
   tokens: number
-}
-
-export interface ModernInterpretationDTO {
-  modern: string | null
-  explanation: string | null
-  analysis: string | null
-  meta: ParagraphAnalysisMeta | null
 }
 
 export interface QaCiteDTO {
@@ -287,34 +285,27 @@ function generateModernImpl(
 
   // 1. cache hit?
   if (opts.force) {
-    invalidateCache(paragraphId, 'modern')
+    invalidateCache(paragraphId, MODERN_CACHE_KIND)
   }
-  const hit = opts.force ? null : findCache(paragraphId, 'modern', promptHash)
+  const hit = opts.force ? null : findCache(paragraphId, MODERN_CACHE_KIND, promptHash)
   console.info(
     `[ai] generateModern paragraph=${paragraphId} force=${opts.force ? 'true' : 'false'} cache=${hit ? 'hit' : 'miss'}`,
   )
   if (hit) {
     const parsed = validateModernJson(parseJsonLoose<ModernJson>(hit.response))
     const interpretation = modernJsonToInterpretation(parsed, null)
-    const analysisView = interpretationToAnalysisView(interpretation)
     const analysisMeta = getDb().transaction(() => {
-      syncLegacyParagraphAnalysisColumns({
+      const analysisInput = buildParagraphAnalysisInput({
         paragraphId,
-        ...analysisView,
+        content: interpretation,
+        summary: parsed.summary,
+        model: hit.model,
+        promptHash,
+        cacheId: hit.id,
+        source: 'cache',
+        meta: { fromCache: true, sentenceCount: parsed.sentences.length },
       })
-      if (!hasActiveParagraphAnalysis(paragraphId, hit.id)) {
-        return writeActiveParagraphAnalysis({
-          paragraphId,
-          ...analysisView,
-          summary: parsed.summary,
-          model: hit.model,
-          promptHash,
-          cacheId: hit.id,
-          source: 'cache',
-          meta: { fromCache: true, sentenceCount: parsed.sentences.length },
-        })
-      }
-      return getActiveParagraphAnalysisMeta(paragraphId)
+      return ensureActiveParagraphAnalysisWithLegacySync(analysisInput)
     })()
     return Promise.resolve(
       toModernDTO(paragraphId, parsed, hit.model, hit.totalTokens, true, analysisMeta),
@@ -357,18 +348,13 @@ function generateModernImpl(
 
     // 3. write active analysis + compatibility columns + ai_cache atomically.
     const interpretation = modernJsonToInterpretation(parsed, null)
-    const analysisView = interpretationToAnalysisView(interpretation)
 
     const db = getDb()
     const tx = db.transaction(() => {
-      syncLegacyParagraphAnalysisColumns({
-        paragraphId,
-        ...analysisView,
-      })
       const cacheId = writeCache({
         scope: 'paragraph',
         scopeId: paragraphId,
-        kind: 'modern',
+        kind: MODERN_CACHE_KIND,
         paragraphId,
         promptHash,
         response: JSON.stringify(parsed),
@@ -378,9 +364,9 @@ function generateModernImpl(
         totalTokens: lastResp.usage?.total_tokens ?? 0,
         meta: { summary: parsed.summary, sentenceCount: parsed.sentences.length },
       })
-      return writeActiveParagraphAnalysis({
+      const analysisInput = buildParagraphAnalysisInput({
         paragraphId,
-        ...analysisView,
+        content: interpretation,
         summary: parsed.summary,
         model: cfg.model,
         promptHash,
@@ -391,6 +377,7 @@ function generateModernImpl(
           totalTokens: lastResp.usage?.total_tokens ?? 0,
         },
       })
+      return writeActiveParagraphAnalysisWithLegacySync(analysisInput)
     })
     const analysisMeta = tx()
 
@@ -434,22 +421,12 @@ function toModernDTO(
 export function modernJsonToInterpretation(
   parsed: ModernJson,
   analysisMeta: ParagraphAnalysisMeta | null,
-): ModernInterpretationDTO {
+): ParagraphInterpretationView {
   return {
     modern: parsed.sentences.map((s) => s.modern).join('\n'),
     explanation: parsed.sentences.map((s, i) => `${i + 1}. ${s.commentary}`).join('\n'),
     analysis: parsed.analysis || parsed.summary,
     meta: analysisMeta,
-  }
-}
-
-function interpretationToAnalysisView(
-  interpretation: ModernInterpretationDTO,
-): { modern: string; explanation: string; analysis: string } {
-  return {
-    modern: interpretation.modern ?? '',
-    explanation: interpretation.explanation ?? '',
-    analysis: interpretation.analysis ?? '',
   }
 }
 

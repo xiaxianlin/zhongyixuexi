@@ -21,16 +21,17 @@ import { getDb } from '../db'
 import { AppError } from '../lib/error'
 import {
   activateParagraphAnalysis,
+  activeAnalysisSql,
   getActiveParagraphAnalysisView,
-  joinActiveAnalysis,
   listParagraphAnalysisHistory,
-  mapParagraphAnalysisMeta,
   mapParagraphAnalysisView,
-  selectActiveAnalysisColumns,
+  toParagraphInterpretationDTO,
+  toParagraphInterpretationView,
   type ParagraphAnalysisHistoryItem,
   type ParagraphAnalysisMeta,
   type ParagraphAnalysisSqlRow,
-  type ParagraphAnalysisView,
+  type ParagraphInterpretationDTO,
+  type ParagraphInterpretationView,
 } from './paragraph-analysis'
 
 // ---------- DTOs (self-contained; do NOT import models/content.ts) ----------
@@ -111,20 +112,9 @@ export interface UpdateBookmarkInput {
   color?: string | null
 }
 
-export interface InterpretationDTO {
-  modern: string | null
-  explanation: string | null
-  analysis: string | null
-  meta: ParagraphAnalysisMeta | null
-  cached: boolean
-}
+export type InterpretationDTO = ParagraphInterpretationDTO
 
-export interface InterpretationViewDTO {
-  modern: string | null
-  explanation: string | null
-  analysis: string | null
-  meta: ParagraphAnalysisMeta | null
-}
+export type InterpretationViewDTO = ParagraphInterpretationView
 
 export type ParagraphAnalysisHistoryDTO = ParagraphAnalysisHistoryItem
 
@@ -156,44 +146,32 @@ export function getChapter(bookId: string, chapterId: string): ChapterContent | 
     .get(chapterId, bookId) as ChapterDTO | undefined
   if (!chapter) return null
 
+  const activeAnalysis = activeAnalysisSql()
   const rows = db
     .prepare(
       `SELECT p.id,
               p.chapter_id,
               p.order_index,
               p.text,
-              ${selectActiveAnalysisColumns()},
+              ${activeAnalysis.columns},
               p.edited,
               p.is_noise
        FROM paragraphs p
-       ${joinActiveAnalysis()}
+       ${activeAnalysis.join}
        WHERE p.chapter_id = ? AND p.deleted_at IS NULL
        ORDER BY p.order_index`,
     )
     .all(chapterId) as ParagraphRow[]
-  const paragraphs = rows.map((paragraph) => ({
-    ...paragraph,
-    analysis_meta: mapParagraphAnalysisMeta(paragraph),
-    interpretation: toInterpretationView(mapParagraphAnalysisView(paragraph)),
-  }))
+  const paragraphs = rows.map((paragraph) => {
+    const analysisView = mapParagraphAnalysisView(paragraph)
+    return {
+      ...paragraph,
+      analysis_meta: analysisView.analysisMeta,
+      interpretation: toParagraphInterpretationView(analysisView),
+    }
+  })
 
   return { chapter, paragraphs }
-}
-
-function toInterpretationView(view: ParagraphAnalysisView): InterpretationViewDTO {
-  return {
-    modern: view.modern,
-    explanation: view.explanation,
-    analysis: view.analysis,
-    meta: view.analysisMeta,
-  }
-}
-
-function toInterpretationDTO(view: ParagraphAnalysisView): InterpretationDTO {
-  return {
-    ...toInterpretationView(view),
-    cached: view.modern != null || view.explanation != null || view.analysis != null,
-  }
 }
 
 // ---------- progress (RD-08) ----------
@@ -411,7 +389,7 @@ export function getInterpretation(paragraphId: string): InterpretationDTO {
   if (!view) {
     throw new AppError('NOT_FOUND', `paragraph ${paragraphId} not found`)
   }
-  return toInterpretationDTO(view)
+  return toParagraphInterpretationDTO(view)
 }
 
 export function listInterpretationHistory(paragraphId: string): ParagraphAnalysisHistoryDTO[] {
@@ -425,7 +403,7 @@ export function activateInterpretationVersion(
 ): InterpretationDTO {
   assertLiveParagraph(paragraphId)
   const view = activateParagraphAnalysis(paragraphId, analysisId)
-  return toInterpretationDTO(view)
+  return toParagraphInterpretationDTO(view)
 }
 
 function assertLiveParagraph(paragraphId: string): void {
