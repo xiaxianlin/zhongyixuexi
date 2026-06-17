@@ -2,8 +2,7 @@
  * Search store (SRH, Zustand). Session/UI cache only — persisted data lives in
  * SQLite (dictionary_terms). Holds the current query, results, the active
  * highlight term, and the term-popup detail. Jump-to-paragraph is delegated to
- * the session store (activeBookId/activeChapterId/activeParagraphId + view) so
- * the RD module owns rendering — see openHit().
+ * the library detail page via the session store.
  */
 
 import { create } from 'zustand'
@@ -33,7 +32,7 @@ interface SearchState {
   openTerm: (termId: string) => Promise<void>
   closeTerm: () => void
 
-  /** Jump to a search hit: sets session fields RD listens on, then view=reading. */
+  /** Jump to a search hit in the library detail page. */
   openHit: (hit: SearchHit) => void
 }
 
@@ -95,17 +94,6 @@ export const useSearchStore = create<SearchState>((set) => ({
   closeTerm: () => set({ activeTermDetail: null, termDetailLoading: false }),
 
   openHit: (hit) => {
-    // Cross-module contract (dev-rd / dev-srh): set the three session fields RD
-    // consumes (activeBookId/activeChapterId/activeParagraphId), then switch
-    // the top-level view to reading. SRH does NOT render the reader — RD picks
-    // up activeParagraphId and scrolls to it. Setting all four fields in one
-    // setState is deliberate: openChapter() does not set activeBookId, and a
-    // search hit can target a different book than the currently open one.
-    useSessionStore.setState({
-      activeBookId: hit.bookId,
-      activeChapterId: hit.chapterId,
-      activeParagraphId: hit.paragraphId,
-      view: 'reading',
-    })
+    useSessionStore.getState().openBookDetail(hit.bookId, hit.chapterId, hit.paragraphId)
   },
 }))

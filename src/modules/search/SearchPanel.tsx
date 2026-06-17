@@ -3,10 +3,8 @@
  *
  * Composes a search input (SearchBar) with the paragraph-level ResultList, and
  * hosts the TermPopup (SRH-04). Enter or a 250ms debounce triggers
- * searchStore.runSearch; clicking a result calls openHit, which sets the
- * session fields RD listens on (activeBookId/activeChapterId/activeParagraphId)
- * and switches the view to 'reading' — SRH never renders the reader itself
- * (cross-module contract, 05-search.md §6.3).
+ * searchStore.runSearch; clicking a result opens the matching paragraph in the
+ * library detail page.
  *
  * Styling mirrors library.css token usage; see search.css.
  */

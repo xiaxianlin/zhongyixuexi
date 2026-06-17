@@ -3,8 +3,7 @@
  *
  * Renders when searchStore.activeTermDetail is set (opened via openTerm). The
  * "related occurrences" list shows paragraphs where the term appears; clicking
- * one jumps to it in the reader by delegating to the session store — exactly
- * like a search hit (activeBookId/activeChapterId/activeParagraphId + view).
+ * one jumps to it in the library detail page.
  *
  * No dangerouslySetInnerHTML: the definition/source are plain text.
  */
@@ -14,14 +13,7 @@ import { useSessionStore } from '@/stores/session'
 import type { TermOccurrence } from '@/lib/types'
 
 function jumpToOccurrence(o: TermOccurrence): void {
-  // Cross-module contract: set the three session fields RD consumes, then view.
-  useSessionStore.setState({
-    activeBookId: o.bookId,
-    activeChapterId: o.chapterId,
-    activeParagraphId: o.paragraphId,
-    view: 'reading',
-  })
-  // Close the popup so the reader is visible.
+  useSessionStore.getState().openBookDetail(o.bookId, o.chapterId, o.paragraphId)
   useSearchStore.getState().closeTerm()
 }
 

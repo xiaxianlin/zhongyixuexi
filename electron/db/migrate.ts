@@ -3,7 +3,7 @@ import { getDb, resetDbFiles } from './connection'
 
 type Migration = { version: number; name: string; up: (db: DB) => void }
 
-const SCHEMA_ID = '2026-06-builtin-multibook'
+const SCHEMA_ID = '2026-06-library-detail-reading'
 
 /**
  * Inline migration registry. Schema migrations arrive with their owning slices
@@ -169,10 +169,7 @@ const MIGRATIONS: Migration[] = [
     },
   },
   {
-    // v5 — RD reading progress + bookmarks (03-reading.md §4). DDL mirrored from
-    // electron/db/migrations/reading.sql. reading_progress is segment-level
-    // (one row per book); bookmarks bind to segment or chapter (paragraph_id
-    // NULL → chapter-level) and degrade via ON DELETE SET NULL.
+    // v5 — reading progress for the library dashboard/detail surfaces.
     version: 5,
     name: 'reading',
     up: (db) => {
@@ -192,22 +189,6 @@ const MIGRATIONS: Migration[] = [
         );
         CREATE INDEX IF NOT EXISTS idx_reading_progress_updated ON reading_progress(updated_at DESC);
 
-        CREATE TABLE IF NOT EXISTS bookmarks (
-            id           TEXT    PRIMARY KEY,
-            book_id      TEXT    NOT NULL,
-            chapter_id   TEXT    NOT NULL,
-            paragraph_id TEXT,
-            title        TEXT,
-            note         TEXT,
-            color        TEXT,
-            created_at   INTEGER NOT NULL,
-            updated_at   INTEGER NOT NULL,
-            FOREIGN KEY (book_id)      REFERENCES books(id)      ON DELETE CASCADE,
-            FOREIGN KEY (chapter_id)   REFERENCES chapters(id)   ON DELETE CASCADE,
-            FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE SET NULL
-        );
-        CREATE INDEX IF NOT EXISTS idx_bookmarks_book_created ON bookmarks(book_id, created_at DESC);
-        CREATE INDEX IF NOT EXISTS idx_bookmarks_paragraph ON bookmarks(paragraph_id) WHERE paragraph_id IS NOT NULL;
       `)
     },
   },

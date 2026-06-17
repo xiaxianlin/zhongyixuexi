@@ -3,7 +3,6 @@ import { useSessionStore } from '@/stores/session'
 import { useAiStore, attachAiProgressListener } from '@/stores/ai'
 import { useSearchStore } from '@/stores/search'
 import { LibraryView } from '@/modules/library/LibraryView'
-import { ReadingWorkbench } from '@/modules/reading/ReadingWorkbench'
 import { SearchPanel } from '@/modules/search/SearchPanel'
 import { SettingsView } from '@/modules/settings/SettingsView'
 import { ProviderEditorModal } from '@/modules/settings/ProviderEditorModal'
@@ -20,7 +19,6 @@ const NAV: { view: import('@/stores/session').View; label: string }[] = [
 
 export default function App() {
   const view = useSessionStore((s) => s.view)
-  const activeBookId = useSessionStore((s) => s.activeBookId)
   const setView = useSessionStore((s) => s.setView)
   const refreshAiStatus = useAiStore((s) => s.refreshStatus)
   const aiStatus = useAiStore((s) => s.status)
@@ -40,8 +38,6 @@ export default function App() {
   const onForceSaved = useCallback(() => {
     void refreshAiStatus()
   }, [refreshAiStatus])
-
-  const reading = view === 'reading' && activeBookId !== null
 
   const openQuickSearch = useCallback(() => {
     setQuickSearchDraft(searchQuery)
@@ -121,9 +117,7 @@ export default function App() {
       <DegradedNotice />
 
       <main className="app__main">
-        {reading && activeBookId ? (
-          <ReadingWorkbench bookId={activeBookId} />
-        ) : view === 'search' ? (
+        {view === 'search' ? (
           <SearchPanel />
         ) : view === 'notes' ? (
           <NotesView />

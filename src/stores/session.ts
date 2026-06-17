@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type View = 'home' | 'library' | 'reading' | 'notes' | 'settings' | 'search'
+export type View = 'home' | 'library' | 'notes' | 'settings' | 'search'
 
 /**
  * Cross-module shared session state (00-architecture §6): the book/chapter/
@@ -13,8 +13,8 @@ interface SessionState {
   activeChapterId: string | null
   activeParagraphId: string | null
   setView: (view: View) => void
-  openBook: (bookId: string) => void
-  openChapter: (chapterId: string, paragraphId?: string | null) => void
+  openBookDetail: (bookId: string, chapterId?: string | null, paragraphId?: string | null) => void
+  clearBookTarget: () => void
   setActiveParagraph: (paragraphId: string | null) => void
 }
 
@@ -24,9 +24,9 @@ export const useSessionStore = create<SessionState>((set) => ({
   activeChapterId: null,
   activeParagraphId: null,
   setView: (view) => set({ view }),
-  openBook: (bookId) =>
-    set({ activeBookId: bookId, activeChapterId: null, activeParagraphId: null, view: 'reading' }),
-  openChapter: (chapterId, paragraphId = null) =>
-    set({ activeChapterId: chapterId, activeParagraphId: paragraphId }),
+  openBookDetail: (bookId, chapterId = null, paragraphId = null) =>
+    set({ activeBookId: bookId, activeChapterId: chapterId, activeParagraphId: paragraphId, view: 'library' }),
+  clearBookTarget: () =>
+    set({ activeBookId: null, activeChapterId: null, activeParagraphId: null }),
   setActiveParagraph: (paragraphId) => set({ activeParagraphId: paragraphId }),
 }))

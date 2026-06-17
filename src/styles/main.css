@@ -171,7 +171,6 @@ body[data-view='search'] .app__main {
   padding: 32px 44px;
 }
 
-body[data-view='reading'] .app__main,
 body[data-view='notes'] .app__main {
   overflow: hidden;
 }

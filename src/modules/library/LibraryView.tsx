@@ -3,14 +3,20 @@ import { libraryApi } from '@/lib/ipc'
 import { aiApi, aiSubCodeFrom } from '@/lib/ai-api'
 import { notesApi } from '@/lib/notes-api'
 import { readingApi } from '@/lib/reading-api'
+import { useSessionStore } from '@/stores/session'
 import type { BookListItem, ChapterNode } from '@/lib/types'
 import type { ParagraphNoteCard } from '@/modules/notes/types'
 import type { ParagraphDTO } from '@/modules/reading/types'
 import './library.css'
 
 export function LibraryView() {
+  const activeBookId = useSessionStore((s) => s.activeBookId)
+  const activeChapterId = useSessionStore((s) => s.activeChapterId)
+  const activeParagraphId = useSessionStore((s) => s.activeParagraphId)
+  const clearBookTarget = useSessionStore((s) => s.clearBookTarget)
   const [books, setBooks] = useState<BookListItem[]>([])
-  const [detailBookId, setDetailBookId] = useState<string | null>(null)
+  const [localDetailBookId, setLocalDetailBookId] = useState<string | null>(null)
+  const detailBookId = activeBookId ?? localDetailBookId
   const selectedBook = books.find((b) => b.id === detailBookId) ?? null
 
   const refresh = useCallback(async () => {
@@ -40,12 +46,24 @@ export function LibraryView() {
       ) : selectedBook ? (
         <BookDetail
           book={selectedBook}
-          onBack={() => setDetailBookId(null)}
+          targetChapterId={selectedBook.id === activeBookId ? activeChapterId : null}
+          targetParagraphId={selectedBook.id === activeBookId ? activeParagraphId : null}
+          onBack={() => {
+            clearBookTarget()
+            setLocalDetailBookId(null)
+          }}
         />
       ) : (
         <div className="lib__grid">
           {books.map((b) => (
-            <div key={b.id} className="bookcard" onClick={() => setDetailBookId(b.id)}>
+            <div
+              key={b.id}
+              className="bookcard"
+              onClick={() => {
+                clearBookTarget()
+                setLocalDetailBookId(b.id)
+              }}
+            >
               <div className="bookcard__cover">{b.title.slice(0, 1)}</div>
               <div className="bookcard__body">
                 <div className="bookcard__title">{b.title}</div>
@@ -63,11 +81,15 @@ export function LibraryView() {
 
 interface BookDetailProps {
   book: BookListItem
+  targetChapterId: string | null
+  targetParagraphId: string | null
   onBack: () => void
 }
 
 function BookDetail({
   book,
+  targetChapterId,
+  targetParagraphId,
   onBack,
 }: BookDetailProps) {
   const [tree, setTree] = useState<ChapterNode[]>([])
@@ -103,7 +125,10 @@ function BookDetail({
       .then((nextTree) => {
         if (!alive) return
         setTree(nextTree)
-        const firstChapter = nextTree[0] ?? null
+        const targetChapter = targetChapterId
+          ? flattenChapters(nextTree).find((chapter) => chapter.id === targetChapterId)
+          : null
+        const firstChapter = targetChapter ?? nextTree[0] ?? null
         setSelectedChapterId(firstChapter?.id ?? null)
       })
       .catch(() => {
@@ -115,7 +140,7 @@ function BookDetail({
     return () => {
       alive = false
     }
-  }, [book.id])
+  }, [book.id, targetChapterId])
 
   const selectedParagraph =
     paragraphs.find((paragraph) => paragraph.id === selectedParagraphId) ?? null
@@ -141,7 +166,10 @@ function BookDetail({
         if (!alive) return
         const nextParagraphs = content?.paragraphs ?? []
         setParagraphs(nextParagraphs)
-        setSelectedParagraphId(nextParagraphs[0]?.id ?? null)
+        const targetParagraph = targetParagraphId
+          ? nextParagraphs.find((paragraph) => paragraph.id === targetParagraphId)
+          : null
+        setSelectedParagraphId(targetParagraph?.id ?? nextParagraphs[0]?.id ?? null)
       })
       .catch(() => {
         if (alive) setParagraphs([])
@@ -152,7 +180,7 @@ function BookDetail({
     return () => {
       alive = false
     }
-  }, [book.id, selectedChapterId])
+  }, [book.id, selectedChapterId, targetParagraphId])
 
   useEffect(() => {
     let alive = true
@@ -640,4 +668,8 @@ function splitIntoColumns<T>(items: T[], columnCount: number): T[][] {
     },
     Array.from({ length: columnCount }, () => []),
   )
+}
+
+function flattenChapters(chapters: ChapterNode[]): ChapterNode[] {
+  return chapters.flatMap((chapter) => [chapter, ...flattenChapters(chapter.children)])
 }

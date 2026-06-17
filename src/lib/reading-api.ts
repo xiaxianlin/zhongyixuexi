@@ -9,56 +9,10 @@
 import { invokeRaw } from './ipc'
 import type {
   ChapterContent,
-  ProgressDTO,
-  SaveProgressInput,
-  BookmarkDTO,
-  AddBookmarkInput,
-  UpdateBookmarkInput,
-  InterpretationDTO,
-  ParagraphAnalysisHistoryDTO,
-  TermLookupDTO,
 } from '@/modules/reading/types'
 
-/** reading:* — chapter content, segment-level progress, bookmarks, term lookup. */
+/** reading:* — chapter content for the library detail page. */
 export const readingApi = {
-  // Chapter content (RD-02).
   getChapter: (bookId: string, chapterId: string) =>
     invokeRaw<ChapterContent | null>('reading:getChapter', bookId, chapterId),
-
-  // Segment-level progress (RD-08).
-  getProgress: (bookId: string) =>
-    invokeRaw<ProgressDTO | null>('reading:getProgress', bookId),
-
-  saveProgress: (input: SaveProgressInput) =>
-    invokeRaw<ProgressDTO>('reading:saveProgress', input),
-
-  // Bookmarks (RD-08).
-  listBookmarks: (bookId: string) =>
-    invokeRaw<BookmarkDTO[]>('reading:listBookmarks', bookId),
-
-  addBookmark: (input: AddBookmarkInput) =>
-    invokeRaw<BookmarkDTO>('reading:addBookmark', input),
-
-  updateBookmark: (input: UpdateBookmarkInput) =>
-    invokeRaw<BookmarkDTO>('reading:updateBookmark', input),
-
-  removeBookmark: (id: string) =>
-    invokeRaw<{ ok: boolean }>('reading:removeBookmark', id),
-
-  // AI interpretation cache read (RD-03).
-  getInterpretation: (paragraphId: string) =>
-    invokeRaw<InterpretationDTO>('reading:getInterpretation', paragraphId),
-
-  listInterpretationHistory: (paragraphId: string) =>
-    invokeRaw<ParagraphAnalysisHistoryDTO[]>('reading:listInterpretationHistory', paragraphId),
-
-  activateInterpretationVersion: (paragraphId: string, analysisId: string) =>
-    invokeRaw<InterpretationDTO>('reading:activateInterpretationVersion', {
-      paragraphId,
-      analysisId,
-    }),
-
-  // Term lookup (RD-05).
-  lookupTerm: (term: string) =>
-    invokeRaw<TermLookupDTO>('reading:lookupTerm', term),
 }
