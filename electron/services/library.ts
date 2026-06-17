@@ -25,7 +25,7 @@ export interface BookListItem {
   source_format: string
   chapter_count: number
   paragraph_count: number
-  /** 0..1 progress. reading_progress is RD Phase 2 (not present yet) → always 0 until then. */
+  /** 0..1 reading progress. */
   progress: number
   imported_at: number
 }
@@ -75,15 +75,10 @@ export interface ChapterRow {
 
 /**
  * All live books (deleted_at IS NULL) with aggregated chapter_count,
- * paragraph_count and a progress placeholder. progress is LEFT JOINed against
- * reading_progress so the same code works once RD writes that table; until then
- * the COALESCE yields 0. Ordered by imported_at desc.
+ * paragraph_count and reading progress. Ordered by imported_at desc.
  */
 export function listBooks(): BookListItem[] {
   const db = getDb()
-  // NOTE: progress is hard-coded 0 here. The reading_progress table (RD, Phase 2)
-  // does not exist yet — joining it would throw "no such table". RD will add the
-  // table and re-introduce the progress aggregation then.
   const rows = db
     .prepare(
       `SELECT
@@ -96,7 +91,7 @@ export function listBooks(): BookListItem[] {
          b.imported_at,
          COALESCE(s.chapter_count, 0)   AS chapter_count,
          COALESCE(s.paragraph_count, 0) AS paragraph_count,
-         0                              AS progress
+         COALESCE(rp.percent, 0)        AS progress
        FROM books b
        LEFT JOIN (
          SELECT c.book_id                 AS book_id,
@@ -107,6 +102,7 @@ export function listBooks(): BookListItem[] {
          WHERE c.deleted_at IS NULL
          GROUP BY c.book_id
        ) s ON s.book_id = b.id
+       LEFT JOIN reading_progress rp ON rp.book_id = b.id
        WHERE b.deleted_at IS NULL
        ORDER BY b.imported_at DESC`,
     )
@@ -161,9 +157,16 @@ export function getBook(bookId: string): BookDetail | null {
     ...book,
     chapter_count: agg.chapter_count ?? 0,
     paragraph_count: agg.paragraph_count ?? 0,
-    progress: 0, // RD Phase 2
+    progress: getBookProgress(bookId),
     chapters,
   }
+}
+
+function getBookProgress(bookId: string): number {
+  const row = getDb()
+    .prepare('SELECT percent FROM reading_progress WHERE book_id = ?')
+    .get(bookId) as { percent: number } | undefined
+  return row?.percent ?? 0
 }
 
 // ---------- chapter tree ----------

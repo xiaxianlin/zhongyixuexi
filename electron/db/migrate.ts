@@ -3,7 +3,7 @@ import { getDb, resetDbFiles } from './connection'
 
 type Migration = { version: number; name: string; up: (db: DB) => void }
 
-const SCHEMA_ID = '2026-06-dashboard-only'
+const SCHEMA_ID = '2026-06-builtin-multibook'
 
 /**
  * Inline migration registry. Schema migrations arrive with their owning slices
@@ -345,40 +345,6 @@ const MIGRATIONS: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_ai_cache_hit ON ai_cache(scope_id, kind, prompt_hash, invalidated);
         CREATE INDEX IF NOT EXISTS idx_ai_cache_scope ON ai_cache(scope, scope_id, kind);
         CREATE INDEX IF NOT EXISTS idx_ai_cache_paragraph ON ai_cache(paragraph_id) WHERE paragraph_id IS NOT NULL;
-      `)
-    },
-  },
-  {
-    // v10 — AI generation task queue. Import creates paragraph-scoped follow-up
-    // tasks only after the whole-book AI parse has been saved, so every task has
-    // a stable paragraph_id anchor.
-    version: 10,
-    name: 'ai_generation_tasks',
-    up: (db) => {
-      db.exec(`
-        CREATE TABLE IF NOT EXISTS ai_generation_tasks (
-          id TEXT PRIMARY KEY,
-          book_id TEXT NOT NULL,
-          chapter_id TEXT NOT NULL,
-          paragraph_id TEXT NOT NULL,
-          kind TEXT NOT NULL CHECK (kind IN ('modern', 'image')),
-          status TEXT NOT NULL DEFAULT 'pending',
-          priority INTEGER NOT NULL DEFAULT 0,
-          attempts INTEGER NOT NULL DEFAULT 0,
-          created_at INTEGER NOT NULL,
-          updated_at INTEGER NOT NULL,
-          started_at INTEGER,
-          finished_at INTEGER,
-          error TEXT,
-          meta TEXT,
-          FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE,
-          FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE CASCADE,
-          FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE CASCADE,
-          UNIQUE (paragraph_id, kind)
-        );
-        CREATE INDEX IF NOT EXISTS idx_ai_tasks_status ON ai_generation_tasks(status, priority, created_at);
-        CREATE INDEX IF NOT EXISTS idx_ai_tasks_book ON ai_generation_tasks(book_id, status);
-        CREATE INDEX IF NOT EXISTS idx_ai_tasks_paragraph ON ai_generation_tasks(paragraph_id);
       `)
     },
   },

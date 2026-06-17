@@ -58,7 +58,7 @@ app.whenReady().then(() => {
     .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
     .all() as { name: string }[]
   console.log(
-    `[db] ready · schema v${schemaVersion} · builtin=${seeded.inserted ? 'inserted' : 'present'} · foreign_keys=${foreignKeys} · tables=${tables.map((t) => t.name).join(',')}`,
+    `[db] ready · schema v${schemaVersion} · builtin=${seeded.inserted ? 'inserted' : 'present'}(${seeded.bookIds.length}) · foreign_keys=${foreignKeys} · tables=${tables.map((t) => t.name).join(',')}`,
   )
 
   registerAllIpc()

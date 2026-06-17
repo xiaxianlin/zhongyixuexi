@@ -7,8 +7,12 @@ export type DB = Database.Database
 
 let db: DB | null = null
 
+function getUserDataDir(): string {
+  return process.env.ELECTRON_USER_DATA_DIR || app.getPath('userData')
+}
+
 export function getDbPath(): string {
-  return join(app.getPath('userData'), 'app.db')
+  return join(getUserDataDir(), 'app.db')
 }
 
 /**
@@ -18,7 +22,7 @@ export function getDbPath(): string {
 export function getDb(): DB {
   if (db) return db
 
-  const dir = app.getPath('userData')
+  const dir = getUserDataDir()
   mkdirSync(dir, { recursive: true })
 
   db = new Database(getDbPath())

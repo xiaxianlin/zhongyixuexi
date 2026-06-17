@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto'
+import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
@@ -7,94 +7,123 @@ import { rebuildFts } from '../db/fts'
 import { normalize } from './content-normalize'
 import { deactivateParagraphAnalysesForBook } from './paragraph-analysis'
 
-interface BuiltinParagraph {
-  index: number
-  text: string
-}
+const BUILTIN_FILES = ['nanjing-original.json', 'huangdi-neijing-original.json'] as const
 
-interface BuiltinChapter {
-  index: number
-  title: string
-  paragraphs: BuiltinParagraph[]
-}
-
-interface BuiltinBook {
-  title: string
-  source: string
-  sourceEntry: string
-  chapterCount: number
-  paragraphCount: number
+interface BuiltinDataFile {
+  schemaVersion: number
+  book: {
+    id: string
+    title: string
+    author: string | null
+    category: string | null
+    sourceFormat: string
+  }
+  source?: {
+    path?: string
+    format?: string
+  }
+  quality?: {
+    chapterCount?: number
+    paragraphCount?: number
+  }
   chapters: BuiltinChapter[]
 }
 
-type AiTaskKind = 'modern'
+interface BuiltinChapter {
+  id: string
+  parentId: string | null
+  orderIndex: number
+  level: string | null
+  title: string
+  contentHash?: string
+  quality?: {
+    flag?: string
+  }
+  paragraphs: BuiltinParagraph[]
+}
 
-const BUILTIN_BOOK_ID = stableUuid('book:nanjing-original')
-const BUILTIN_SOURCE_FILE = 'builtin:data/nanjing-original.json'
+interface BuiltinParagraph {
+  id: string
+  orderIndex: number
+  text: string
+  parseHash?: string
+  quality?: {
+    flag?: string
+  }
+}
+
+export interface SeedBuiltinResult {
+  inserted: boolean
+  bookIds: string[]
+}
 
 function sha256Hex16(text: string): string {
   return createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 16)
 }
 
-function stableUuid(seed: string): string {
-  const hex = createHash('sha256').update(seed, 'utf8').digest('hex')
-  return [
-    hex.slice(0, 8),
-    hex.slice(8, 12),
-    `5${hex.slice(13, 16)}`,
-    ((parseInt(hex.slice(16, 18), 16) & 0x3f) | 0x80).toString(16) + hex.slice(18, 20),
-    hex.slice(20, 32),
-  ].join('-')
-}
-
-function validateBuiltinBook(book: BuiltinBook): void {
-  if (!book.title || !Array.isArray(book.chapters)) {
-    throw new Error('内置书籍数据格式错误')
-  }
-  if (book.chapters.length !== book.chapterCount) {
-    throw new Error(`内置书籍章节数不一致：${book.chapters.length}/${book.chapterCount}`)
-  }
-  const paragraphCount = book.chapters.reduce((sum, chapter) => sum + chapter.paragraphs.length, 0)
-  if (paragraphCount !== book.paragraphCount) {
-    throw new Error(`内置书籍段落数不一致：${paragraphCount}/${book.paragraphCount}`)
-  }
-}
-
-function loadBuiltinBook(): BuiltinBook {
+function dataPath(fileName: string): string {
   const candidates = [
-    join(app.getAppPath(), 'data/nanjing-original.json'),
-    join(__dirname, '../../data/nanjing-original.json'),
-    join(process.cwd(), 'data/nanjing-original.json'),
+    join(app.getAppPath(), 'data', fileName),
+    join(__dirname, '../../data', fileName),
+    join(process.cwd(), 'data', fileName),
   ]
   const filePath = candidates.find((candidate) => existsSync(candidate))
-  if (!filePath) {
-    throw new Error(`未找到内置书籍数据：${candidates.join(', ')}`)
+  if (!filePath) throw new Error(`未找到内置书籍数据：${candidates.join(', ')}`)
+  return filePath
+}
+
+function loadBuiltinFile(fileName: string): BuiltinDataFile {
+  const file = JSON.parse(readFileSync(dataPath(fileName), 'utf8')) as BuiltinDataFile
+  validateBuiltinFile(file, fileName)
+  return file
+}
+
+function validateBuiltinFile(file: BuiltinDataFile, fileName: string): void {
+  if (!file.book?.id || !file.book.title || !Array.isArray(file.chapters)) {
+    throw new Error(`内置书籍数据格式错误：${fileName}`)
   }
-  return JSON.parse(readFileSync(filePath, 'utf8')) as BuiltinBook
+  for (const chapter of file.chapters) {
+    if (!chapter.id || !chapter.title || !Array.isArray(chapter.paragraphs)) {
+      throw new Error(`内置章节数据格式错误：${fileName}`)
+    }
+    for (const paragraph of chapter.paragraphs) {
+      if (!paragraph.id || typeof paragraph.text !== 'string') {
+        throw new Error(`内置段落数据格式错误：${fileName}`)
+      }
+    }
+  }
+
+  const expectedChapters = file.quality?.chapterCount
+  if (typeof expectedChapters === 'number' && expectedChapters !== file.chapters.length) {
+    throw new Error(`内置书籍章节数不一致：${fileName} ${file.chapters.length}/${expectedChapters}`)
+  }
+
+  const paragraphCount = file.chapters.reduce((sum, chapter) => sum + chapter.paragraphs.length, 0)
+  const expectedParagraphs = file.quality?.paragraphCount
+  if (typeof expectedParagraphs === 'number' && expectedParagraphs !== paragraphCount) {
+    throw new Error(`内置书籍段落数不一致：${fileName} ${paragraphCount}/${expectedParagraphs}`)
+  }
 }
 
 /**
- * Seeds bundled classical content on app startup. Idempotent: once the built-in
- * book is present, startup leaves existing user edits/progress untouched.
+ * Seeds bundled classical content on app startup. Idempotent: when bundled data
+ * is unchanged, startup leaves existing progress, notes, and analyses untouched.
  */
-export function seedBuiltinContent(): { inserted: boolean; bookId: string } {
-  const book = loadBuiltinBook()
-  validateBuiltinBook(book)
-
+export function seedBuiltinContent(): SeedBuiltinResult {
+  const files = BUILTIN_FILES.map((fileName) => ({
+    fileName,
+    data: loadBuiltinFile(fileName),
+  }))
   const db = getDb()
-  const existing = db
-    .prepare('SELECT id, parse_version FROM books WHERE id = ? AND deleted_at IS NULL')
-    .get(BUILTIN_BOOK_ID) as { id: string; parse_version: number } | undefined
-  const version = builtinVersion(book)
-  if (existing?.parse_version === version) return { inserted: false, bookId: BUILTIN_BOOK_ID }
-
   const now = Date.now()
+  const bookIds: string[] = []
+  let inserted = false
 
   const insertBook = db.prepare(
     `INSERT INTO books
        (id, title, author, source_format, source_file, cover, category,
         imported_at, parse_version, updated_at, deleted_at)
-     VALUES (@id, @title, @author, 'builtin', @sourceFile, NULL, NULL,
+     VALUES (@id, @title, @author, 'builtin', @sourceFile, NULL, @category,
              @importedAt, @parseVersion, @updatedAt, NULL)`,
   )
 
@@ -104,6 +133,7 @@ export function seedBuiltinContent(): { inserted: boolean; bookId: string } {
          author = @author,
          source_format = 'builtin',
          source_file = @sourceFile,
+         category = @category,
          parse_version = @parseVersion,
          updated_at = @updatedAt,
          deleted_at = NULL
@@ -114,7 +144,7 @@ export function seedBuiltinContent(): { inserted: boolean; bookId: string } {
     `INSERT INTO chapters
        (id, book_id, parent_id, order_index, level, title, content_hash,
         created_at, deleted_at)
-     VALUES (@id, @bookId, NULL, @orderIndex, '难', @title, @contentHash,
+     VALUES (@id, @bookId, @parentId, @orderIndex, @level, @title, @contentHash,
              @createdAt, NULL)
      ON CONFLICT(id) DO UPDATE SET
        book_id = excluded.book_id,
@@ -131,7 +161,7 @@ export function seedBuiltinContent(): { inserted: boolean; bookId: string } {
        (id, chapter_id, order_index, text, edited, parse_hash, is_noise,
         quality_flag, created_at, deleted_at)
      VALUES (@id, @chapterId, @orderIndex, @text, 0, @parseHash, 0,
-             'ok', @createdAt, NULL)
+             @qualityFlag, @createdAt, NULL)
      ON CONFLICT(id) DO UPDATE SET
        chapter_id = excluded.chapter_id,
        order_index = excluded.order_index,
@@ -139,133 +169,106 @@ export function seedBuiltinContent(): { inserted: boolean; bookId: string } {
        edited = 0,
        parse_hash = excluded.parse_hash,
        is_noise = 0,
-       quality_flag = 'ok',
+       quality_flag = excluded.quality_flag,
        deleted_at = NULL`,
   )
 
   const tx = db.transaction(() => {
-    const bookParams = {
-      id: BUILTIN_BOOK_ID,
-      title: book.title,
-      author: '秦越人',
-      sourceFile: BUILTIN_SOURCE_FILE,
-      parseVersion: version,
-      importedAt: now,
-      updatedAt: now,
-    }
-    if (existing) {
-      db.prepare(
-        `UPDATE paragraphs
-         SET deleted_at = ?
-         WHERE chapter_id IN (SELECT id FROM chapters WHERE book_id = ?)
-           AND deleted_at IS NULL`,
-      ).run(now, BUILTIN_BOOK_ID)
-      deactivateParagraphAnalysesForBook(BUILTIN_BOOK_ID, now)
-      db.prepare('UPDATE chapters SET deleted_at = ? WHERE book_id = ? AND deleted_at IS NULL').run(
-        now,
-        BUILTIN_BOOK_ID,
-      )
-      db.prepare('DELETE FROM ai_generation_tasks WHERE book_id = ?').run(BUILTIN_BOOK_ID)
-      updateBook.run(bookParams)
-    } else {
-      insertBook.run(bookParams)
-    }
+    for (const { fileName, data } of files) {
+      const bookId = data.book.id
+      const version = builtinVersion(data)
+      bookIds.push(bookId)
 
-    for (const chapter of book.chapters) {
-      const chapterId = stableUuid(`chapter:nanjing-original:${chapter.index}:${chapter.title}`)
-      const chapterText = chapter.paragraphs.map((p) => normalize(p.text)).join('\n')
-      insertChapter.run({
-        id: chapterId,
-        bookId: BUILTIN_BOOK_ID,
-        orderIndex: chapter.index - 1,
-        title: chapter.title,
-        contentHash: sha256Hex16(chapterText),
-        createdAt: now,
-      })
+      const existing = db
+        .prepare('SELECT id, parse_version FROM books WHERE id = ? AND deleted_at IS NULL')
+        .get(bookId) as { id: string; parse_version: number } | undefined
+      if (existing?.parse_version === version) continue
 
-      for (const paragraph of chapter.paragraphs) {
-        const text = normalize(paragraph.text)
-        if (!text) continue
-        insertParagraph.run({
-          id: stableUuid(
-            `paragraph:nanjing-original:${chapter.index}:${paragraph.index}:${sha256Hex16(text)}`,
-          ),
-          chapterId,
-          orderIndex: paragraph.index - 1,
-          text,
-          parseHash: sha256Hex16(text),
+      inserted = true
+      const bookParams = {
+        id: bookId,
+        title: data.book.title,
+        author: data.book.author,
+        category: data.book.category,
+        sourceFile: `builtin:data/${fileName}`,
+        parseVersion: version,
+        importedAt: now,
+        updatedAt: now,
+      }
+
+      if (existing) {
+        db.prepare(
+          `UPDATE paragraphs
+           SET deleted_at = ?
+           WHERE chapter_id IN (SELECT id FROM chapters WHERE book_id = ?)
+             AND deleted_at IS NULL`,
+        ).run(now, bookId)
+        deactivateParagraphAnalysesForBook(bookId, now)
+        db.prepare('UPDATE chapters SET deleted_at = ? WHERE book_id = ? AND deleted_at IS NULL').run(
+          now,
+          bookId,
+        )
+        updateBook.run(bookParams)
+      } else {
+        insertBook.run(bookParams)
+      }
+
+      for (const chapter of data.chapters) {
+        const chapterText = chapter.paragraphs.map((p) => normalize(p.text)).join('\n')
+        insertChapter.run({
+          id: chapter.id,
+          bookId,
+          parentId: chapter.parentId,
+          orderIndex: chapter.orderIndex,
+          level: chapter.level,
+          title: chapter.title,
+          contentHash: chapter.contentHash ?? sha256Hex16(chapterText),
           createdAt: now,
         })
+
+        for (const paragraph of chapter.paragraphs) {
+          const text = normalize(paragraph.text)
+          if (!text) continue
+          insertParagraph.run({
+            id: paragraph.id,
+            chapterId: chapter.id,
+            orderIndex: paragraph.orderIndex,
+            text,
+            parseHash: paragraph.parseHash ?? sha256Hex16(text),
+            qualityFlag: paragraph.quality?.flag ?? chapter.quality?.flag ?? 'ok',
+            createdAt: now,
+          })
+        }
       }
     }
 
-    createAiTasksForBook(BUILTIN_BOOK_ID, now)
-    rebuildFts(db)
+    if (inserted) rebuildFts(db)
   })
 
   tx()
-  return { inserted: true, bookId: BUILTIN_BOOK_ID }
+  return { inserted, bookIds }
 }
 
-function builtinVersion(book: BuiltinBook): number {
+function builtinVersion(data: BuiltinDataFile): number {
   const payload = JSON.stringify({
-    title: book.title,
-    chapterCount: book.chapterCount,
-    paragraphCount: book.paragraphCount,
-    chapters: book.chapters.map((chapter) => ({
-      index: chapter.index,
+    schemaVersion: data.schemaVersion,
+    book: data.book,
+    source: data.source,
+    quality: data.quality,
+    chapters: data.chapters.map((chapter) => ({
+      id: chapter.id,
+      parentId: chapter.parentId,
+      orderIndex: chapter.orderIndex,
+      level: chapter.level,
       title: chapter.title,
+      contentHash: chapter.contentHash,
       paragraphs: chapter.paragraphs.map((paragraph) => ({
-        index: paragraph.index,
+        id: paragraph.id,
+        orderIndex: paragraph.orderIndex,
         text: normalize(paragraph.text),
+        parseHash: paragraph.parseHash,
       })),
     })),
   })
   return parseInt(sha256Hex16(payload).slice(0, 8), 16)
-}
-
-function createAiTasksForBook(bookId: string, now: number): number {
-  const db = getDb()
-  const paragraphs = db
-    .prepare(
-      `SELECT p.id AS paragraphId,
-              p.chapter_id AS chapterId,
-              p.order_index AS orderIndex
-       FROM paragraphs p
-       JOIN chapters c ON c.id = p.chapter_id
-       WHERE c.book_id = ?
-         AND c.deleted_at IS NULL
-         AND p.deleted_at IS NULL
-         AND p.is_noise = 0
-       ORDER BY c.order_index, p.order_index`,
-    )
-    .all(bookId) as { paragraphId: string; chapterId: string; orderIndex: number }[]
-
-  const insertTask = db.prepare(
-    `INSERT OR IGNORE INTO ai_generation_tasks
-       (id, book_id, chapter_id, paragraph_id, kind, status, priority,
-        attempts, created_at, updated_at, started_at, finished_at, error, meta)
-     VALUES
-       (@id, @bookId, @chapterId, @paragraphId, @kind, 'pending', @priority,
-        0, @createdAt, @updatedAt, NULL, NULL, NULL, @meta)`,
-  )
-
-  let created = 0
-  for (const paragraph of paragraphs) {
-    for (const kind of ['modern'] satisfies AiTaskKind[]) {
-      const result = insertTask.run({
-        id: randomUUID(),
-        bookId,
-        chapterId: paragraph.chapterId,
-        paragraphId: paragraph.paragraphId,
-        kind,
-        priority: paragraph.orderIndex,
-        createdAt: now,
-        updatedAt: now,
-        meta: JSON.stringify({ source: 'builtin' }),
-      })
-      created += result.changes
-    }
-  }
-  return created
 }

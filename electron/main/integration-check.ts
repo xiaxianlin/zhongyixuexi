@@ -76,6 +76,18 @@ export async function runIntegrationCheck(): Promise<void> {
     return
   }
 
+  const builtinBooks = listBooks().filter((book) => book.source_format === 'builtin')
+  assert(builtinBooks.length >= 2, `builtin books missing: ${builtinBooks.length}`)
+  assert(
+    builtinBooks.some((book) => book.title === '黄帝八十一难经' && book.chapter_count === 81),
+    'builtin 难经 missing or invalid',
+  )
+  assert(
+    builtinBooks.some((book) => book.title === '黄帝内经' && book.chapter_count >= 160),
+    'builtin 黄帝内经 missing or invalid',
+  )
+  console.log('[integration] builtin ok:', builtinBooks.map((book) => book.title).join(', '))
+
   // pre-clean leftover test books
   for (const b of listBooks().filter((x) => x.title === TEST_TITLE)) {
     deleteTestBook(b.id)
