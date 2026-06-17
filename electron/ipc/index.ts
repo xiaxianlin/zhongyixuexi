@@ -1,6 +1,5 @@
 import { registerAppHandlers } from './app'
 import { registerLibraryHandlers } from './library'
-import { registerSegmentHandlers } from './segment'
 import { registerReadingHandlers } from './reading'
 import { registerSearchHandlers } from './search'
 import { registerSettingsHandlers } from './settings'
@@ -12,7 +11,6 @@ import { registerAiHandlers } from './ai'
 export function registerAllIpc(): void {
   registerAppHandlers()
   registerLibraryHandlers()
-  registerSegmentHandlers()
   registerReadingHandlers()
   registerSearchHandlers()
   registerSettingsHandlers()

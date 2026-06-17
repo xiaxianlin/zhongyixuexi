@@ -4,7 +4,7 @@
  * Module-specific APIs are added here as slices land.
  */
 
-import type { BookListItem, ChapterNode, SegmentParagraph } from './types'
+import type { BookListItem, ChapterNode } from './types'
 
 export type ErrorCode =
   | 'DB'
@@ -59,14 +59,4 @@ export const appApi = {
 export const libraryApi = {
   list: () => invokeRaw<BookListItem[]>('library:list'),
   tree: (bookId: string) => invokeRaw<ChapterNode[]>('library:tree', bookId),
-}
-
-/** segment:* — paragraph-level proofreading/editing (IMP-03). */
-export const segmentApi = {
-  list: (chapterId: string) => invokeRaw<SegmentParagraph[]>('segment:list', chapterId),
-  updateText: (id: string, text: string) => invokeRaw<null>('segment:updateText', id, text),
-  remove: (id: string) => invokeRaw<null>('segment:delete', id),
-  mergeNext: (id: string) => invokeRaw<null>('segment:mergeNext', id),
-  split: (id: string, offset: number) => invokeRaw<null>('segment:split', id, offset),
-  setNoise: (id: string, isNoise: boolean) => invokeRaw<null>('segment:setNoise', id, isNoise),
 }

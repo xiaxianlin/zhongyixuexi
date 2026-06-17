@@ -131,7 +131,7 @@ export const OriginalPanel = forwardRef<HTMLDivElement, OriginalPanelProps>(
           {loading && paragraphs.length === 0 ? (
             <p className="opanel__empty">加载中…</p>
           ) : paragraphs.length === 0 ? (
-            <p className="opanel__empty">本章无内容，请在导入校对中检查。</p>
+            <p className="opanel__empty">本章暂无内容。</p>
           ) : (
             paragraphs.map((p) => (
               <ParagraphBlock

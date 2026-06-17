@@ -25,15 +25,6 @@ export interface ChapterNode {
   children: ChapterNode[]
 }
 
-export interface SegmentParagraph {
-  id: string
-  order_index: number
-  text: string
-  edited: number
-  is_noise: number
-  quality_flag: string | null
-}
-
 // ---------- SRH (search) DTOs — mirror electron/services/search.ts ----------
 
 export interface SearchHit {

@@ -2,12 +2,10 @@
  * Dev-only end-to-end check. Triggered by ZYXX_INTEGRATION=1 env var in main.
  *
  * The app ships built-in content, so this check inserts a small transient book
- * directly and verifies the list → tree → FTS → segment-edit → search →
- * cascade-delete chain.
+ * directly and verifies the list → tree → FTS → search → cascade-delete chain.
  */
 import { randomUUID } from 'node:crypto'
 import { listBooks, getChapterTree, deleteBook } from '../services/library'
-import { getChapterParagraphs, updateParagraphText, splitParagraph } from '../services/segment'
 import { searchParagraphs } from '../services/search'
 import { getActiveApiKey } from '../services/settings'
 import { deepseek } from '../ai/deepseek'
@@ -91,20 +89,6 @@ export async function runIntegrationCheck(): Promise<void> {
     assert(matched >= 1, `fts match returned ${matched}`)
     console.log('[integration] fts ok: matched', matched, 'paragraph(s)')
 
-    // segment edit keeps FTS in sync (au trigger)
-    const firstChapterId = tree[0].id
-    const paras = getChapterParagraphs(firstChapterId)
-    assert(paras.length >= 1, 'first chapter has no paragraphs')
-    const MARKER = '独一无二的校对测试标记'
-    updateParagraphText(paras[0].id, `${paras[0].text}${MARKER}`)
-    assert(ftsMatchCount(MARKER) === 1, `segment edit did not reindex FTS`)
-    splitParagraph(paras[0].id, 4)
-    assert(
-      getChapterParagraphs(firstChapterId).length >= paras.length,
-      'split shrank paragraph count',
-    )
-    console.log('[integration] segment edit/split ok: FTS reindexed via trigger')
-
     // SRH search
     const sr = searchParagraphs(FTS_QUERY)
     assert(sr.hits.length >= 1, `search returned ${sr.hits.length} hits`)
@@ -117,7 +101,7 @@ export async function runIntegrationCheck(): Promise<void> {
   assert(listBooks().filter((b) => b.id === bookId).length === 0, 'book still present after delete')
   assert(ftsMatchCount() === 0, `fts rows survived delete: ${ftsMatchCount()}`)
 
-  console.log('[integration] PASS — insert / list / tree / fts / segment / search / delete verified')
+  console.log('[integration] PASS — insert / list / tree / fts / search / delete verified')
 }
 
 async function runAiDebug(): Promise<void> {
