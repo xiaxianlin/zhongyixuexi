@@ -20,6 +20,7 @@
 import { randomUUID } from 'node:crypto'
 import { getDb } from '../db'
 import { AppError } from '../lib/error'
+import { ACTIVE_ANALYSIS_JOIN, ACTIVE_ANALYSIS_SELECT } from './paragraph-analysis'
 
 // ---------- DTOs (self-contained; do NOT import models/content.ts) ----------
 
@@ -132,11 +133,17 @@ export function getChapter(bookId: string, chapterId: string): ChapterContent | 
 
   const paragraphs = db
     .prepare(
-      `SELECT id, chapter_id, order_index, text, content_modern, content_explanation, content_analysis,
-              edited, is_noise
-       FROM paragraphs
-       WHERE chapter_id = ? AND deleted_at IS NULL
-       ORDER BY order_index`,
+      `SELECT p.id,
+              p.chapter_id,
+              p.order_index,
+              p.text,
+              ${ACTIVE_ANALYSIS_SELECT},
+              p.edited,
+              p.is_noise
+       FROM paragraphs p
+       ${ACTIVE_ANALYSIS_JOIN}
+       WHERE p.chapter_id = ? AND p.deleted_at IS NULL
+       ORDER BY p.order_index`,
     )
     .all(chapterId) as ParagraphDTO[]
 
@@ -357,7 +364,12 @@ export function removeBookmark(id: string): { ok: boolean } {
 export function getInterpretation(paragraphId: string): InterpretationDTO {
   const db = getDb()
   const row = db
-    .prepare('SELECT content_modern, content_explanation, content_analysis FROM paragraphs WHERE id = ?')
+    .prepare(
+      `SELECT ${ACTIVE_ANALYSIS_SELECT}
+       FROM paragraphs p
+       ${ACTIVE_ANALYSIS_JOIN}
+       WHERE p.id = ?`,
+    )
     .get(paragraphId) as
     | {
         content_modern: string | null

@@ -10,6 +10,7 @@ import { invokeRaw } from './ipc'
 import type {
   Note,
   NoteListItem,
+  ParagraphNoteCard,
   NoteListResult,
   NoteLink,
   Backlink,
@@ -35,9 +36,9 @@ export const notesApi = {
 
   delete: (id: string) => invokeRaw<{ ok: true }>('notes:delete', { id }),
 
-  // NOTE-05: reading sidebar
+  // NOTE-05: paragraph note cards for reading/detail side surfaces
   getByParagraph: (paragraphId: string) =>
-    invokeRaw<NoteListItem[]>('notes:getByParagraph', { paragraph_id: paragraphId }),
+    invokeRaw<ParagraphNoteCard[]>('notes:getByParagraph', { paragraph_id: paragraphId }),
 
   getByChapter: (chapterId: string) =>
     invokeRaw<NoteListItem[]>('notes:getByChapter', { chapter_id: chapterId }),

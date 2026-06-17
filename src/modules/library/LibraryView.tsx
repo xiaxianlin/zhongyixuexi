@@ -4,7 +4,7 @@ import { aiApi, aiSubCodeFrom } from '@/lib/ai-api'
 import { notesApi } from '@/lib/notes-api'
 import { readingApi } from '@/lib/reading-api'
 import type { BookListItem, ChapterNode } from '@/lib/types'
-import type { NoteListItem } from '@/modules/notes/types'
+import type { ParagraphNoteCard } from '@/modules/notes/types'
 import type { ParagraphDTO } from '@/modules/reading/types'
 import './library.css'
 
@@ -76,13 +76,13 @@ function BookDetail({
   const [selectedParagraphId, setSelectedParagraphId] = useState<string | null>(null)
   const [paragraphs, setParagraphs] = useState<ParagraphDTO[]>([])
   const [contentLoading, setContentLoading] = useState(false)
-  const [notes, setNotes] = useState<NoteListItem[]>([])
+  const [notes, setNotes] = useState<ParagraphNoteCard[]>([])
   const [notesLoading, setNotesLoading] = useState(false)
   const [noteDraftContent, setNoteDraftContent] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
-  const [deleteTarget, setDeleteTarget] = useState<NoteListItem | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<ParagraphNoteCard | null>(null)
   const [deletingNote, setDeletingNote] = useState(false)
   const [aiGenerating, setAiGenerating] = useState(false)
   const [reanalyzeConfirmOpen, setReanalyzeConfirmOpen] = useState(false)
@@ -499,7 +499,7 @@ function BookDetail({
                             ×
                           </button>
                         </div>
-                        <p>{note.content || note.preview || '（空）'}</p>
+                        <p>{note.content || '（空）'}</p>
                       </article>
                     ))}
                   </div>

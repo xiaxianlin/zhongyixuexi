@@ -22,6 +22,7 @@ import { resolve } from 'node:path'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
+import { ACTIVE_ANALYSIS_JOIN, ACTIVE_ANALYSIS_SELECT } from './paragraph-analysis'
 
 // ===========================================================================
 // DTOs (self-contained; renderer mirrors in src/modules/notes/types.ts)
@@ -73,10 +74,17 @@ export interface NoteListItem {
   id: string
   title: string
   preview: string
-  content?: string
   notebook_id: string | null
   paragraph_id: string | null
   pinned: boolean
+  updated_at: number
+}
+
+export interface ParagraphNoteCard {
+  id: string
+  content: string
+  pinned: boolean
+  created_at: number
   updated_at: number
 }
 
@@ -620,37 +628,31 @@ export function deleteNote(id: string): { ok: true } {
 }
 
 /**
- * NOTE-05: reading sidebar — notes bound to a paragraph.
- * High-frequency path; hits idx_notes_paragraph.
+ * NOTE-05: paragraph note cards for the current reading/detail UI.
+ * Returns full content for the side drawer / reading sidebar stream; generic
+ * library note lists still use NoteListItem with title + preview.
  */
-export function getNotesByParagraph(paragraphId: string): NoteListItem[] {
+export function getNotesByParagraph(paragraphId: string): ParagraphNoteCard[] {
   const db = getDb()
   const rows = db
     .prepare(
-      `SELECT id, title, content, substr(content, 1, 200) AS preview, notebook_id, paragraph_id,
-              pinned, updated_at
+      `SELECT id, content, pinned, created_at, updated_at
        FROM notes
        WHERE paragraph_id = ? AND deleted_at IS NULL
        ORDER BY pinned DESC, updated_at DESC`,
     )
     .all(paragraphId) as Array<{
     id: string
-    title: string
     content: string
-    preview: string
-    notebook_id: string | null
-    paragraph_id: string | null
     pinned: number
+    created_at: number
     updated_at: number
   }>
   return rows.map((r) => ({
     id: r.id,
-    title: r.title,
-    preview: r.preview,
     content: r.content,
-    notebook_id: r.notebook_id,
-    paragraph_id: r.paragraph_id,
     pinned: Boolean(r.pinned),
+    created_at: r.created_at,
     updated_at: r.updated_at,
   }))
 }
@@ -1328,9 +1330,13 @@ export function exportParagraphCombined(
   const db = getDb()
   const para = db
     .prepare(
-      `SELECT id, chapter_id, text, content_modern, content_explanation, content_analysis
-       FROM paragraphs
-       WHERE id = ? AND deleted_at IS NULL`,
+      `SELECT p.id,
+              p.chapter_id,
+              p.text,
+              ${ACTIVE_ANALYSIS_SELECT}
+       FROM paragraphs p
+       ${ACTIVE_ANALYSIS_JOIN}
+       WHERE p.id = ? AND p.deleted_at IS NULL`,
     )
     .get(input.paragraph_id) as
     | {

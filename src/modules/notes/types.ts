@@ -48,10 +48,17 @@ export interface NoteListItem {
   id: string
   title: string
   preview: string
-  content?: string
   notebook_id: string | null
   paragraph_id: string | null
   pinned: boolean
+  updated_at: number
+}
+
+export interface ParagraphNoteCard {
+  id: string
+  content: string
+  pinned: boolean
+  created_at: number
   updated_at: number
 }
 

@@ -464,6 +464,71 @@ const MIGRATIONS: Migration[] = [
       }
     },
   },
+  {
+    // v12 — versioned paragraph analyses. The current UI still reads the
+    // materialized paragraph columns for speed/compatibility, but this table is
+    // the extensible record of AI analysis runs and can support future model,
+    // style, history, and rollback workflows without widening paragraphs.
+    version: 12,
+    name: 'paragraph_analyses',
+    up: (db) => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS paragraph_analyses (
+          id TEXT PRIMARY KEY,
+          paragraph_id TEXT NOT NULL,
+          kind TEXT NOT NULL DEFAULT 'modern',
+          version INTEGER NOT NULL,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          modern TEXT,
+          explanation TEXT,
+          analysis TEXT,
+          summary TEXT,
+          model TEXT,
+          prompt_hash TEXT,
+          cache_id TEXT,
+          source TEXT NOT NULL DEFAULT 'ai',
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          meta TEXT,
+          FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE CASCADE,
+          FOREIGN KEY (cache_id) REFERENCES ai_cache(id) ON DELETE SET NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_paragraph_analyses_paragraph ON paragraph_analyses(paragraph_id, kind, created_at DESC);
+        CREATE UNIQUE INDEX IF NOT EXISTS uq_paragraph_analyses_active ON paragraph_analyses(paragraph_id, kind)
+          WHERE is_active = 1;
+
+        INSERT INTO paragraph_analyses (
+          id, paragraph_id, kind, version, is_active, modern, explanation,
+          analysis, summary, model, prompt_hash, cache_id, source,
+          created_at, updated_at, meta
+        )
+        SELECT
+          'legacy-' || id,
+          id,
+          'modern',
+          1,
+          1,
+          content_modern,
+          content_explanation,
+          content_analysis,
+          NULL,
+          NULL,
+          NULL,
+          NULL,
+          'legacy',
+          created_at,
+          created_at,
+          NULL
+        FROM paragraphs
+        WHERE deleted_at IS NULL
+          AND (content_modern IS NOT NULL OR content_explanation IS NOT NULL OR content_analysis IS NOT NULL)
+          AND NOT EXISTS (
+            SELECT 1 FROM paragraph_analyses pa
+            WHERE pa.paragraph_id = paragraphs.id AND pa.kind = 'modern'
+          );
+      `)
+    },
+  },
 ]
 
 const META_TABLE = `

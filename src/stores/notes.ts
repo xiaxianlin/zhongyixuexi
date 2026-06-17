@@ -12,6 +12,7 @@ import { notesApi } from '@/lib/notes-api'
 import type {
   Note,
   NoteListItem,
+  ParagraphNoteCard,
   NoteLink,
   Backlink,
   NotebookNode,
@@ -43,9 +44,9 @@ interface NotesStore {
   outlinks: NoteLink[]
   refreshLinks: () => Promise<void>
 
-  // NOTE-05: paragraph sidebar
+  // NOTE-05: paragraph sidebar note cards
   sidebarParagraphId: string | null
-  sidebarNotes: NoteListItem[]
+  sidebarNotes: ParagraphNoteCard[]
   loadSidebar: (paragraphId: string) => Promise<void>
 
   // Create

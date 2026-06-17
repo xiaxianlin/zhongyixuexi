@@ -5,6 +5,7 @@ import { app } from 'electron'
 import { getDb } from '../db'
 import { rebuildFts } from '../db/fts'
 import { normalize } from './content-normalize'
+import { deactivateParagraphAnalysesForBook } from './paragraph-analysis'
 
 interface BuiltinParagraph {
   index: number
@@ -162,6 +163,7 @@ export function seedBuiltinContent(): { inserted: boolean; bookId: string } {
          WHERE chapter_id IN (SELECT id FROM chapters WHERE book_id = ?)
            AND deleted_at IS NULL`,
       ).run(now, BUILTIN_BOOK_ID)
+      deactivateParagraphAnalysesForBook(BUILTIN_BOOK_ID, now)
       db.prepare('UPDATE chapters SET deleted_at = ? WHERE book_id = ? AND deleted_at IS NULL').run(
         now,
         BUILTIN_BOOK_ID,

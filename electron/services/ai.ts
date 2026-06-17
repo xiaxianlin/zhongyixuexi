@@ -52,6 +52,11 @@ import {
 } from '../ai/cache'
 import { aiError } from '../ai/errors'
 import { createHash } from 'node:crypto'
+import {
+  hasActiveParagraphAnalysis,
+  syncParagraphAnalysisColumns,
+  writeActiveParagraphAnalysis,
+} from './paragraph-analysis'
 
 /**
  * Extended cache-kind union — adds 'parse' for AI-driven chapter parsing.
@@ -282,12 +287,29 @@ function generateModernImpl(
     const explainText = parsed.sentences
       .map((s, i) => `${i + 1}. ${s.commentary}`)
       .join('\n')
-    getDb()
-      .prepare(
-        `UPDATE paragraphs SET content_modern = ?, content_explanation = ?, content_analysis = ?
-         WHERE id = ?`,
-      )
-      .run(modernText, explainText, parsed.analysis || parsed.summary, paragraphId)
+    const analysisText = parsed.analysis || parsed.summary
+    getDb().transaction(() => {
+      syncParagraphAnalysisColumns({
+        paragraphId,
+        modern: modernText,
+        explanation: explainText,
+        analysis: analysisText,
+      })
+      if (!hasActiveParagraphAnalysis(paragraphId, hit.id)) {
+        writeActiveParagraphAnalysis({
+          paragraphId,
+          modern: modernText,
+          explanation: explainText,
+          analysis: analysisText,
+          summary: parsed.summary,
+          model: hit.model,
+          promptHash,
+          cacheId: hit.id,
+          source: 'cache',
+          meta: { fromCache: true, sentenceCount: parsed.sentences.length },
+        })
+      }
+    })()
     return Promise.resolve(toModernDTO(paragraphId, parsed, hit.model, hit.totalTokens, true))
   }
 
@@ -334,11 +356,13 @@ function generateModernImpl(
 
     const db = getDb()
     const tx = db.transaction(() => {
-      db.prepare(
-        `UPDATE paragraphs SET content_modern = ?, content_explanation = ?, content_analysis = ?
-         WHERE id = ?`,
-      ).run(modernText, explainText, analysisText, paragraphId)
-      writeCache({
+      syncParagraphAnalysisColumns({
+        paragraphId,
+        modern: modernText,
+        explanation: explainText,
+        analysis: analysisText,
+      })
+      const cacheId = writeCache({
         scope: 'paragraph',
         scopeId: paragraphId,
         kind: 'modern',
@@ -350,6 +374,21 @@ function generateModernImpl(
         completionTokens: lastResp.usage?.completion_tokens ?? 0,
         totalTokens: lastResp.usage?.total_tokens ?? 0,
         meta: { summary: parsed.summary, sentenceCount: parsed.sentences.length },
+      })
+      writeActiveParagraphAnalysis({
+        paragraphId,
+        modern: modernText,
+        explanation: explainText,
+        analysis: analysisText,
+        summary: parsed.summary,
+        model: cfg.model,
+        promptHash,
+        cacheId,
+        source: 'ai',
+        meta: {
+          sentenceCount: parsed.sentences.length,
+          totalTokens: lastResp.usage?.total_tokens ?? 0,
+        },
       })
     })
     tx()
