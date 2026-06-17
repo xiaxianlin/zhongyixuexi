@@ -7,6 +7,9 @@
 import { randomUUID } from 'node:crypto'
 import { listBooks, getChapterTree } from '../services/library'
 import { searchParagraphs } from '../services/search'
+import { getChapter } from '../services/reading'
+import { createNote, deleteNote, getNotesByParagraph } from '../services/notes'
+import { getDashboard } from '../services/learning'
 import { getActiveApiKey } from '../services/settings'
 import { deepseek } from '../ai/deepseek'
 import { getDb } from '../db'
@@ -104,6 +107,12 @@ export async function runIntegrationCheck(): Promise<void> {
     assert(tree.length === 2, `tree roots=${tree.length}`)
     assert(tree[0].title === '上品', `tree[0]=${tree[0].title}`)
 
+    const chapterContent = getChapter(bookId, tree[0].id)
+    assert(!!chapterContent, 'reading chapter returned null')
+    assert(chapterContent!.paragraphs.length === 2, `chapter paragraphs=${chapterContent!.paragraphs.length}`)
+    const paragraphId = chapterContent!.paragraphs[0]!.id
+    console.log('[integration] reading ok:', chapterContent!.paragraphs.length, 'paragraphs')
+
     const matched = ftsMatchCount()
     assert(matched >= 1, `fts match returned ${matched}`)
     console.log('[integration] fts ok: matched', matched, 'paragraph(s)')
@@ -113,6 +122,25 @@ export async function runIntegrationCheck(): Promise<void> {
     assert(sr.hits.length >= 1, `search returned ${sr.hits.length} hits`)
     assert(!sr.degraded, 'search unexpectedly degraded')
     console.log('[integration] search ok:', sr.hits.length, 'hits, total', sr.total)
+
+    const note = createNote({ paragraph_id: paragraphId, content: '测试笔记：甘温补虚。' })
+    let notes = getNotesByParagraph(paragraphId)
+    assert(notes.length === 1, `note count after create=${notes.length}`)
+    assert(notes[0]!.content === note.content, 'created note content mismatch')
+    deleteNote(note.id)
+    notes = getNotesByParagraph(paragraphId)
+    assert(notes.length === 0, `note count after delete=${notes.length}`)
+    console.log('[integration] notes ok: create / list / delete')
+
+    const dashboard = getDashboard()
+    assert(dashboard.totalBooks >= 3, `dashboard totalBooks=${dashboard.totalBooks}`)
+    assert(dashboard.totalChapters >= 165, `dashboard totalChapters=${dashboard.totalChapters}`)
+    assert(dashboard.totalParagraphs >= 1203, `dashboard totalParagraphs=${dashboard.totalParagraphs}`)
+    console.log('[integration] dashboard ok:', {
+      books: dashboard.totalBooks,
+      chapters: dashboard.totalChapters,
+      paragraphs: dashboard.totalParagraphs,
+    })
   } finally {
     deleteTestBook(bookId)
   }
@@ -120,7 +148,7 @@ export async function runIntegrationCheck(): Promise<void> {
   assert(listBooks().filter((b) => b.id === bookId).length === 0, 'book still present after delete')
   assert(ftsMatchCount() === 0, `fts rows survived delete: ${ftsMatchCount()}`)
 
-  console.log('[integration] PASS — insert / list / tree / fts / search / delete verified')
+  console.log('[integration] PASS — insert / list / tree / reading / fts / search / notes / dashboard / delete verified')
 }
 
 async function runAiDebug(): Promise<void> {
