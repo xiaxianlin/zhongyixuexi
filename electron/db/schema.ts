@@ -89,32 +89,6 @@ const CURRENT_SCHEMA = `
       WHERE new.deleted_at IS NULL AND new.is_noise = 0;
   END;
 
-  CREATE TABLE IF NOT EXISTS dictionary_terms (
-    term_id      TEXT PRIMARY KEY,
-    term         TEXT NOT NULL,
-    definition   TEXT,
-    source       TEXT,
-    category     TEXT,
-    attributes   TEXT,
-    created_by   TEXT NOT NULL,
-    paragraph_id TEXT,
-    created_at   INTEGER NOT NULL,
-    updated_at   INTEGER NOT NULL,
-    FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE SET NULL
-  );
-  CREATE UNIQUE INDEX IF NOT EXISTS idx_dict_term ON dictionary_terms(term);
-  CREATE INDEX IF NOT EXISTS idx_dict_category ON dictionary_terms(category);
-
-  CREATE TABLE IF NOT EXISTS term_occurrences (
-    term_id      TEXT NOT NULL,
-    paragraph_id TEXT NOT NULL,
-    count        INTEGER NOT NULL DEFAULT 1,
-    PRIMARY KEY (term_id, paragraph_id),
-    FOREIGN KEY (term_id)      REFERENCES dictionary_terms(term_id) ON DELETE CASCADE,
-    FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE CASCADE
-  );
-  CREATE INDEX IF NOT EXISTS idx_occ_paragraph ON term_occurrences(paragraph_id);
-
   CREATE TABLE IF NOT EXISTS reading_progress (
     book_id      TEXT    NOT NULL,
     chapter_id   TEXT    NOT NULL,

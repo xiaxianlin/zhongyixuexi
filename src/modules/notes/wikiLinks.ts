@@ -22,7 +22,7 @@
 // eslint-disable-next-line no-useless-escape
 export const WIKILINK_RE = /\[\[([^\[\]]+)\]\]/g
 
-export type LinkTargetType = 'chapter' | 'paragraph' | 'term' | 'note'
+export type LinkTargetType = 'chapter' | 'paragraph' | 'note'
 
 export interface ParsedLink {
   /** Raw target text inside [[ ]] before pipe split, trimmed. */
@@ -65,16 +65,6 @@ export function parseWikiLinks(content: string): ParsedLink[] {
   return results
 }
 
-/**
- * Normalize a raw term string into a canonical key for the term fallback path.
- * Used when resolveTarget fails: the raw text is stored as a term-type link
- * with this normalized key, so creating a dictionary term later auto-restores
- * the backlink (06-notes.md §7.2).
- */
-export function normalizeTermKey(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
 /** Check if a string looks like a UUID (v4 or otherwise). */
 export function looksLikeUuid(s: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.trim())
@@ -82,7 +72,7 @@ export function looksLikeUuid(s: string): boolean {
 
 /** Parse a precise [[type:id]] syntax. Returns null if not precise syntax. */
 export function parsePreciseTarget(rawTarget: string): { type: LinkTargetType; id: string } | null {
-  const m = rawTarget.match(/^(chapter|paragraph|term|note):(.+)$/i)
+  const m = rawTarget.match(/^(chapter|paragraph|note):(.+)$/i)
   if (!m) return null
   return {
     type: m[1]!.toLowerCase() as LinkTargetType,
@@ -99,7 +89,6 @@ export interface TargetLookup {
   findParagraphByTitleLike(text: string): string | null
   findChapterByTitleLike(text: string): string | null
   findNoteByTitleLike(text: string): string | null
-  findTermByTerm(text: string): string | null
 }
 
 export interface ResolvedLink {
@@ -118,8 +107,7 @@ export interface ResolvedLink {
  *  (c) Paragraph title/text fuzzy (paragraphs.text LIKE or chapter title LIKE).
  *  (d) Chapter title fuzzy.
  *  (e) Note title fuzzy.
- *  (f) Term exact match.
- *  (g) All miss → null (caller falls back to term: normalizeTermKey(raw)).
+ *  (f) All miss → null.
  *
  * This function takes a lookup callback so it is unit-testable without a DB.
  */
@@ -162,13 +150,7 @@ export function resolveTarget(rawTarget: string, lookup: TargetLookup): Resolved
     return { targetType: 'note', targetId: noteId, valid: true }
   }
 
-  // (f) Term exact
-  const termId = lookup.findTermByTerm(rawTarget)
-  if (termId) {
-    return { targetType: 'term', targetId: termId, valid: true }
-  }
-
-  // (g) All miss → null (caller stores term fallback)
+  // (f) All miss
   return null
 }
 

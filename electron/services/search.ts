@@ -1,12 +1,7 @@
 /**
- * Search service (SRH module) — S3.1 full-text + S3.3 terminology dictionary.
+ * Search service — full-text search over built-in classics.
  *
- * Owns (05-search.md):
- *  - fulltext search over the IMP-owned fts_paragraphs FTS5 table (READ ONLY —
- *    00-architecture §5.4: SRH never writes fts_paragraphs, IMP does).
- *  - the dictionary_terms / term_occurrences CRUD (SRH-04).
- *
- * Schema note (library.ts): the real columns use `id` (not `book_id`/
+ * Schema note (library.ts): the columns use `id` (not `book_id`/
  * `chapter_id`/`paragraph_id`) as the stable TEXT primary key on
  * books/chapters/paragraphs. paragraphs also has the implicit `rowid` that
  * fts_paragraphs keys on via content_rowid='rowid'.
@@ -16,7 +11,6 @@
  * (no BM25; ordered by chapter/order_index for stable, predictable output).
  */
 
-import { randomUUID } from 'node:crypto'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
 
@@ -41,51 +35,6 @@ export interface SearchResult {
   hits: SearchHit[]
   /** true when the query was too short for trigram and ran a LIKE scan instead. */
   degraded: boolean
-}
-
-export interface HighlightLoc {
-  paragraphId: string
-  chapterId: string
-  bookId: string
-  /** Match count in this paragraph. */
-  count: number
-}
-
-export interface Term {
-  termId: string
-  term: string
-  definition: string | null
-  source: string | null
-  category: string | null
-  attributes: string | null
-  createdBy: string
-  paragraphId: string | null
-  createdAt: number
-  updatedAt: number
-}
-
-export interface TermOccurrence {
-  paragraphId: string
-  chapterId: string
-  bookId: string
-  bookTitle: string
-  chapterTitle: string
-  count: number
-}
-
-export interface TermDetail extends Term {
-  occurrences: TermOccurrence[]
-}
-
-/** Input for upsert — id/timestamps are server-assigned. */
-export interface TermInput {
-  term: string
-  definition?: string | null
-  source?: string | null
-  category?: string | null
-  attributes?: string | null
-  createdBy?: string
-  paragraphId?: string | null
 }
 
 // ---------- pure helpers (exported for unit testing) ----------
@@ -115,8 +64,6 @@ export function isShortQuery(q: string): boolean {
  * that, if unescaped, get parsed as operators and raise a query-syntax error.
  * Wrapping the whole query in double quotes makes it a single phrase literal;
  * any embedded `"` is doubled (`""`) per the FTS5 string-escaping rule.
- *
- * Exported so the AI module's RAG path (Phase 5) reuses the exact same escape.
  */
 export function buildFtsMatch(q: string): string {
   const trimmed = q.trim()
@@ -134,13 +81,9 @@ export interface SearchOpts {
 }
 
 /**
- * Cross-library full-text search (SRH-01).
+ * Cross-library full-text search.
  *
- * Exported (and re-exported from electron/ipc/search.ts) for the AI module's
- * RAG retrieval (AI-02, Phase 5) — keep this signature stable:
- *   searchParagraphs(q, opts?) => SearchResult
- *
- * Path selection (05-search.md §7.2):
+ * Path selection:
  *  - < 3 code points → LIKE '%q%' scan, ordered by chapter/order_index, no BM25.
  *  - otherwise      → FTS5 MATCH + bm25() ranking + snippet() highlight.
  *
@@ -315,164 +258,4 @@ export function makeLikeSnippet(text: string, term: string, window = 32): string
   const prefix = lo > 0 ? ' … ' : ''
   const suffix = hi < cps.length ? ' … ' : ''
   return `${prefix}${before}<mark>${match}</mark>${after}${suffix}`
-}
-
-/**
- * Full-library highlight scan (SRH-05). Returns per-paragraph match counts for
- * the given term. Uses a LIKE scan (works for any length, including the short
- * terms trigram can't match). Scoped to a single book when scope.bookId is set
- * (default) to bound cost; omit scope for a whole-library scan.
- */
-export function highlightAll(
-  term: string,
-  scope: { bookId?: string } = {},
-): { total: number; locations: HighlightLoc[] } {
-  const t = (term ?? '').trim()
-  if (t === '') return { total: 0, locations: [] }
-
-  const db = getDb()
-  const like = `%${t}%`
-  const scoped = typeof scope.bookId === 'string' && scope.bookId.length > 0
-
-  const rows = db
-    .prepare(
-      `SELECT p.id          AS paragraphId,
-              p.chapter_id  AS chapterId,
-              c.book_id     AS bookId,
-              (LENGTH(p.text) - LENGTH(REPLACE(p.text, ?, '')))
-                / LENGTH(?) AS count
-       FROM paragraphs p
-       JOIN chapters c ON c.id = p.chapter_id
-       WHERE p.deleted_at IS NULL
-         AND p.is_noise = 0
-         AND p.text LIKE ?
-         ${scoped ? 'AND c.book_id = ?' : ''}`,
-    )
-    .all(...[t, t, like, ...(scoped ? [scope.bookId as string] : [])]) as HighlightLoc[]
-
-  const total = rows.reduce((sum, r) => sum + r.count, 0)
-  return { total, locations: rows }
-}
-
-// ---------- terminology dictionary (S3.3) ----------
-
-const TERM_COLS = `
-  term_id      AS termId,
-  term         AS term,
-  definition   AS definition,
-  source       AS source,
-  category     AS category,
-  attributes   AS attributes,
-  created_by   AS createdBy,
-  paragraph_id AS paragraphId,
-  created_at   AS createdAt,
-  updated_at   AS updatedAt`
-
-function rowToTerm(r: unknown): Term {
-  return r as Term
-}
-
-/** List terms, optionally filtered by free-text (term LIKE) and category. */
-export function listTerms(opts: { q?: string; category?: string } = {}): Term[] {
-  const db = getDb()
-  const q = opts.q?.trim()
-  const cat = opts.category?.trim()
-  const rows = db
-    .prepare(
-      `SELECT ${TERM_COLS}
-       FROM dictionary_terms
-       WHERE 1=1
-         ${q ? 'AND term LIKE ?' : ''}
-         ${cat ? 'AND category = ?' : ''}
-       ORDER BY term`,
-    )
-    .all(...[...(q ? [`%${q}%`] : []), ...(cat ? [cat] : [])]) as Term[]
-  return rows.map(rowToTerm)
-}
-
-/** Fetch one term with its occurrence list (paragraphs where it appears). */
-export function getTerm(termId: string): TermDetail | null {
-  const db = getDb()
-  const term = db
-    .prepare(`SELECT ${TERM_COLS} FROM dictionary_terms WHERE term_id = ?`)
-    .get(termId) as Term | undefined
-  if (!term) return null
-
-  const occurrences = db
-    .prepare(
-      `SELECT o.paragraph_id AS paragraphId,
-              p.chapter_id  AS chapterId,
-              c.book_id     AS bookId,
-              b.title       AS bookTitle,
-              c.title       AS chapterTitle,
-              o.count       AS count
-       FROM term_occurrences o
-       JOIN paragraphs p ON p.id = o.paragraph_id
-       JOIN chapters    c ON c.id = p.chapter_id
-       JOIN books       b ON b.id = c.book_id
-       WHERE o.term_id = ?
-       ORDER BY c.book_id, p.chapter_id`,
-    )
-    .all(termId) as TermOccurrence[]
-
-  return { ...term, occurrences }
-}
-
-/**
- * Insert or update a term. term is UNIQUE; on conflict the existing row is
- * updated in place (merge) and its term_id is returned. id/timestamps are
- * server-assigned and never taken from the input.
- */
-export function upsertTerm(input: TermInput): Term {
-  const db = getDb()
-  const term = input.term.trim()
-  if (term === '') {
-    throw new AppError('VALIDATION', '术语不能为空')
-  }
-  const now = Date.now()
-  const termId = randomUUID()
-
-  const tx = db.transaction(() => {
-    db.prepare(
-      `INSERT INTO dictionary_terms
-         (term_id, term, definition, source, category, attributes, created_by, paragraph_id, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(term) DO UPDATE SET
-         definition   = excluded.definition,
-         source       = excluded.source,
-         category     = excluded.category,
-         attributes   = excluded.attributes,
-         created_by   = excluded.created_by,
-         paragraph_id = excluded.paragraph_id,
-         updated_at   = excluded.updated_at`,
-    ).run(
-      termId,
-      term,
-      input.definition ?? null,
-      input.source ?? null,
-      input.category ?? null,
-      input.attributes ?? null,
-      input.createdBy ?? 'user',
-      input.paragraphId ?? null,
-      now,
-      now,
-    )
-  })
-  tx()
-
-  // ON CONFLICT updates the existing row, so the returned id is whichever row
-  // actually holds this term now.
-  const row = db
-    .prepare(`SELECT ${TERM_COLS} FROM dictionary_terms WHERE term = ?`)
-    .get(term) as Term
-  return rowToTerm(row)
-}
-
-/** Delete a term; term_occurrences cascade-clears via ON DELETE CASCADE. */
-export function deleteTerm(termId: string): void {
-  const db = getDb()
-  const res = db.prepare('DELETE FROM dictionary_terms WHERE term_id = ?').run(termId)
-  if (res.changes === 0) {
-    throw new AppError('NOT_FOUND', `术语 ${termId} 不存在`)
-  }
 }

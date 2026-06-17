@@ -3,9 +3,8 @@
  *
  * Covers:
  *  1. parseWikiLinks — all [[ ]] syntax variants, edge cases, dedup, position.
- *  2. resolveTarget — priority cascade (precise > uuid > paragraph > chapter > note > term).
- *  3. normalizeTermKey — canonical key generation.
- *  4. splitWikiLinks — renderer-side segment splitting.
+ *  2. resolveTarget — priority cascade (precise > uuid > paragraph > chapter > note).
+ *  3. splitWikiLinks — renderer-side segment splitting.
  *
  * These pure functions live in src/modules/notes/wikiLinks.ts (renderer-side
  * canonical copy) because electron/services/notes.ts imports better-sqlite3 +
@@ -17,7 +16,6 @@ import { describe, it, expect } from 'vitest'
 import {
   parseWikiLinks,
   resolveTarget,
-  normalizeTermKey,
   parsePreciseTarget,
   looksLikeUuid,
   splitWikiLinks,
@@ -33,7 +31,6 @@ function makeMockLookup(opts: {
   paragraphs?: string[]
   chapters?: string[]
   notes?: string[]
-  terms?: string[]
   paragraphTitles?: Record<string, string>
   chapterTitles?: Record<string, string>
   noteTitles?: Record<string, string>
@@ -43,7 +40,6 @@ function makeMockLookup(opts: {
       if (type === 'paragraph') return (opts.paragraphs ?? []).includes(id)
       if (type === 'chapter') return (opts.chapters ?? []).includes(id)
       if (type === 'note') return (opts.notes ?? []).includes(id)
-      if (type === 'term') return (opts.terms ?? []).includes(id)
       return false
     },
     findParagraphByTitleLike(text) {
@@ -63,9 +59,6 @@ function makeMockLookup(opts: {
         if (ntitle.includes(text) || text.includes(ntitle)) return nid
       }
       return null
-    },
-    findTermByTerm(text) {
-      return (opts.terms ?? []).includes(text) ? `term-${text}` : null
     },
   }
 }
@@ -222,13 +215,6 @@ describe('resolveTarget', () => {
     expect(result!.valid).toBe(true)
   })
 
-  it('(a) precise type:id — works for term', () => {
-    const lookup = makeMockLookup({ terms: ['人参'] })
-    const result = resolveTarget('term:人参', lookup)
-    expect(result!.targetType).toBe('term')
-    expect(result!.valid).toBe(true)
-  })
-
   it('(b) bare UUID — matches paragraph first', () => {
     const lookup = makeMockLookup({
       paragraphs: [UUID_A],
@@ -289,24 +275,11 @@ describe('resolveTarget', () => {
     expect(result!.targetId).toBe('note-1')
   })
 
-  it('(f) term exact match as last resort before null', () => {
+  it('(f) returns null when nothing matches', () => {
     const lookup = makeMockLookup({
       paragraphTitles: {},
       chapterTitles: {},
       noteTitles: {},
-      terms: ['脾虚'],
-    })
-    const result = resolveTarget('脾虚', lookup)
-    expect(result!.targetType).toBe('term')
-    expect(result!.targetId).toBe('term-脾虚')
-  })
-
-  it('(g) returns null when nothing matches — caller falls back to term', () => {
-    const lookup = makeMockLookup({
-      paragraphTitles: {},
-      chapterTitles: {},
-      noteTitles: {},
-      terms: [],
     })
     const result = resolveTarget('未知术语', lookup)
     expect(result).toBeNull()
@@ -333,29 +306,6 @@ describe('resolveTarget', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// normalizeTermKey
-// ---------------------------------------------------------------------------
-
-describe('normalizeTermKey', () => {
-  it('trims and lowercases', () => {
-    expect(normalizeTermKey('  Hello World  ')).toBe('hello world')
-  })
-
-  it('collapses multiple spaces', () => {
-    expect(normalizeTermKey('a   b\tc')).toBe('a b c')
-  })
-
-  it('preserves CJK characters', () => {
-    expect(normalizeTermKey('人参')).toBe('人参')
-  })
-
-  it('handles mixed CJK + latin', () => {
-    expect(normalizeTermKey('  Qi 气  ')).toBe('qi 气')
-  })
-})
-
-// ---------------------------------------------------------------------------
 // parsePreciseTarget
 // ---------------------------------------------------------------------------
 
@@ -374,11 +324,8 @@ describe('parsePreciseTarget', () => {
     })
   })
 
-  it('parses term:key', () => {
-    expect(parsePreciseTarget('term:人参')).toEqual({
-      type: 'term',
-      id: '人参',
-    })
+  it('returns null for unsupported target type', () => {
+    expect(parsePreciseTarget('term:人参')).toBeNull()
   })
 
   it('parses note:id', () => {

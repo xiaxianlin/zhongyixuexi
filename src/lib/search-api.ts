@@ -8,7 +8,7 @@
  */
 
 import { IpcError, type SerializedError } from './ipc'
-import type { SearchResult, HighlightLoc, Term, TermDetail } from './types'
+import type { SearchResult } from './types'
 
 type IpcResult<T> = { __ok: true; data: T } | { __ok: false; error: SerializedError }
 
@@ -28,23 +28,6 @@ export interface FulltextArgs {
   bookIds?: string[]
 }
 
-/** search:* — SRH-01 fulltext, SRH-05 highlight, SRH-04 dictionary CRUD. */
 export const searchApi = {
   fulltext: (args: FulltextArgs) => invokeRaw<SearchResult>('search:fulltext', args),
-
-  highlightAll: (term: string, scope?: { bookId?: string }) =>
-    invokeRaw<{ total: number; locations: HighlightLoc[] }>('search:highlightAll', {
-      term,
-      scope: scope ?? {},
-    }),
-
-  termList: (q?: string, category?: string) =>
-    invokeRaw<Term[]>('search:termList', { q, category }),
-
-  termGet: (termId: string) => invokeRaw<TermDetail | null>('search:termGet', { termId }),
-
-  termUpsert: (input: Omit<Term, 'termId' | 'createdAt' | 'updatedAt'>) =>
-    invokeRaw<Term>('search:termUpsert', input),
-
-  termDelete: (termId: string) => invokeRaw<null>('search:termDelete', { termId }),
 }

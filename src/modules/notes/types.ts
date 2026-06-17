@@ -18,7 +18,7 @@ export interface Note {
   deleted_at: number | null
 }
 
-export type LinkTargetType = 'chapter' | 'paragraph' | 'term' | 'note'
+export type LinkTargetType = 'chapter' | 'paragraph' | 'note'
 
 export interface NoteLink {
   id: string

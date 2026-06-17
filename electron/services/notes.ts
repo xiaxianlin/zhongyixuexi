@@ -7,10 +7,7 @@
  * PRAGMA foreign_keys=ON (00-arch §5.1) so the ON DELETE CASCADE / SET NULL
  * declared in the current database schema actually fires.
  *
- * Wiki-link parsing (NOTE-02 core) is split into pure functions
- * (parseWikiLinks, normalizeTermKey) that are unit-tested without a database,
- * and a DB-dependent resolver (resolveTarget) that takes a lookup callback so
- * the priority cascade can also be tested in isolation.
+ * Wiki-link parsing is split into pure parsing and a DB-dependent resolver.
  *
  * PDF export (NOTE-04) uses Electron's built-in Chromium via BrowserWindow
  * to avoid bundling puppeteer. The service returns assembled HTML; the IPC
@@ -47,7 +44,7 @@ export interface Note {
   deleted_at: number | null
 }
 
-export type LinkTargetType = 'chapter' | 'paragraph' | 'term' | 'note'
+export type LinkTargetType = 'chapter' | 'paragraph' | 'note'
 
 export interface NoteLink {
   id: string
@@ -223,18 +220,6 @@ export function parseWikiLinks(content: string): ParsedLink[] {
   return results
 }
 
-/**
- * Normalize a raw term string into a canonical key for the term fallback path.
- * Used when resolveTarget fails: the raw text is stored as a term-type link
- * with this normalized key, so creating a dictionary term later auto-restores
- * the backlink (06-notes.md §7.2).
- *
- * Pure function — exported for unit testing.
- */
-export function normalizeTermKey(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+/g, ' ')
-}
-
 /** Check if a string looks like a UUID (v4 or otherwise). Pure — exported for testing. */
 export function looksLikeUuid(s: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s.trim())
@@ -242,7 +227,7 @@ export function looksLikeUuid(s: string): boolean {
 
 /** Parse a precise [[type:id]] syntax. Returns null if not precise syntax. Pure. */
 export function parsePreciseTarget(rawTarget: string): { type: LinkTargetType; id: string } | null {
-  const m = rawTarget.match(/^(chapter|paragraph|term|note):(.+)$/i)
+  const m = rawTarget.match(/^(chapter|paragraph|note):(.+)$/i)
   if (!m) return null
   return {
     type: m[1].toLowerCase() as LinkTargetType,
@@ -269,7 +254,6 @@ export interface TargetLookup {
   findParagraphByTitleLike(text: string): string | null
   findChapterByTitleLike(text: string): string | null
   findNoteByTitleLike(text: string): string | null
-  findTermByTerm(text: string): string | null
 }
 
 /**
@@ -281,8 +265,7 @@ export interface TargetLookup {
  *  (c) Paragraph title fuzzy (paragraphs.text LIKE or chapter title LIKE).
  *  (d) Chapter title fuzzy.
  *  (e) Note title fuzzy.
- *  (f) Term exact match.
- *  (g) All miss → return null (caller falls back to term: normalizeTermKey(raw)).
+ *  (f) All miss → return null.
  *
  * This function takes a lookup callback so it is unit-testable without a DB.
  */
@@ -328,13 +311,7 @@ export function resolveTarget(rawTarget: string, lookup: TargetLookup): Resolved
     return { targetType: 'note', targetId: noteId, valid: true }
   }
 
-  // (f) Term exact
-  const termId = lookup.findTermByTerm(rawTarget)
-  if (termId) {
-    return { targetType: 'term', targetId: termId, valid: true }
-  }
-
-  // (g) All miss → null (caller stores term fallback)
+  // (f) All miss
   return null
 }
 
@@ -345,15 +322,8 @@ function makeDbLookup(): TargetLookup {
   const db = getDb()
   return {
     entityExists(type, id) {
-      const table =
-        type === 'chapter'
-          ? 'chapters'
-          : type === 'paragraph'
-            ? 'paragraphs'
-            : type === 'note'
-              ? 'notes'
-              : 'dictionary_terms'
-      const col = type === 'term' ? 'term_id' : 'id'
+      const table = type === 'chapter' ? 'chapters' : type === 'paragraph' ? 'paragraphs' : 'notes'
+      const col = 'id'
       const extra = type === 'note' ? ' AND deleted_at IS NULL' : ''
       const row = db.prepare(`SELECT 1 FROM ${table} WHERE ${col} = ?${extra} LIMIT 1`).get(id)
       return !!row
@@ -383,12 +353,6 @@ function makeDbLookup(): TargetLookup {
         .get(`%${text}%`) as { id: string } | undefined
       return row?.id ?? null
     },
-    findTermByTerm(text) {
-      const row = db
-        .prepare('SELECT term_id FROM dictionary_terms WHERE term = ? LIMIT 1')
-        .get(text) as { term_id: string } | undefined
-      return row?.term_id ?? null
-    },
   }
 }
 
@@ -398,8 +362,7 @@ function makeDbLookup(): TargetLookup {
  * link, and inserts fresh rows. Deduplicates by (targetType, targetId) but
  * keeps position as the first occurrence index (06-notes.md §7.2).
  *
- * Failed resolutions fall back to type 'term' with target_id = normalized key,
- * so future dictionary creation auto-restores the backlink.
+ * Unresolved free-text links are ignored.
  */
 export function reparseLinks(noteId: string, content: string): void {
   const db = getDb()
@@ -429,9 +392,8 @@ export function reparseLinks(noteId: string, content: string): void {
       targetType = resolved.targetType
       targetId = resolved.targetId
     } else {
-      // Total miss → term fallback (06-notes.md §7.2)
-      targetType = 'term'
-      targetId = normalizeTermKey(link.rawTarget)
+      position++
+      continue
     }
 
     const dedupKey = `${targetType}:${targetId}`
@@ -845,11 +807,7 @@ function resolveTargetTitle(
       .get(targetId) as { title: string } | undefined
     return row ? { title: row.title, valid: true } : { title: '(已删除)', valid: false }
   }
-  // term
-  const row = db
-    .prepare('SELECT term FROM dictionary_terms WHERE term_id = ?')
-    .get(targetId) as { term: string } | undefined
-  return row ? { title: row.term, valid: true } : { title: targetId, valid: false }
+  return { title: '(已删除)', valid: false }
 }
 
 /**

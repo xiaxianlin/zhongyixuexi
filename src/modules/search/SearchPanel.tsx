@@ -1,18 +1,6 @@
-/**
- * SearchPanel — the SRH main panel (SRH-01 / SRH-02 / SRH-05).
- *
- * Composes a search input (SearchBar) with the paragraph-level ResultList, and
- * hosts the TermPopup (SRH-04). Enter or a 250ms debounce triggers
- * searchStore.runSearch; clicking a result opens the matching paragraph in the
- * library detail page.
- *
- * Styling mirrors library.css token usage; see search.css.
- */
-
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useSearchStore } from '@/stores/search'
 import { ResultList } from './ResultList'
-import { TermPopup } from './TermPopup'
 import './search.css'
 
 const DEBOUNCE_MS = 250
@@ -89,9 +77,6 @@ export function SearchPanel() {
       </form>
 
       <ResultList />
-
-      {/* SRH-04 term popup — rendered as an overlay; activeTermDetail gates it. */}
-      <TermPopup />
     </section>
   )
 }

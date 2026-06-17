@@ -46,36 +46,3 @@ export interface SearchResult {
   /** true when the query was too short for trigram and ran a LIKE scan. */
   degraded: boolean
 }
-
-export interface HighlightLoc {
-  paragraphId: string
-  chapterId: string
-  bookId: string
-  count: number
-}
-
-export interface Term {
-  termId: string
-  term: string
-  definition: string | null
-  source: string | null
-  category: string | null
-  attributes: string | null
-  createdBy: string
-  paragraphId: string | null
-  createdAt: number
-  updatedAt: number
-}
-
-export interface TermOccurrence {
-  paragraphId: string
-  chapterId: string
-  bookId: string
-  bookTitle: string
-  chapterTitle: string
-  count: number
-}
-
-export interface TermDetail extends Term {
-  occurrences: TermOccurrence[]
-}
