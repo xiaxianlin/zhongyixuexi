@@ -63,8 +63,6 @@ const MIGRATIONS: Migration[] = [
           chapter_id         TEXT NOT NULL,
           order_index        INTEGER NOT NULL,
           text               TEXT NOT NULL,
-          content_modern     TEXT,              -- AI-generated (DeepSeek), nullable
-          content_explanation TEXT,             -- AI-generated, nullable
           edited             INTEGER NOT NULL DEFAULT 0,  -- user hand-edited
           parse_hash         TEXT,              -- content fingerprint for re-parse mapping
           is_noise           INTEGER NOT NULL DEFAULT 0,  -- header/footer/watermark
@@ -320,7 +318,7 @@ const MIGRATIONS: Migration[] = [
 
         CREATE TABLE IF NOT EXISTS notes (
           id TEXT PRIMARY KEY,
-          title TEXT NOT NULL DEFAULT '无标题笔记',
+          title TEXT NOT NULL DEFAULT '',
           content TEXT NOT NULL DEFAULT '',
           book_id TEXT, chapter_id TEXT, paragraph_id TEXT, notebook_id TEXT,
           word_count INTEGER NOT NULL DEFAULT 0, pinned INTEGER NOT NULL DEFAULT 0,
@@ -452,24 +450,10 @@ const MIGRATIONS: Migration[] = [
     },
   },
   {
-    // v11 — paragraph-level content analysis generated alongside modern text
-    // and medical commentary. Forward-only additive migration; stable paragraph
-    // IDs and rowids remain untouched.
+    // v11 — versioned paragraph analyses. This is the sole storage for AI
+    // paragraph interpretation and supports model, style, history, and rollback
+    // workflows without widening paragraphs.
     version: 11,
-    name: 'paragraph_content_analysis',
-    up: (db) => {
-      const columns = db.prepare('PRAGMA table_info(paragraphs)').all() as { name: string }[]
-      if (!columns.some((column) => column.name === 'content_analysis')) {
-        db.exec('ALTER TABLE paragraphs ADD COLUMN content_analysis TEXT')
-      }
-    },
-  },
-  {
-    // v12 — versioned paragraph analyses. The current UI still reads the
-    // materialized paragraph columns for speed/compatibility, but this table is
-    // the extensible record of AI analysis runs and can support future model,
-    // style, history, and rollback workflows without widening paragraphs.
-    version: 12,
     name: 'paragraph_analyses',
     up: (db) => {
       db.exec(`
@@ -496,36 +480,6 @@ const MIGRATIONS: Migration[] = [
         CREATE INDEX IF NOT EXISTS idx_paragraph_analyses_paragraph ON paragraph_analyses(paragraph_id, kind, created_at DESC);
         CREATE UNIQUE INDEX IF NOT EXISTS uq_paragraph_analyses_active ON paragraph_analyses(paragraph_id, kind)
           WHERE is_active = 1;
-
-        INSERT INTO paragraph_analyses (
-          id, paragraph_id, kind, version, is_active, modern, explanation,
-          analysis, summary, model, prompt_hash, cache_id, source,
-          created_at, updated_at, meta
-        )
-        SELECT
-          'legacy-' || id,
-          id,
-          'modern',
-          1,
-          1,
-          content_modern,
-          content_explanation,
-          content_analysis,
-          NULL,
-          NULL,
-          NULL,
-          NULL,
-          'legacy',
-          created_at,
-          created_at,
-          NULL
-        FROM paragraphs
-        WHERE deleted_at IS NULL
-          AND (content_modern IS NOT NULL OR content_explanation IS NOT NULL OR content_analysis IS NOT NULL)
-          AND NOT EXISTS (
-            SELECT 1 FROM paragraph_analyses pa
-            WHERE pa.paragraph_id = paragraphs.id AND pa.kind = 'modern'
-          );
       `)
     },
   },

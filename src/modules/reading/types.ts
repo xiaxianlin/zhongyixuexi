@@ -11,14 +11,6 @@ export interface ParagraphDTO {
   chapter_id: string
   order_index: number
   text: string
-  /** @deprecated Use interpretation.modern. Kept while legacy paragraph columns exist. */
-  content_modern: string | null
-  /** @deprecated Use interpretation.explanation. Kept while legacy paragraph columns exist. */
-  content_explanation: string | null
-  /** @deprecated Use interpretation.analysis. Kept while legacy paragraph columns exist. */
-  content_analysis: string | null
-  /** @deprecated Use interpretation.meta. Kept for compatibility with older UI code. */
-  analysis_meta: ParagraphAnalysisMeta | null
   interpretation: InterpretationViewDTO
   edited: number
   is_noise: number

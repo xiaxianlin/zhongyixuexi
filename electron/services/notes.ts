@@ -516,8 +516,8 @@ export function createNote(input: CreateNoteInput): Note {
   const db = getDb()
   const now = Date.now()
   const id = randomUUID()
-  const title = input.title?.trim() || '无标题笔记'
   const content = input.content ?? ''
+  const title = input.title?.trim() ?? ''
   const wordCount = countWords(content)
 
   let bookId = input.book_id ?? null
@@ -575,8 +575,8 @@ export function updateNote(input: UpdateNoteInput): Note {
   const note = rowToNote(existing)
   const now = Date.now()
 
-  const title = input.title != null ? input.title.trim() || '无标题笔记' : note.title
   const content = input.content != null ? input.content : note.content
+  const title = input.title != null ? input.title.trim() : note.title
   const contentChanged = input.content != null && input.content !== note.content
   const wordCount = contentChanged ? countWords(content) : note.word_count
   const pinned =
@@ -1348,9 +1348,6 @@ export function exportParagraphCombined(
         id: string
         chapter_id: string
         text: string
-        content_modern: string | null
-        content_explanation: string | null
-        content_analysis: string | null
       } & ParagraphAnalysisSqlRow
     | undefined
   if (!para) {

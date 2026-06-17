@@ -55,9 +55,5 @@
   --control-radius: 10px;
   --shadow-soft: 0 10px 24px rgba(119, 82, 45, 0.06);
 
-  /* legacy aliases（兼容现有组件引用 --ink/--paper） */
-  --ink: #2f2118;
-  --paper: #f5ead6;
-
   color-scheme: light;
 }

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { getDb } from '../db'
 import { AppError } from '../lib/error'
 
-export type ParagraphAnalysisSource = 'ai' | 'cache' | 'legacy'
+export type ParagraphAnalysisSource = 'ai' | 'cache'
 
 export interface ParagraphAnalysisInput {
   paragraphId: string
@@ -86,9 +86,9 @@ interface ParagraphAnalysisRecord extends ParagraphAnalysisHistoryRow {
 }
 
 export interface ParagraphAnalysisSqlRow {
-  content_modern: string | null
-  content_explanation: string | null
-  content_analysis: string | null
+  modern: string | null
+  explanation: string | null
+  analysis: string | null
   analysis_id: string | null
   analysis_version: number | null
   analysis_source: string | null
@@ -130,11 +130,11 @@ function activeAnalysisSqlAliases(options: ActiveAnalysisSqlOptions = {}): {
 }
 
 export function selectActiveAnalysisColumns(options: ActiveAnalysisSqlOptions = {}): string {
-  const { paragraphAlias, analysisAlias } = activeAnalysisSqlAliases(options)
+  const { analysisAlias } = activeAnalysisSqlAliases(options)
   return `
-COALESCE(${analysisAlias}.modern, ${paragraphAlias}.content_modern) AS content_modern,
-COALESCE(${analysisAlias}.explanation, ${paragraphAlias}.content_explanation) AS content_explanation,
-COALESCE(${analysisAlias}.analysis, ${paragraphAlias}.content_analysis) AS content_analysis,
+${analysisAlias}.modern AS modern,
+${analysisAlias}.explanation AS explanation,
+${analysisAlias}.analysis AS analysis,
 ${analysisAlias}.id AS analysis_id,
 ${analysisAlias}.kind AS analysis_kind,
 ${analysisAlias}.version AS analysis_version,
@@ -196,9 +196,9 @@ export function mapParagraphAnalysisMeta(
 
 export function mapParagraphAnalysisView(row: ParagraphAnalysisSqlRow): ParagraphAnalysisView {
   return {
-    modern: row.content_modern,
-    explanation: row.content_explanation,
-    analysis: row.content_analysis,
+    modern: row.modern,
+    explanation: row.explanation,
+    analysis: row.analysis,
     analysisMeta: mapParagraphAnalysisMeta(row),
   }
 }
@@ -335,49 +335,18 @@ export function writeActiveParagraphAnalysis(input: ParagraphAnalysisInput): Par
   }
 }
 
-export function writeActiveParagraphAnalysisWithLegacySync(
-  input: ParagraphAnalysisInput,
-): ParagraphAnalysisMeta {
-  const meta = writeActiveParagraphAnalysis(input)
-  syncLegacyParagraphAnalysisColumns({
-    paragraphId: input.paragraphId,
-    modern: input.modern,
-    explanation: input.explanation,
-    analysis: input.analysis,
-  })
-  return meta
-}
-
-export function ensureActiveParagraphAnalysisWithLegacySync(
+export function ensureActiveParagraphAnalysis(
   input: ParagraphAnalysisInput,
 ): ParagraphAnalysisMeta {
   const kind = input.kind ?? DEFAULT_PARAGRAPH_ANALYSIS_KIND
   if (!hasActiveParagraphAnalysis(input.paragraphId, input.cacheId, kind)) {
-    return writeActiveParagraphAnalysisWithLegacySync(input)
+    return writeActiveParagraphAnalysis(input)
   }
-  syncLegacyParagraphAnalysisColumns({
-    paragraphId: input.paragraphId,
-    modern: input.modern,
-    explanation: input.explanation,
-    analysis: input.analysis,
-  })
   const meta = getActiveParagraphAnalysisMeta(input.paragraphId, kind)
   if (!meta) {
     throw new AppError('NOT_FOUND', `active paragraph analysis for ${input.paragraphId} not found`)
   }
   return meta
-}
-
-export function syncLegacyParagraphAnalysisColumns(
-  input: Pick<ParagraphAnalysisView, 'modern' | 'explanation' | 'analysis'> & { paragraphId: string },
-): void {
-  getDb()
-    .prepare(
-      `UPDATE paragraphs
-       SET content_modern = ?, content_explanation = ?, content_analysis = ?
-       WHERE id = ?`,
-    )
-    .run(input.modern, input.explanation, input.analysis, input.paragraphId)
 }
 
 export function hasActiveParagraphAnalysis(
@@ -507,12 +476,6 @@ export function activateParagraphAnalysis(
        SET is_active = 1, updated_at = ?
        WHERE id = ?`,
     ).run(now, analysisId)
-    db.prepare(
-      `UPDATE paragraphs
-       SET content_modern = ?, content_explanation = ?, content_analysis = ?
-       WHERE id = ?`,
-    ).run(row.modern, row.explanation, row.analysis, paragraphId)
-
     return {
       modern: row.modern,
       explanation: row.explanation,

@@ -11,10 +11,9 @@
  * so a segment-edit hard delete degrades the bookmark to chapter-level rather
  * than losing it.
  *
- * Schema note: the real schema (db/migrate.ts v2) uses `id` as the stable TEXT
- * primary key on books/chapters/paragraphs (NOT book_id/chapter_id). AI
- * interpretations are read from the active paragraph_analyses row, with legacy
- * paragraph columns used only as a compatibility fallback.
+ * Schema note: the real schema uses `id` as the stable TEXT primary key on
+ * books/chapters/paragraphs (NOT book_id/chapter_id). AI interpretations are
+ * read from the active paragraph_analyses row.
  */
 import { randomUUID } from 'node:crypto'
 import { getDb } from '../db'
@@ -28,7 +27,6 @@ import {
   toParagraphInterpretationDTO,
   toParagraphInterpretationView,
   type ParagraphAnalysisHistoryItem,
-  type ParagraphAnalysisMeta,
   type ParagraphAnalysisSqlRow,
   type ParagraphInterpretationDTO,
   type ParagraphInterpretationView,
@@ -41,10 +39,6 @@ export interface ParagraphDTO {
   chapter_id: string
   order_index: number
   text: string
-  content_modern: string | null
-  content_explanation: string | null
-  content_analysis: string | null
-  analysis_meta: ParagraphAnalysisMeta | null
   interpretation: InterpretationViewDTO
   edited: number
   is_noise: number
@@ -118,7 +112,7 @@ export type InterpretationViewDTO = ParagraphInterpretationView
 
 export type ParagraphAnalysisHistoryDTO = ParagraphAnalysisHistoryItem
 
-type ParagraphRow = Omit<ParagraphDTO, 'analysis_meta' | 'interpretation'> & ParagraphAnalysisSqlRow
+type ParagraphRow = Omit<ParagraphDTO, 'interpretation'> & ParagraphAnalysisSqlRow
 
 export interface TermLookupDTO {
   term: string
@@ -165,8 +159,12 @@ export function getChapter(bookId: string, chapterId: string): ChapterContent | 
   const paragraphs = rows.map((paragraph) => {
     const analysisView = mapParagraphAnalysisView(paragraph)
     return {
-      ...paragraph,
-      analysis_meta: analysisView.analysisMeta,
+      id: paragraph.id,
+      chapter_id: paragraph.chapter_id,
+      order_index: paragraph.order_index,
+      text: paragraph.text,
+      edited: paragraph.edited,
+      is_noise: paragraph.is_noise,
       interpretation: toParagraphInterpretationView(analysisView),
     }
   })

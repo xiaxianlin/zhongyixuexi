@@ -210,10 +210,6 @@ function BookDetail({
           paragraph.id === selectedParagraphId
             ? {
                 ...paragraph,
-                content_modern: interpretation.modern,
-                content_explanation: interpretation.explanation,
-                content_analysis: interpretation.analysis,
-                analysis_meta: interpretation.meta,
                 interpretation,
               }
             : paragraph,
@@ -258,7 +254,6 @@ function BookDetail({
         book_id: book.id,
         chapter_id: selectedChapterId,
         paragraph_id: selectedParagraphId,
-        title: '段落笔记',
         content,
       })
       setNoteDraftContent('')

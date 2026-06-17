@@ -3,7 +3,7 @@
  *
  *  generateModern(paragraphId) — AI-01: per-paragraph modern interpretation.
  *     cache → DeepSeek (JSON mode, temp 0.3) → validate → write
- *     paragraph_analyses active version + compatibility columns + ai_cache.
+ *     paragraph_analyses active version + ai_cache.
  *     Returns DTO.
  *  ask(query, opts) — AI-02: RAG Q&A. guard pre-check → FTS5 top-k → prompt →
  *     DeepSeek (temp 0.5) → parse trailing cites JSON → guard post-sanitize →
@@ -57,11 +57,11 @@ import { createHash } from 'node:crypto'
 import {
   DEFAULT_PARAGRAPH_ANALYSIS_KIND,
   buildParagraphAnalysisInput,
-  ensureActiveParagraphAnalysisWithLegacySync,
+  ensureActiveParagraphAnalysis,
   type ParagraphAnalysisKind,
   type ParagraphAnalysisMeta,
   type ParagraphInterpretationView,
-  writeActiveParagraphAnalysisWithLegacySync,
+  writeActiveParagraphAnalysis,
 } from './paragraph-analysis'
 
 /**
@@ -267,7 +267,7 @@ function stripLeadingNumber(text: string): string {
  *
  * Flow: cache lookup by prompt_hash → on miss, call DeepSeek (JSON mode,
  * temp 0.3) → validate → write active paragraph_analyses version,
- * compatibility paragraph columns, and ai_cache in one transaction → return DTO.
+ * and ai_cache in one transaction → return DTO.
  */
 export function generateModern(paragraphId: string, opts: { force?: boolean } = {}): Promise<ModernResultDTO> {
   const cacheKey = `modern:${paragraphId}`
@@ -305,7 +305,7 @@ function generateModernImpl(
         source: 'cache',
         meta: { fromCache: true, sentenceCount: parsed.sentences.length },
       })
-      return ensureActiveParagraphAnalysisWithLegacySync(analysisInput)
+      return ensureActiveParagraphAnalysis(analysisInput)
     })()
     return Promise.resolve(
       toModernDTO(paragraphId, parsed, hit.model, hit.totalTokens, true, analysisMeta),
@@ -346,7 +346,7 @@ function generateModernImpl(
       throw aiError('AI_PARSE_ERROR', '模型未返回有效解读')
     }
 
-    // 3. write active analysis + compatibility columns + ai_cache atomically.
+    // 3. write active analysis + ai_cache atomically.
     const interpretation = modernJsonToInterpretation(parsed, null)
 
     const db = getDb()
@@ -377,7 +377,7 @@ function generateModernImpl(
           totalTokens: lastResp.usage?.total_tokens ?? 0,
         },
       })
-      return writeActiveParagraphAnalysisWithLegacySync(analysisInput)
+      return writeActiveParagraphAnalysis(analysisInput)
     })
     const analysisMeta = tx()
 

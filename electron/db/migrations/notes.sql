@@ -24,7 +24,7 @@
 -- paragraph_id is the NOTE-05 sidebar entry point (idx_notes_paragraph).
 CREATE TABLE IF NOT EXISTS notes (
     id            TEXT    PRIMARY KEY,                 -- UUID v4, app-generated
-    title         TEXT    NOT NULL DEFAULT '无标题笔记',
+    title         TEXT    NOT NULL DEFAULT '',
     content       TEXT    NOT NULL DEFAULT '',          -- Markdown source (only storage)
     book_id       TEXT    NULL,                         -- FK books.id (nullable: free note)
     chapter_id    TEXT    NULL,                         -- FK chapters.id (nullable)

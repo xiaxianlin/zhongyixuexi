@@ -34,9 +34,7 @@ describe('active paragraph analysis SQL helpers', () => {
     expect(joinSql).toContain('LEFT JOIN paragraph_analyses active_pa')
     expect(joinSql).toContain('active_pa.paragraph_id = paragraph.id')
     expect(joinSql).toContain("active_pa.kind = 'modern'")
-    expect(selectSql).toContain(
-      'COALESCE(active_pa.modern, paragraph.content_modern) AS content_modern',
-    )
+    expect(selectSql).toContain('active_pa.modern AS modern')
     expect(selectSql).toContain('active_pa.id AS analysis_id')
   })
 
@@ -46,21 +44,17 @@ describe('active paragraph analysis SQL helpers', () => {
       analysisAlias: 'source_pa',
     })
 
-    expect(activeAnalysis.columns).toContain(
-      'COALESCE(source_pa.modern, source_p.content_modern) AS content_modern',
-    )
+    expect(activeAnalysis.columns).toContain('source_pa.modern AS modern')
     expect(activeAnalysis.join).toContain('LEFT JOIN paragraph_analyses source_pa')
     expect(activeAnalysis.join).toContain('source_pa.paragraph_id = source_p.id')
   })
 
-  it('selects active analysis fields with legacy paragraph fallbacks', () => {
+  it('selects active analysis fields only', () => {
     const selectSql = selectActiveAnalysisColumns()
 
-    expect(selectSql).toContain('COALESCE(pa.modern, p.content_modern) AS content_modern')
-    expect(selectSql).toContain(
-      'COALESCE(pa.explanation, p.content_explanation) AS content_explanation',
-    )
-    expect(selectSql).toContain('COALESCE(pa.analysis, p.content_analysis) AS content_analysis')
+    expect(selectSql).toContain('pa.modern AS modern')
+    expect(selectSql).toContain('pa.explanation AS explanation')
+    expect(selectSql).toContain('pa.analysis AS analysis')
     expect(selectSql).toContain('pa.id AS analysis_id')
     expect(selectSql).toContain('pa.meta AS analysis_meta')
   })
@@ -105,39 +99,15 @@ describe('mapParagraphAnalysisMeta', () => {
       updated_at: 1710000001000,
     })
   })
-
-  it('keeps legacy-compatible timestamps when nullable aliases are absent', () => {
-    expect(
-      mapParagraphAnalysisMeta({
-        analysis_id: 'pa-legacy',
-        analysis_kind: null,
-        analysis_version: 1,
-        analysis_source: 'legacy',
-        analysis_model: null,
-        analysis_meta: null,
-        analysis_created_at: null,
-        analysis_updated_at: null,
-      }),
-    ).toEqual({
-      id: 'pa-legacy',
-      kind: 'modern',
-      version: 1,
-      source: 'legacy',
-      model: null,
-      meta: null,
-      created_at: 0,
-      updated_at: 0,
-    })
-  })
 })
 
 describe('mapParagraphAnalysisView', () => {
   it('maps content fields and nested metadata together', () => {
     expect(
       mapParagraphAnalysisView({
-        content_modern: '白话',
-        content_explanation: '医理',
-        content_analysis: '解读',
+        modern: '白话',
+        explanation: '医理',
+        analysis: '解读',
         analysis_id: 'pa-2',
         analysis_kind: 'modern',
         analysis_version: 2,
