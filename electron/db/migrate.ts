@@ -451,6 +451,19 @@ const MIGRATIONS: Migration[] = [
       `)
     },
   },
+  {
+    // v11 — paragraph-level content analysis generated alongside modern text
+    // and medical commentary. Forward-only additive migration; stable paragraph
+    // IDs and rowids remain untouched.
+    version: 11,
+    name: 'paragraph_content_analysis',
+    up: (db) => {
+      const columns = db.prepare('PRAGMA table_info(paragraphs)').all() as { name: string }[]
+      if (!columns.some((column) => column.name === 'content_analysis')) {
+        db.exec('ALTER TABLE paragraphs ADD COLUMN content_analysis TEXT')
+      }
+    },
+  },
 ]
 
 const META_TABLE = `

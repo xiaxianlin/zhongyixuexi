@@ -3,7 +3,7 @@
  *
  *  generateModern(paragraphId) — AI-01: per-paragraph modern interpretation.
  *     cache → DeepSeek (JSON mode, temp 0.3) → validate → write
- *     paragraphs.content_modern/explanation + ai_cache. Returns DTO.
+ *     paragraphs.content_modern/explanation/analysis + ai_cache. Returns DTO.
  *  ask(query, opts) — AI-02: RAG Q&A. guard pre-check → FTS5 top-k → prompt →
  *     DeepSeek (temp 0.5) → parse trailing cites JSON → guard post-sanitize →
  *     cache. Returns answer + cites with paragraphId (jumpable).
@@ -68,6 +68,7 @@ export interface ModernResultDTO {
   paragraphId: string
   fromCache: boolean
   sentences: ModernSentence[]
+  analysis: string
   summary: string
   model: string
   tokens: number
@@ -219,6 +220,7 @@ function validateModernJson(obj: ModernJson): ModernJson {
     }
   }
   if (typeof obj.summary !== 'string') obj.summary = ''
+  if (typeof obj.analysis !== 'string') obj.analysis = obj.summary
   return obj
 }
 
@@ -230,7 +232,7 @@ function validateModernJson(obj: ModernJson): ModernJson {
  * Generate (or return cached) modern-language interpretation for a paragraph.
  *
  * Flow: cache lookup by prompt_hash → on miss, call DeepSeek (JSON mode,
- * temp 0.3) → validate → write paragraphs.content_modern/explanation AND
+ * temp 0.3) → validate → write paragraphs.content_modern/explanation/analysis AND
  * ai_cache in one transaction → return DTO.
  */
 export function generateModern(paragraphId: string): Promise<ModernResultDTO> {
@@ -248,6 +250,16 @@ function generateModernImpl(paragraphId: string): Promise<ModernResultDTO> {
   const hit = findCache(paragraphId, 'modern', promptHash)
   if (hit) {
     const parsed = validateModernJson(parseJsonLoose<ModernJson>(hit.response))
+    const modernText = parsed.sentences.map((s) => s.modern).join('\n')
+    const explainText = parsed.sentences
+      .map((s, i) => `${i + 1}. ${s.commentary}`)
+      .join('\n\n')
+    getDb()
+      .prepare(
+        `UPDATE paragraphs SET content_modern = ?, content_explanation = ?, content_analysis = ?
+         WHERE id = ?`,
+      )
+      .run(modernText, explainText, parsed.analysis || parsed.summary, paragraphId)
     return Promise.resolve(toModernDTO(paragraphId, parsed, hit.model, hit.totalTokens, true))
   }
 
@@ -285,15 +297,16 @@ function generateModernImpl(paragraphId: string): Promise<ModernResultDTO> {
     // 3. write paragraphs + ai_cache atomically.
     const modernText = parsed.sentences.map((s) => s.modern).join('\n')
     const explainText = parsed.sentences
-      .map((s, i) => `${i + 1}. ${s.original}\n    ${s.commentary}`)
-      .join('\n')
+      .map((s, i) => `${i + 1}. ${s.commentary}`)
+      .join('\n\n')
+    const analysisText = parsed.analysis || parsed.summary
 
     const db = getDb()
     const tx = db.transaction(() => {
       db.prepare(
-        `UPDATE paragraphs SET content_modern = ?, content_explanation = ?
+        `UPDATE paragraphs SET content_modern = ?, content_explanation = ?, content_analysis = ?
          WHERE id = ?`,
-      ).run(modernText, explainText, paragraphId)
+      ).run(modernText, explainText, analysisText, paragraphId)
       writeCache({
         scope: 'paragraph',
         scopeId: paragraphId,
@@ -329,6 +342,7 @@ function toModernDTO(
       modern: s.modern,
       commentary: s.commentary,
     })),
+    analysis: parsed.analysis || parsed.summary,
     summary: parsed.summary,
     model,
     tokens,

@@ -36,9 +36,9 @@ function insertTestBook(): string {
   const now = Date.now()
   const insP = db.prepare(
     `INSERT INTO paragraphs
-       (id, chapter_id, order_index, text, content_modern, content_explanation,
+       (id, chapter_id, order_index, text, content_modern, content_explanation, content_analysis,
         edited, parse_hash, is_noise, quality_flag, created_at, deleted_at)
-     VALUES (?, ?, ?, ?, NULL, NULL, 0, NULL, 0, 'ok', ?, NULL)`,
+     VALUES (?, ?, ?, ?, NULL, NULL, NULL, 0, NULL, 0, 'ok', ?, NULL)`,
   )
   db.transaction(() => {
     db.prepare(

@@ -13,8 +13,8 @@
  *
  * Schema note: the real schema (db/migrate.ts v2) uses `id` as the stable TEXT
  * primary key on books/chapters/paragraphs (NOT book_id/chapter_id). paragraphs
- * carries content_modern/content_explanation (AI-generated, nullable — filled by
- * the AI module in Phase 5; until then the interpretation panel shows a
+ * carries content_modern/content_explanation/content_analysis (AI-generated,
+ * nullable — filled by the AI module in Phase 5; until then the interpretation panel shows a
  * placeholder).
  */
 import { randomUUID } from 'node:crypto'
@@ -30,6 +30,7 @@ export interface ParagraphDTO {
   text: string
   content_modern: string | null
   content_explanation: string | null
+  content_analysis: string | null
   edited: number
   is_noise: number
 }
@@ -99,6 +100,7 @@ export interface UpdateBookmarkInput {
 export interface InterpretationDTO {
   modern: string | null
   explanation: string | null
+  analysis: string | null
   cached: boolean
 }
 
@@ -130,7 +132,7 @@ export function getChapter(bookId: string, chapterId: string): ChapterContent | 
 
   const paragraphs = db
     .prepare(
-      `SELECT id, chapter_id, order_index, text, content_modern, content_explanation,
+      `SELECT id, chapter_id, order_index, text, content_modern, content_explanation, content_analysis,
               edited, is_noise
        FROM paragraphs
        WHERE chapter_id = ? AND deleted_at IS NULL
@@ -348,20 +350,32 @@ export function removeBookmark(id: string): { ok: boolean } {
 
 /**
  * Returns the AI interpretation cached on the paragraph row (content_modern +
- * content_explanation). cached=false when both are null — the renderer then
+ * content_explanation + content_analysis). cached=false when all are null — the renderer then
  * shows a "click to generate" placeholder. The AI module (Phase 5) fills these
  * columns; RD never calls the AI itself (03-reading.md §7.2).
  */
 export function getInterpretation(paragraphId: string): InterpretationDTO {
   const db = getDb()
   const row = db
-    .prepare('SELECT content_modern, content_explanation FROM paragraphs WHERE id = ?')
-    .get(paragraphId) as { content_modern: string | null; content_explanation: string | null } | undefined
+    .prepare('SELECT content_modern, content_explanation, content_analysis FROM paragraphs WHERE id = ?')
+    .get(paragraphId) as
+    | {
+        content_modern: string | null
+        content_explanation: string | null
+        content_analysis: string | null
+      }
+    | undefined
   if (!row) {
     throw new AppError('NOT_FOUND', `paragraph ${paragraphId} not found`)
   }
-  const cached = row.content_modern != null || row.content_explanation != null
-  return { modern: row.content_modern, explanation: row.content_explanation, cached }
+  const cached =
+    row.content_modern != null || row.content_explanation != null || row.content_analysis != null
+  return {
+    modern: row.content_modern,
+    explanation: row.content_explanation,
+    analysis: row.content_analysis,
+    cached,
+  }
 }
 
 // ---------- term lookup (RD-05, reads SRH dictionary_terms) ----------

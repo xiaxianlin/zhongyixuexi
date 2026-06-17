@@ -47,6 +47,7 @@ export interface ModernSentence {
 export interface ModernJson {
   version: number
   sentences: ModernSentence[]
+  analysis: string
   summary: string
 }
 
@@ -56,7 +57,7 @@ export function buildModernPrompt(input: ModernInput): {
   temperature: number
   response_format: { type: 'json_object' }
 } {
-  const task = `你的任务：把给定的中医古籍原文逐句翻译为白话，并给出医理点拨。
+  const task = `你的任务：把给定的中医古籍原文逐句翻译为白话，给出医理点拨，并补充整段内容解读。
 仅基于原文含义翻译与解释，不得添加原文没有的诊断或用药主张。`
   const user = `原文：
 """
@@ -73,6 +74,7 @@ ${input.text}
       "commentary": "医理点拨：解释该句的中医理论背景、关键术语含义（1-2句，不得给出剂量/处方）"
     }
   ],
+  "analysis": "整段内容解读：说明本段问答的核心意思、论述层次和学习要点（2-4句，不引用原文，不给诊疗建议）",
   "summary": "整段一句话概括（≤40字）"
 }
 
@@ -80,6 +82,7 @@ ${input.text}
 - sentences 数量与原文句数对应，顺序一致；
 - modern 为现代汉语白话，不照搬古文；
 - commentary 仅解释医理与术语，禁止诊疗/剂量；
+- analysis 从整段层面解释内容脉络、主旨和学习重点，不要重复白话译文；
 - 若原文为残篇/存疑，commentary 标注"原文存疑"。`
   return {
     messages: [system(task), { role: 'user', content: user }],

@@ -15,6 +15,7 @@ export interface ModernResultDTO {
   paragraphId: string
   fromCache: boolean
   sentences: ModernSentence[]
+  analysis: string
   summary: string
   model: string
   tokens: number

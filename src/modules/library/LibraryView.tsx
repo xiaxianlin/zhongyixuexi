@@ -78,15 +78,15 @@ function BookDetail({
   const [contentLoading, setContentLoading] = useState(false)
   const [notes, setNotes] = useState<NoteListItem[]>([])
   const [notesLoading, setNotesLoading] = useState(false)
-  const [noteDraftTitle, setNoteDraftTitle] = useState('')
   const [noteDraftContent, setNoteDraftContent] = useState('')
   const [noteSaving, setNoteSaving] = useState(false)
   const [noteModalOpen, setNoteModalOpen] = useState(false)
+  const [noteDrawerOpen, setNoteDrawerOpen] = useState(false)
   const [noteDetail, setNoteDetail] = useState<Note | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<NoteListItem | null>(null)
   const [deletingNote, setDeletingNote] = useState(false)
   const [aiGenerating, setAiGenerating] = useState(false)
-  const [actionMessage, setActionMessage] = useState('')
+  const [toastMessage, setToastMessage] = useState('')
 
   useEffect(() => {
     let alive = true
@@ -96,7 +96,8 @@ function BookDetail({
     setSelectedParagraphId(null)
     setParagraphs([])
     setNotes([])
-    setActionMessage('')
+    setNoteDrawerOpen(false)
+    setToastMessage('')
     libraryApi
       .tree(book.id)
       .then((nextTree) => {
@@ -131,7 +132,8 @@ function BookDetail({
     setContentLoading(true)
     setSelectedParagraphId(null)
     setNotes([])
-    setActionMessage('')
+    setNoteDrawerOpen(false)
+    setToastMessage('')
     readingApi
       .getChapter(book.id, selectedChapterId)
       .then((content) => {
@@ -155,6 +157,7 @@ function BookDetail({
     let alive = true
     if (!selectedParagraphId) {
       setNotes([])
+      setNoteDrawerOpen(false)
       return () => {
         alive = false
       }
@@ -166,7 +169,7 @@ function BookDetail({
         if (alive) setNotes(nextNotes)
       })
       .catch((e) => {
-        if (alive) setActionMessage(`笔记加载失败：${(e as Error).message}`)
+        if (alive) setToastMessage(`笔记加载失败：${(e as Error).message}`)
       })
       .finally(() => {
         if (alive) setNotesLoading(false)
@@ -176,6 +179,12 @@ function BookDetail({
     }
   }, [selectedParagraphId])
 
+  useEffect(() => {
+    if (!toastMessage) return undefined
+    const timer = window.setTimeout(() => setToastMessage(''), 3200)
+    return () => window.clearTimeout(timer)
+  }, [toastMessage])
+
   const selectChapter = useCallback((chapter: ChapterNode) => {
     setSelectedChapterId(chapter.id)
   }, [])
@@ -183,13 +192,14 @@ function BookDetail({
   const generateModern = useCallback(async () => {
     if (!selectedParagraph) return
     setAiGenerating(true)
-    setActionMessage('')
+    setToastMessage('')
     try {
       const result = await aiApi.generateModern(selectedParagraph.id)
       const contentModern = result.sentences.map((sentence) => sentence.modern).join('\n')
       const contentExplanation = result.sentences
         .map((sentence, index) => `${index + 1}. ${sentence.commentary}`)
         .join('\n\n')
+      const contentAnalysis = result.analysis || result.summary
       setParagraphs((current) =>
         current.map((paragraph) =>
           paragraph.id === selectedParagraph.id
@@ -197,14 +207,14 @@ function BookDetail({
                 ...paragraph,
                 content_modern: contentModern,
                 content_explanation: contentExplanation,
+                content_analysis: contentAnalysis,
               }
             : paragraph,
         ),
       )
-      setActionMessage(result.fromCache ? '已读取缓存解读' : 'AI 解读已生成')
     } catch (e) {
       const subCode = aiSubCodeFrom(e)
-      setActionMessage(
+      setToastMessage(
         subCode === 'AI_KEY_NOT_CONFIGURED'
           ? '请先在设置中配置 AI API Key'
           : `AI 解读失败：${(e as Error).message}`,
@@ -218,59 +228,56 @@ function BookDetail({
     if (!selectedParagraph || !selectedChapter) return
     const content = noteDraftContent.trim()
     if (!content) {
-      setActionMessage('先写一点笔记内容')
+      setToastMessage('先写一点笔记内容')
       return
     }
     setNoteSaving(true)
-    setActionMessage('')
+    setToastMessage('')
     try {
       await notesApi.create({
         book_id: book.id,
         chapter_id: selectedChapter.id,
         paragraph_id: selectedParagraph.id,
-        title: noteDraftTitle.trim() || `${selectedChapter.title} · 段落笔记`,
+        title: '段落笔记',
         content,
       })
-      setNoteDraftTitle('')
       setNoteDraftContent('')
       setNoteModalOpen(false)
+      setNoteDrawerOpen(true)
       setNotes(await notesApi.getByParagraph(selectedParagraph.id))
-      setActionMessage('笔记已保存')
     } catch (e) {
-      setActionMessage(`笔记保存失败：${(e as Error).message}`)
+      setToastMessage(`笔记保存失败：${(e as Error).message}`)
     } finally {
       setNoteSaving(false)
     }
   }, [
     book.id,
     noteDraftContent,
-    noteDraftTitle,
     selectedChapter,
     selectedParagraph,
   ])
 
   const openNoteDetail = useCallback(async (noteId: string) => {
-    setActionMessage('')
+    setToastMessage('')
     try {
       const nextNote = await notesApi.get(noteId)
       setNoteDetail(nextNote)
     } catch (e) {
-      setActionMessage(`笔记详情加载失败：${(e as Error).message}`)
+      setToastMessage(`笔记详情加载失败：${(e as Error).message}`)
     }
   }, [])
 
   const deleteNote = useCallback(async () => {
     if (!deleteTarget || !selectedParagraph) return
     setDeletingNote(true)
-    setActionMessage('')
+    setToastMessage('')
     try {
       await notesApi.delete(deleteTarget.id)
       setDeleteTarget(null)
       setNoteDetail((current) => (current?.id === deleteTarget.id ? null : current))
       setNotes(await notesApi.getByParagraph(selectedParagraph.id))
-      setActionMessage('笔记已删除')
     } catch (e) {
-      setActionMessage(`删除失败：${(e as Error).message}`)
+      setToastMessage(`删除失败：${(e as Error).message}`)
     } finally {
       setDeletingNote(false)
     }
@@ -284,6 +291,24 @@ function BookDetail({
         </button>
         <div className="bookdetail__titleBlock">
           <h2 className="bookdetail__title">{book.title}</h2>
+        </div>
+        <div className="bookdetail__headerActions">
+          <button
+            type="button"
+            className="bookdetail__noteCount"
+            disabled={!selectedParagraph}
+            onClick={() => setNoteDrawerOpen(true)}
+          >
+            {notesLoading ? '笔记加载中' : `${notes.length} 篇笔记`}
+          </button>
+          <button
+            type="button"
+            className="bookdetail__primary"
+            disabled={!selectedParagraph}
+            onClick={() => setNoteModalOpen(true)}
+          >
+            添加笔记
+          </button>
         </div>
       </header>
 
@@ -318,7 +343,6 @@ function BookDetail({
           <div className="bookdetail__paraHead">
             <div>
               <div className="bookdetail__railHead">段</div>
-              <h3 className="bookdetail__sectionTitle">{selectedChapter?.title ?? '未选择'}</h3>
             </div>
           </div>
 
@@ -351,22 +375,39 @@ function BookDetail({
             <>
               <div className="bookdetail__inspectHead">
                 <div>
-                  <div className="bookdetail__railHead">析</div>
-                  <h3 className="bookdetail__sectionTitle">当前段</h3>
+                  <div className="bookdetail__railTitleRow">
+                    <div className="bookdetail__railHead">析</div>
+                    {(selectedParagraph.content_modern ||
+                      selectedParagraph.content_explanation ||
+                      selectedParagraph.content_analysis) && (
+                      <span className="bookdetail__parsedTag">已解析</span>
+                    )}
+                  </div>
                 </div>
                 <button
                   type="button"
-                  className="bookdetail__btn"
+                  className={aiGenerating ? 'bookdetail__btn bookdetail__btn--loading' : 'bookdetail__btn'}
                   disabled={aiGenerating}
                   onClick={() => void generateModern()}
                 >
-                  {aiGenerating ? '生成中' : 'AI 解读'}
+                  {aiGenerating && <span className="bookdetail__loadingSeal" aria-hidden />}
+                  {aiGenerating ? '分析中' : '分析'}
                 </button>
               </div>
 
-              {actionMessage && <p className="bookdetail__message">{actionMessage}</p>}
-
-              <div className="bookdetail__inspectScroll">
+              <div
+                className={
+                  aiGenerating
+                    ? 'bookdetail__inspectScroll bookdetail__inspectScroll--generating'
+                    : 'bookdetail__inspectScroll'
+                }
+              >
+                {aiGenerating && (
+                  <div className="bookdetail__aiProgress" aria-live="polite">
+                    <span className="bookdetail__aiProgressDot" />
+                    正在分析白话、医理与解读
+                  </div>
+                )}
                 <section className="bookdetail__panelBlock">
                   <div className="bookdetail__panelTitle">白话</div>
                   {selectedParagraph.content_modern ? (
@@ -388,48 +429,14 @@ function BookDetail({
                 </section>
 
                 <section className="bookdetail__panelBlock">
-                  <div className="bookdetail__noteHead">
-                    <div className="bookdetail__panelTitle">笔记</div>
-                    <button
-                      type="button"
-                      className="bookdetail__miniBtn"
-                      onClick={() => setNoteModalOpen(true)}
-                    >
-                      添加
-                    </button>
-                  </div>
-                  {notesLoading ? (
-                    <p className="bookdetail__muted">加载中…</p>
-                  ) : notes.length === 0 ? (
-                    <p className="bookdetail__muted">还没有笔记</p>
+                  <div className="bookdetail__panelTitle">解读</div>
+                  {selectedParagraph.content_analysis ? (
+                    <p className="bookdetail__analysisText">{selectedParagraph.content_analysis}</p>
                   ) : (
-                    <div className="bookdetail__noteGrid">
-                      {notes.map((note) => (
-                        <article
-                          key={note.id}
-                          className="bookdetail__noteItem"
-                          onClick={() => void openNoteDetail(note.id)}
-                        >
-                          <div className="bookdetail__noteItemHead">
-                            <strong>{note.title}</strong>
-                            <button
-                              type="button"
-                              className="bookdetail__noteDelete"
-                              title="删除笔记"
-                              onClick={(event) => {
-                                event.stopPropagation()
-                                setDeleteTarget(note)
-                              }}
-                            >
-                              ×
-                            </button>
-                          </div>
-                          <p>{note.preview || '（空）'}</p>
-                        </article>
-                      ))}
-                    </div>
+                    <p className="bookdetail__muted">暂无解读</p>
                   )}
                 </section>
+
               </div>
             </>
           ) : (
@@ -437,6 +444,58 @@ function BookDetail({
           )}
         </aside>
       </div>
+
+      {noteDrawerOpen && (
+        <div className="bookdetail__drawerLayer">
+          <button
+            type="button"
+            className="bookdetail__drawerScrim"
+            aria-label="关闭笔记列表"
+            onClick={() => setNoteDrawerOpen(false)}
+          />
+          <aside className="bookdetail__noteDrawer" aria-label="笔记列表">
+            <div className="bookdetail__noteDrawerHead">
+              <div>
+                <div className="bookdetail__drawerEyebrow">笔记</div>
+                <h3>{notes.length} 篇笔记</h3>
+              </div>
+              <button type="button" onClick={() => setNoteDrawerOpen(false)}>
+                ×
+              </button>
+            </div>
+            {notesLoading ? (
+              <p className="bookdetail__muted">加载中…</p>
+            ) : notes.length === 0 ? (
+              <p className="bookdetail__muted">还没有笔记</p>
+            ) : (
+              <div className="bookdetail__noteGrid">
+                {notes.map((note) => (
+                  <article
+                    key={note.id}
+                    className="bookdetail__noteItem"
+                    onClick={() => void openNoteDetail(note.id)}
+                  >
+                    <div className="bookdetail__noteItemHead">
+                      <button
+                        type="button"
+                        className="bookdetail__noteDelete"
+                        title="删除笔记"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          setDeleteTarget(note)
+                        }}
+                      >
+                        ×
+                      </button>
+                    </div>
+                    <p>{note.preview || '（空）'}</p>
+                  </article>
+                ))}
+              </div>
+            )}
+          </aside>
+        </div>
+      )}
 
       {noteModalOpen && selectedParagraph && (
         <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
@@ -447,12 +506,6 @@ function BookDetail({
                 ×
               </button>
             </div>
-            <input
-              className="bookdetail__noteTitleInput"
-              value={noteDraftTitle}
-              onChange={(event) => setNoteDraftTitle(event.target.value)}
-              placeholder="标题（可选）"
-            />
             <textarea
               className="bookdetail__noteDraft"
               value={noteDraftContent}
@@ -481,7 +534,7 @@ function BookDetail({
         <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
           <div className="bookdetail__modal bookdetail__modal--note">
             <div className="bookdetail__modalHead">
-              <h3>{noteDetail.title}</h3>
+              <h3>笔记详情</h3>
               <button type="button" onClick={() => setNoteDetail(null)}>
                 ×
               </button>
@@ -500,7 +553,7 @@ function BookDetail({
                 ×
               </button>
             </div>
-            <p className="bookdetail__confirmText">删除「{deleteTarget.title}」？此操作不可撤销。</p>
+            <p className="bookdetail__confirmText">删除这篇笔记？此操作不可撤销。</p>
             <div className="bookdetail__modalActions">
               <button type="button" className="bookdetail__btn" onClick={() => setDeleteTarget(null)}>
                 取消
@@ -515,6 +568,12 @@ function BookDetail({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {toastMessage && (
+        <div className="bookdetail__toast" role="status" aria-live="polite">
+          {toastMessage}
         </div>
       )}
     </div>

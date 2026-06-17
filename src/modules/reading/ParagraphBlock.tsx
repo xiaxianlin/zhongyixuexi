@@ -10,8 +10,9 @@
  *    model is used (no front-end tokenizer dependency yet) — clicking fires
  *    onTerm with the current text selection (window.getSelection) so the user can
  *    highlight a term; if no selection, the click is a no-op.
- *  - kind="interpret": renders content_modern + content_explanation; when both
- *    are null (AI not generated yet, Phase 5) shows a placeholder "待 AI 解读"
+ *  - kind="interpret": renders content_modern + content_explanation +
+ *    content_analysis; when all are null (AI not generated yet, Phase 5) shows
+ *    a placeholder "待 AI 解读"
  *    so the column still occupies its layout slot (sync-scroll needs a stable id).
  *
  * An optional "active" highlight (the segment the user is currently reading,
@@ -83,7 +84,8 @@ function ParagraphBlockImpl({
   const hasModern = paragraph.content_modern != null && paragraph.content_modern !== ''
   const hasExpl =
     paragraph.content_explanation != null && paragraph.content_explanation !== ''
-  const hasInterpretation = hasModern || hasExpl
+  const hasAnalysis = paragraph.content_analysis != null && paragraph.content_analysis !== ''
+  const hasInterpretation = hasModern || hasExpl || hasAnalysis
 
   return (
     <div className={cls} data-paragraph-id={paragraph.id}>
@@ -94,6 +96,12 @@ function ParagraphBlockImpl({
             <div className="pblock__expl">
               <span className="pblock__expl-label">医理</span>
               <p>{paragraph.content_explanation}</p>
+            </div>
+          )}
+          {hasAnalysis && (
+            <div className="pblock__expl">
+              <span className="pblock__expl-label">解读</span>
+              <p>{paragraph.content_analysis}</p>
             </div>
           )}
         </>

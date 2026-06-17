@@ -13,6 +13,7 @@ export interface ParagraphDTO {
   text: string
   content_modern: string | null
   content_explanation: string | null
+  content_analysis: string | null
   edited: number
   is_noise: number
 }
@@ -81,6 +82,7 @@ export interface UpdateBookmarkInput {
 export interface InterpretationDTO {
   modern: string | null
   explanation: string | null
+  analysis: string | null
   cached: boolean
 }
 

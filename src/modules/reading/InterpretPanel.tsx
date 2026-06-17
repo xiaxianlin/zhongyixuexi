@@ -1,7 +1,7 @@
 /**
  * InterpretPanel — middle column (RD-03). Renders the AI interpretation
- * (content_modern + content_explanation) for each paragraph, locked 1:1 to the
- * original column by paragraph_id. Segments without a cached interpretation
+ * (content_modern + content_explanation + content_analysis) for each paragraph,
+ * locked 1:1 to the original column by paragraph_id. Segments without a cached interpretation
  * render a placeholder "待 AI 解读".
  *
  * The "生成解读" button triggers `ai:generateModern` for the top paragraph
@@ -41,7 +41,8 @@ export const InterpretPanel = forwardRef<HTMLDivElement, InterpretPanelProps>(
     const generated = paragraphs.filter(
       (p) =>
         (p.content_modern != null && p.content_modern !== '') ||
-        (p.content_explanation != null && p.content_explanation !== ''),
+        (p.content_explanation != null && p.content_explanation !== '') ||
+        (p.content_analysis != null && p.content_analysis !== ''),
     ).length
 
     const onGenerate = (): void => {

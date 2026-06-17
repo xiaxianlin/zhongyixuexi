@@ -1324,7 +1324,11 @@ export function exportParagraphCombined(
 ): { title: string; md: string; html: string } {
   const db = getDb()
   const para = db
-    .prepare('SELECT id, chapter_id, text, content_modern, content_explanation FROM paragraphs WHERE id = ? AND deleted_at IS NULL')
+    .prepare(
+      `SELECT id, chapter_id, text, content_modern, content_explanation, content_analysis
+       FROM paragraphs
+       WHERE id = ? AND deleted_at IS NULL`,
+    )
     .get(input.paragraph_id) as
     | {
         id: string
@@ -1332,6 +1336,7 @@ export function exportParagraphCombined(
         text: string
         content_modern: string | null
         content_explanation: string | null
+        content_analysis: string | null
       }
     | undefined
   if (!para) {
@@ -1347,7 +1352,9 @@ export function exportParagraphCombined(
     sections.push(`## 原文\n\n${para.text}`)
   }
   if (input.include.modern) {
-    sections.push(`## 白话解读\n\n${para.content_modern ?? '（未生成）'}\n\n## 医理点拨\n\n${para.content_explanation ?? ''}`)
+    sections.push(
+      `## 白话解读\n\n${para.content_modern ?? '（未生成）'}\n\n## 医理点拨\n\n${para.content_explanation ?? ''}\n\n## 内容解读\n\n${para.content_analysis ?? ''}`,
+    )
   }
   if (input.include.notes) {
     const linkedNotes = db

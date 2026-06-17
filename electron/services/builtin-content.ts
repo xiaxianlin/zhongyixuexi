@@ -127,9 +127,9 @@ export function seedBuiltinContent(): { inserted: boolean; bookId: string } {
 
   const insertParagraph = db.prepare(
     `INSERT INTO paragraphs
-       (id, chapter_id, order_index, text, content_modern, content_explanation,
+       (id, chapter_id, order_index, text, content_modern, content_explanation, content_analysis,
         edited, parse_hash, is_noise, quality_flag, created_at, deleted_at)
-     VALUES (@id, @chapterId, @orderIndex, @text, NULL, NULL,
+     VALUES (@id, @chapterId, @orderIndex, @text, NULL, NULL, NULL,
              0, @parseHash, 0, 'ok', @createdAt, NULL)
      ON CONFLICT(id) DO UPDATE SET
        chapter_id = excluded.chapter_id,
@@ -137,6 +137,7 @@ export function seedBuiltinContent(): { inserted: boolean; bookId: string } {
        text = excluded.text,
        content_modern = NULL,
        content_explanation = NULL,
+       content_analysis = NULL,
        edited = 0,
        parse_hash = excluded.parse_hash,
        is_noise = 0,
