@@ -17,6 +17,13 @@
 import { randomUUID } from 'node:crypto'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
+import {
+  joinActiveAnalysis,
+  mapParagraphAnalysisView,
+  selectActiveAnalysisColumns,
+  type ParagraphAnalysisSqlRow,
+  type ParagraphAnalysisView,
+} from './paragraph-analysis'
 
 // ===================== Types (self-contained DTOs) ==========================
 
@@ -45,6 +52,14 @@ export const GRADE_MAP: Record<GradeLabel, number> = {
 }
 
 const DAY_MS = 24 * 3600 * 1000
+
+interface QuizParagraphCandidate {
+  id: string
+  chapter_id: string
+  book_id: string
+  text: string
+  interpretation: ParagraphAnalysisView
+}
 
 // ===================== SM-2 pure function ===================================
 
@@ -698,8 +713,8 @@ export function undoReview(cardId: string): Card {
 /**
  * Generate a quiz session. Rule-based generation from paragraphs:
  *  - judge: take a paragraph's text, optionally negate it
- *  - choice: take a paragraph as stem, use content_modern as correct answer
- *  - match: (simplified) pair paragraph text with content_modern
+ *  - choice: take a paragraph as stem, use active modern analysis as correct answer
+ *  - match: (simplified) pair paragraph text with active modern analysis
  *
  * Falls back gracefully if paragraphs are insufficient.
  */
@@ -710,33 +725,42 @@ export function generateQuiz(input: QuizGenInput): { session_id: string; questio
   const questions: QuizQuestion[] = []
 
   // Fetch candidate paragraphs from scope
-  let scopeWhere = 'deleted_at IS NULL AND is_noise = 0'
+  let scopeWhere = 'p.deleted_at IS NULL AND p.is_noise = 0'
   const scopeParams: unknown[] = []
   if (input.chapter_id) {
-    scopeWhere += ' AND chapter_id = ?'
+    scopeWhere += ' AND p.chapter_id = ?'
     scopeParams.push(input.chapter_id)
   } else if (input.book_id) {
-    scopeWhere += ' AND chapter_id IN (SELECT id FROM chapters WHERE book_id = ? AND deleted_at IS NULL)'
+    scopeWhere += ' AND p.chapter_id IN (SELECT id FROM chapters WHERE book_id = ? AND deleted_at IS NULL)'
     scopeParams.push(input.book_id)
   }
 
-  const paragraphs = db
+  const paragraphRows = db
     .prepare(
-      `SELECT id, chapter_id,
-         (SELECT book_id FROM chapters WHERE id = paragraphs.chapter_id) AS book_id,
-         text, content_modern
-       FROM paragraphs
+      `SELECT p.id,
+         p.chapter_id,
+         (SELECT book_id FROM chapters WHERE id = p.chapter_id) AS book_id,
+         p.text,
+         ${selectActiveAnalysisColumns()}
+       FROM paragraphs p
+       ${joinActiveAnalysis()}
        WHERE ${scopeWhere}
        ORDER BY RANDOM()
        LIMIT ?`,
     )
-    .all(...scopeParams, input.count * 3) as {
+    .all(...scopeParams, input.count * 3) as ({
       id: string
       chapter_id: string
       book_id: string
       text: string
-      content_modern: string | null
-    }[]
+    } & ParagraphAnalysisSqlRow)[]
+  const paragraphs: QuizParagraphCandidate[] = paragraphRows.map((row) => ({
+    id: row.id,
+    chapter_id: row.chapter_id,
+    book_id: row.book_id,
+    text: row.text,
+    interpretation: mapParagraphAnalysisView(row),
+  }))
 
   const insertQ = db.prepare(
     `INSERT INTO quiz_questions (id, book_id, chapter_id, paragraph_id, source, qtype,
@@ -764,14 +788,14 @@ export function generateQuiz(input: QuizGenInput): { session_id: string; questio
         stem = isTrue ? statement : `${statement}（此说有误）`
         payload = JSON.stringify({ statement })
         answer = JSON.stringify({ is_true: isTrue })
-        explanation = para.content_modern?.slice(0, 200) ?? null
+        explanation = para.interpretation.modern?.slice(0, 200) ?? null
       } else if (qtype === 'choice') {
         stem = `以下哪项是对原文的最佳解读？\n「${para.text.slice(0, 80)}」`
-        const correct = para.content_modern?.slice(0, 50) ?? '（无解读）'
+        const correct = para.interpretation.modern?.slice(0, 50) ?? '（无解读）'
         const distractors = paragraphs
-          .filter((p) => p.id !== para.id && p.content_modern)
+          .filter((p) => p.id !== para.id && p.interpretation.modern)
           .slice(0, 3)
-          .map((p) => p.content_modern!.slice(0, 50))
+          .map((p) => p.interpretation.modern!.slice(0, 50))
         const options = [
           { key: 'A', text: correct },
           ...distractors.map((d, i) => ({ key: String.fromCharCode(66 + i), text: d })),
@@ -784,17 +808,17 @@ export function generateQuiz(input: QuizGenInput): { session_id: string; questio
         const correctKey = options.find((o) => o.text === correct)?.key ?? 'A'
         payload = JSON.stringify({ options })
         answer = JSON.stringify({ correct_key: correctKey })
-        explanation = para.content_modern ?? null
+        explanation = para.interpretation.modern ?? null
       } else {
         // match: simplified — pair text with modern
         stem = `将原文与解读配对`
         const pair = {
           left: para.text.slice(0, 40),
-          right: para.content_modern?.slice(0, 40) ?? '（无解读）',
+          right: para.interpretation.modern?.slice(0, 40) ?? '（无解读）',
         }
         payload = JSON.stringify({ pairs: [pair], shuffled: true })
         answer = JSON.stringify({ mapping: { [pair.left]: pair.right } })
-        explanation = para.content_modern ?? null
+        explanation = para.interpretation.modern ?? null
       }
 
       insertQ.run({

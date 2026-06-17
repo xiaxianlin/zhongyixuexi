@@ -50,6 +50,15 @@ export function registerReadingHandlers(): void {
     reading.getInterpretation(paragraphId as string),
   )
 
+  handle('reading:listInterpretationHistory', (_event, paragraphId: unknown) =>
+    reading.listInterpretationHistory(paragraphId as string),
+  )
+
+  handle('reading:activateInterpretationVersion', (_event, payload: unknown) => {
+    const { paragraphId, analysisId } = payload as { paragraphId: string; analysisId: string }
+    return reading.activateInterpretationVersion(paragraphId, analysisId)
+  })
+
   // Term lookup (RD-05, reads SRH dictionary_terms).
   handle('reading:lookupTerm', (_event, term: unknown) =>
     reading.lookupTerm(term as string),

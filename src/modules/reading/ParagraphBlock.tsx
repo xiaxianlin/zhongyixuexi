@@ -10,9 +10,8 @@
  *    model is used (no front-end tokenizer dependency yet) — clicking fires
  *    onTerm with the current text selection (window.getSelection) so the user can
  *    highlight a term; if no selection, the click is a no-op.
- *  - kind="interpret": renders content_modern + content_explanation +
- *    content_analysis; when all are null (AI not generated yet, Phase 5) shows
- *    a placeholder "待 AI 解读"
+ *  - kind="interpret": renders the reading module's interpretation fields; when
+ *    all are null (AI not generated yet) shows a placeholder "待 AI 解读"
  *    so the column still occupies its layout slot (sync-scroll needs a stable id).
  *
  * An optional "active" highlight (the segment the user is currently reading,
@@ -81,32 +80,33 @@ function ParagraphBlockImpl({
   }
 
   // kind === 'interpret'
-  const hasModern = paragraph.content_modern != null && paragraph.content_modern !== ''
+  const interpretation = paragraph.interpretation
+  const hasModern = interpretation.modern != null && interpretation.modern !== ''
   const hasExpl =
-    paragraph.content_explanation != null && paragraph.content_explanation !== ''
-  const hasAnalysis = paragraph.content_analysis != null && paragraph.content_analysis !== ''
+    interpretation.explanation != null && interpretation.explanation !== ''
+  const hasAnalysis = interpretation.analysis != null && interpretation.analysis !== ''
   const hasInterpretation = hasModern || hasExpl || hasAnalysis
 
   return (
     <div className={cls} data-paragraph-id={paragraph.id}>
       {hasInterpretation ? (
         <>
-          {hasModern && <p className="pblock__modern">{compactAnalysisText(paragraph.content_modern ?? '')}</p>}
+          {hasModern && <p className="pblock__modern">{compactAnalysisText(interpretation.modern ?? '')}</p>}
           {hasExpl && (
             <div className="pblock__expl">
               <span className="pblock__expl-label">医理</span>
-              <p>{compactAnalysisText(paragraph.content_explanation ?? '')}</p>
+              <p>{compactAnalysisText(interpretation.explanation ?? '')}</p>
             </div>
           )}
           {hasAnalysis && (
             <div className="pblock__expl">
               <span className="pblock__expl-label">解读</span>
-              <p>{compactAnalysisText(paragraph.content_analysis ?? '')}</p>
+              <p>{compactAnalysisText(interpretation.analysis ?? '')}</p>
             </div>
           )}
         </>
       ) : (
-        // RD-03: no AI interpretation cached yet (content_modern/explanation null).
+        // RD-03: no AI interpretation cached yet.
         // Phase 5 AI module fills these; until then show a stable placeholder so
         // the column keeps its anchor and the sync-scroll map stays 1:1 by id.
         <p className="pblock__placeholder" title="AI 解读将在后续阶段生成">

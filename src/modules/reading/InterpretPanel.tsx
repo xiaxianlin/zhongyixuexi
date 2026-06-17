@@ -1,12 +1,11 @@
 /**
  * InterpretPanel — middle column (RD-03). Renders the AI interpretation
- * (content_modern + content_explanation + content_analysis) for each paragraph,
- * locked 1:1 to the original column by paragraph_id. Segments without a cached interpretation
+ * fields returned by the reading module for each paragraph, locked 1:1 to the
+ * original column by paragraph_id. Segments without a cached interpretation
  * render a placeholder "待 AI 解读".
  *
- * The "生成解读" button triggers `ai:generateModern` for the top paragraph
- * (Phase 5 AI module writes paragraphs.content_modern), then reloads the
- * chapter content while preserving the reading position.
+ * The "生成解读" button triggers `ai:generateModern` for the top paragraph,
+ * then reloads the chapter content while preserving the reading position.
  */
 import { forwardRef } from 'react'
 import { ParagraphBlock } from './ParagraphBlock'
@@ -20,7 +19,7 @@ interface InterpretPanelProps {
   paragraphs: ParagraphDTO[]
 }
 
-/** Re-fetch the chapter (picks up AI-written content_modern) keeping position. */
+/** Re-fetch the chapter (picks up the active paragraph analysis) keeping position. */
 async function reloadChapterKeepPosition(): Promise<void> {
   const st = useReadingStore.getState()
   const { bookId, chapterId, topParagraphId, scrollRatio } = st
@@ -40,9 +39,9 @@ export const InterpretPanel = forwardRef<HTMLDivElement, InterpretPanelProps>(
     // How many segments actually have interpretation (for the header summary).
     const generated = paragraphs.filter(
       (p) =>
-        (p.content_modern != null && p.content_modern !== '') ||
-        (p.content_explanation != null && p.content_explanation !== '') ||
-        (p.content_analysis != null && p.content_analysis !== ''),
+        (p.interpretation.modern != null && p.interpretation.modern !== '') ||
+        (p.interpretation.explanation != null && p.interpretation.explanation !== '') ||
+        (p.interpretation.analysis != null && p.interpretation.analysis !== ''),
     ).length
 
     const onGenerate = (): void => {

@@ -117,9 +117,9 @@ function BookDetail({
     }
   }, [book.id])
 
-  const selectedChapter = tree.find((chapter) => chapter.id === selectedChapterId) ?? null
   const selectedParagraph =
     paragraphs.find((paragraph) => paragraph.id === selectedParagraphId) ?? null
+  const selectedInterpretation = selectedParagraph?.interpretation ?? null
   const noteColumns = splitIntoColumns(notes, 3)
 
   useEffect(() => {
@@ -190,34 +190,31 @@ function BookDetail({
     setSelectedChapterId(chapter.id)
   }, [])
 
-  const selectedParagraphAnalyzed = Boolean(
-    selectedParagraph?.content_modern ||
-      selectedParagraph?.content_explanation ||
-      selectedParagraph?.content_analysis,
-  )
+  const selectedParagraphAnalyzed = Boolean(selectedInterpretation?.meta)
 
   const runAnalysis = useCallback(async (force = false) => {
-    if (!selectedParagraph) return
+    if (!selectedParagraphId) return
     const startedAt = Date.now()
     setAiGenerating(true)
     setToastMessage('')
     try {
-      const result = await aiApi.generateModern(selectedParagraph.id, { force })
-      const contentModern = compactAnalysisText(
-        result.sentences.map((sentence) => sentence.modern).join('\n'),
-      )
-      const contentExplanation = result.sentences
-        .map((sentence, index) => `${index + 1}. ${stripLeadingNumber(sentence.commentary)}`)
-        .join('\n')
-      const contentAnalysis = compactAnalysisText(result.analysis || result.summary)
+      const result = await aiApi.generateModern(selectedParagraphId, { force })
+      const interpretation = {
+        modern: compactAnalysisText(result.interpretation.modern ?? ''),
+        explanation: compactAnalysisText(result.interpretation.explanation ?? ''),
+        analysis: compactAnalysisText(result.interpretation.analysis ?? ''),
+        meta: result.interpretation.meta,
+      }
       setParagraphs((current) =>
         current.map((paragraph) =>
-          paragraph.id === selectedParagraph.id
+          paragraph.id === selectedParagraphId
             ? {
                 ...paragraph,
-                content_modern: contentModern,
-                content_explanation: contentExplanation,
-                content_analysis: contentAnalysis,
+                content_modern: interpretation.modern,
+                content_explanation: interpretation.explanation,
+                content_analysis: interpretation.analysis,
+                analysis_meta: interpretation.meta,
+                interpretation,
               }
             : paragraph,
         ),
@@ -236,19 +233,19 @@ function BookDetail({
       }
       setAiGenerating(false)
     }
-  }, [selectedParagraph])
+  }, [selectedParagraphId])
 
   const requestAnalysis = useCallback(() => {
-    if (!selectedParagraph) return
+    if (!selectedParagraphId) return
     if (selectedParagraphAnalyzed) {
       setReanalyzeConfirmOpen(true)
       return
     }
     void runAnalysis(true)
-  }, [runAnalysis, selectedParagraph, selectedParagraphAnalyzed])
+  }, [runAnalysis, selectedParagraphAnalyzed, selectedParagraphId])
 
   const createParagraphNote = useCallback(async () => {
-    if (!selectedParagraph || !selectedChapter) return
+    if (!selectedParagraphId || !selectedChapterId) return
     const content = noteDraftContent.trim()
     if (!content) {
       setToastMessage('先写一点笔记内容')
@@ -259,15 +256,15 @@ function BookDetail({
     try {
       await notesApi.create({
         book_id: book.id,
-        chapter_id: selectedChapter.id,
-        paragraph_id: selectedParagraph.id,
+        chapter_id: selectedChapterId,
+        paragraph_id: selectedParagraphId,
         title: '段落笔记',
         content,
       })
       setNoteDraftContent('')
       setNoteModalOpen(false)
       setNoteDrawerOpen(true)
-      setNotes(await notesApi.getByParagraph(selectedParagraph.id))
+      setNotes(await notesApi.getByParagraph(selectedParagraphId))
     } catch (e) {
       setToastMessage(`笔记保存失败：${(e as Error).message}`)
     } finally {
@@ -276,24 +273,24 @@ function BookDetail({
   }, [
     book.id,
     noteDraftContent,
-    selectedChapter,
-    selectedParagraph,
+    selectedChapterId,
+    selectedParagraphId,
   ])
 
   const deleteNote = useCallback(async () => {
-    if (!deleteTarget || !selectedParagraph) return
+    if (!deleteTarget || !selectedParagraphId) return
     setDeletingNote(true)
     setToastMessage('')
     try {
       await notesApi.delete(deleteTarget.id)
       setDeleteTarget(null)
-      setNotes(await notesApi.getByParagraph(selectedParagraph.id))
+      setNotes(await notesApi.getByParagraph(selectedParagraphId))
     } catch (e) {
       setToastMessage(`删除失败：${(e as Error).message}`)
     } finally {
       setDeletingNote(false)
     }
-  }, [deleteTarget, selectedParagraph])
+  }, [deleteTarget, selectedParagraphId])
 
   return (
     <div className="bookdetail">
@@ -416,9 +413,9 @@ function BookDetail({
                 )}
                 <section className="bookdetail__panelBlock">
                   <div className="bookdetail__panelTitle">白话</div>
-                  {selectedParagraph.content_modern ? (
+                  {selectedInterpretation?.modern ? (
                     <p className="bookdetail__modernText">
-                      {compactAnalysisText(selectedParagraph.content_modern)}
+                      {compactAnalysisText(selectedInterpretation.modern)}
                     </p>
                   ) : (
                     <p className="bookdetail__muted">尚未生成</p>
@@ -427,9 +424,9 @@ function BookDetail({
 
                 <section className="bookdetail__panelBlock">
                   <div className="bookdetail__panelTitle">医理</div>
-                  {selectedParagraph.content_explanation ? (
+                  {selectedInterpretation?.explanation ? (
                     <pre className="bookdetail__explainText">
-                      {formatMedicalExplanation(compactAnalysisText(selectedParagraph.content_explanation))}
+                      {formatMedicalExplanation(compactAnalysisText(selectedInterpretation.explanation))}
                     </pre>
                   ) : (
                     <p className="bookdetail__muted">暂无点拨</p>
@@ -438,9 +435,9 @@ function BookDetail({
 
                 <section className="bookdetail__panelBlock">
                   <div className="bookdetail__panelTitle">解读</div>
-                  {selectedParagraph.content_analysis ? (
+                  {selectedInterpretation?.analysis ? (
                     <p className="bookdetail__analysisText">
-                      {compactAnalysisText(selectedParagraph.content_analysis)}
+                      {compactAnalysisText(selectedInterpretation.analysis)}
                     </p>
                   ) : (
                     <p className="bookdetail__muted">暂无解读</p>
@@ -638,10 +635,6 @@ function compactAnalysisText(text: string): string {
     .map((line) => line.trim())
     .filter(Boolean)
     .join('\n')
-}
-
-function stripLeadingNumber(text: string): string {
-  return text.replace(/^\s*(?:\d+[.、)]|[（(]\d+[）)]|[一二三四五六七八九十]+[、.])\s*/u, '')
 }
 
 function splitIntoColumns<T>(items: T[], columnCount: number): T[][] {

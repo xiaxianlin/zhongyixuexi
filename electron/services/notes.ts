@@ -22,7 +22,12 @@ import { resolve } from 'node:path'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
-import { ACTIVE_ANALYSIS_JOIN, ACTIVE_ANALYSIS_SELECT } from './paragraph-analysis'
+import {
+  joinActiveAnalysis,
+  mapParagraphAnalysisView,
+  selectActiveAnalysisColumns,
+  type ParagraphAnalysisSqlRow,
+} from './paragraph-analysis'
 
 // ===========================================================================
 // DTOs (self-contained; renderer mirrors in src/modules/notes/types.ts)
@@ -1333,9 +1338,9 @@ export function exportParagraphCombined(
       `SELECT p.id,
               p.chapter_id,
               p.text,
-              ${ACTIVE_ANALYSIS_SELECT}
+              ${selectActiveAnalysisColumns()}
        FROM paragraphs p
-       ${ACTIVE_ANALYSIS_JOIN}
+       ${joinActiveAnalysis()}
        WHERE p.id = ? AND p.deleted_at IS NULL`,
     )
     .get(input.paragraph_id) as
@@ -1346,7 +1351,7 @@ export function exportParagraphCombined(
         content_modern: string | null
         content_explanation: string | null
         content_analysis: string | null
-      }
+      } & ParagraphAnalysisSqlRow
     | undefined
   if (!para) {
     throw new AppError('NOT_FOUND', `段落 ${input.paragraph_id} 不存在`)
@@ -1361,8 +1366,9 @@ export function exportParagraphCombined(
     sections.push(`## 原文\n\n${para.text}`)
   }
   if (input.include.modern) {
+    const interpretation = mapParagraphAnalysisView(para)
     sections.push(
-      `## 白话解读\n\n${para.content_modern ?? '（未生成）'}\n\n## 医理点拨\n\n${para.content_explanation ?? ''}\n\n## 内容解读\n\n${para.content_analysis ?? ''}`,
+      `## 白话解读\n\n${interpretation.modern ?? '（未生成）'}\n\n## 医理点拨\n\n${interpretation.explanation ?? ''}\n\n## 内容解读\n\n${interpretation.analysis ?? ''}`,
     )
   }
   if (input.include.notes) {

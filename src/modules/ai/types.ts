@@ -4,6 +4,7 @@
  * module does not own). The ipc.ts wrapper passes these through opaquely; we
  * re-type them here for the UI components.
  */
+import type { ParagraphAnalysisMeta, InterpretationViewDTO } from '@/modules/reading/types'
 
 export interface ModernSentence {
   original: string
@@ -14,6 +15,8 @@ export interface ModernSentence {
 export interface ModernResultDTO {
   paragraphId: string
   fromCache: boolean
+  analysisMeta: ParagraphAnalysisMeta | null
+  interpretation: InterpretationViewDTO
   sentences: ModernSentence[]
   analysis: string
   summary: string

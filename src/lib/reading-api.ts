@@ -15,6 +15,7 @@ import type {
   AddBookmarkInput,
   UpdateBookmarkInput,
   InterpretationDTO,
+  ParagraphAnalysisHistoryDTO,
   TermLookupDTO,
 } from '@/modules/reading/types'
 
@@ -47,6 +48,15 @@ export const readingApi = {
   // AI interpretation cache read (RD-03).
   getInterpretation: (paragraphId: string) =>
     invokeRaw<InterpretationDTO>('reading:getInterpretation', paragraphId),
+
+  listInterpretationHistory: (paragraphId: string) =>
+    invokeRaw<ParagraphAnalysisHistoryDTO[]>('reading:listInterpretationHistory', paragraphId),
+
+  activateInterpretationVersion: (paragraphId: string, analysisId: string) =>
+    invokeRaw<InterpretationDTO>('reading:activateInterpretationVersion', {
+      paragraphId,
+      analysisId,
+    }),
 
   // Term lookup (RD-05).
   lookupTerm: (term: string) =>

@@ -7,8 +7,8 @@
  * last Q&A answer (so the side panel keeps its content across re-renders).
  *
  * The store deliberately does NOT cache generated interpretations — those are
- * read by the RD module from paragraphs.content_modern (the AI service writes
- * them there). The store only tracks generation triggers and degraded state.
+ * read by the RD module from the active paragraph analysis view. The store only
+ * tracks generation triggers and degraded state.
  */
 import { create } from 'zustand'
 import { aiApi, aiSubCodeFrom } from '@/lib/ai-api'

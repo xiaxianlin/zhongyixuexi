@@ -12,15 +12,26 @@
  * than losing it.
  *
  * Schema note: the real schema (db/migrate.ts v2) uses `id` as the stable TEXT
- * primary key on books/chapters/paragraphs (NOT book_id/chapter_id). paragraphs
- * carries content_modern/content_explanation/content_analysis (AI-generated,
- * nullable — filled by the AI module in Phase 5; until then the interpretation panel shows a
- * placeholder).
+ * primary key on books/chapters/paragraphs (NOT book_id/chapter_id). AI
+ * interpretations are read from the active paragraph_analyses row, with legacy
+ * paragraph columns used only as a compatibility fallback.
  */
 import { randomUUID } from 'node:crypto'
 import { getDb } from '../db'
 import { AppError } from '../lib/error'
-import { ACTIVE_ANALYSIS_JOIN, ACTIVE_ANALYSIS_SELECT } from './paragraph-analysis'
+import {
+  activateParagraphAnalysis,
+  getActiveParagraphAnalysisView,
+  joinActiveAnalysis,
+  listParagraphAnalysisHistory,
+  mapParagraphAnalysisMeta,
+  mapParagraphAnalysisView,
+  selectActiveAnalysisColumns,
+  type ParagraphAnalysisHistoryItem,
+  type ParagraphAnalysisMeta,
+  type ParagraphAnalysisSqlRow,
+  type ParagraphAnalysisView,
+} from './paragraph-analysis'
 
 // ---------- DTOs (self-contained; do NOT import models/content.ts) ----------
 
@@ -32,6 +43,8 @@ export interface ParagraphDTO {
   content_modern: string | null
   content_explanation: string | null
   content_analysis: string | null
+  analysis_meta: ParagraphAnalysisMeta | null
+  interpretation: InterpretationViewDTO
   edited: number
   is_noise: number
 }
@@ -102,8 +115,20 @@ export interface InterpretationDTO {
   modern: string | null
   explanation: string | null
   analysis: string | null
+  meta: ParagraphAnalysisMeta | null
   cached: boolean
 }
+
+export interface InterpretationViewDTO {
+  modern: string | null
+  explanation: string | null
+  analysis: string | null
+  meta: ParagraphAnalysisMeta | null
+}
+
+export type ParagraphAnalysisHistoryDTO = ParagraphAnalysisHistoryItem
+
+type ParagraphRow = Omit<ParagraphDTO, 'analysis_meta' | 'interpretation'> & ParagraphAnalysisSqlRow
 
 export interface TermLookupDTO {
   term: string
@@ -131,23 +156,44 @@ export function getChapter(bookId: string, chapterId: string): ChapterContent | 
     .get(chapterId, bookId) as ChapterDTO | undefined
   if (!chapter) return null
 
-  const paragraphs = db
+  const rows = db
     .prepare(
       `SELECT p.id,
               p.chapter_id,
               p.order_index,
               p.text,
-              ${ACTIVE_ANALYSIS_SELECT},
+              ${selectActiveAnalysisColumns()},
               p.edited,
               p.is_noise
        FROM paragraphs p
-       ${ACTIVE_ANALYSIS_JOIN}
+       ${joinActiveAnalysis()}
        WHERE p.chapter_id = ? AND p.deleted_at IS NULL
        ORDER BY p.order_index`,
     )
-    .all(chapterId) as ParagraphDTO[]
+    .all(chapterId) as ParagraphRow[]
+  const paragraphs = rows.map((paragraph) => ({
+    ...paragraph,
+    analysis_meta: mapParagraphAnalysisMeta(paragraph),
+    interpretation: toInterpretationView(mapParagraphAnalysisView(paragraph)),
+  }))
 
   return { chapter, paragraphs }
+}
+
+function toInterpretationView(view: ParagraphAnalysisView): InterpretationViewDTO {
+  return {
+    modern: view.modern,
+    explanation: view.explanation,
+    analysis: view.analysis,
+    meta: view.analysisMeta,
+  }
+}
+
+function toInterpretationDTO(view: ParagraphAnalysisView): InterpretationDTO {
+  return {
+    ...toInterpretationView(view),
+    cached: view.modern != null || view.explanation != null || view.analysis != null,
+  }
 }
 
 // ---------- progress (RD-08) ----------
@@ -353,40 +399,41 @@ export function removeBookmark(id: string): { ok: boolean } {
   return { ok: res.changes > 0 }
 }
 
-// ---------- interpretation (RD-03, reads paragraphs cache) ----------
+// ---------- interpretation (RD-03, reads active analysis view) ----------
 
 /**
- * Returns the AI interpretation cached on the paragraph row (content_modern +
- * content_explanation + content_analysis). cached=false when all are null — the renderer then
- * shows a "click to generate" placeholder. The AI module (Phase 5) fills these
- * columns; RD never calls the AI itself (03-reading.md §7.2).
+ * Returns the active AI interpretation view for a paragraph. cached=false when
+ * all content fields are null, so the renderer can show a generate placeholder.
+ * RD never calls the AI itself (03-reading.md §7.2).
  */
 export function getInterpretation(paragraphId: string): InterpretationDTO {
-  const db = getDb()
-  const row = db
-    .prepare(
-      `SELECT ${ACTIVE_ANALYSIS_SELECT}
-       FROM paragraphs p
-       ${ACTIVE_ANALYSIS_JOIN}
-       WHERE p.id = ?`,
-    )
-    .get(paragraphId) as
-    | {
-        content_modern: string | null
-        content_explanation: string | null
-        content_analysis: string | null
-      }
-    | undefined
-  if (!row) {
+  const view = getActiveParagraphAnalysisView(paragraphId)
+  if (!view) {
     throw new AppError('NOT_FOUND', `paragraph ${paragraphId} not found`)
   }
-  const cached =
-    row.content_modern != null || row.content_explanation != null || row.content_analysis != null
-  return {
-    modern: row.content_modern,
-    explanation: row.content_explanation,
-    analysis: row.content_analysis,
-    cached,
+  return toInterpretationDTO(view)
+}
+
+export function listInterpretationHistory(paragraphId: string): ParagraphAnalysisHistoryDTO[] {
+  assertLiveParagraph(paragraphId)
+  return listParagraphAnalysisHistory(paragraphId)
+}
+
+export function activateInterpretationVersion(
+  paragraphId: string,
+  analysisId: string,
+): InterpretationDTO {
+  assertLiveParagraph(paragraphId)
+  const view = activateParagraphAnalysis(paragraphId, analysisId)
+  return toInterpretationDTO(view)
+}
+
+function assertLiveParagraph(paragraphId: string): void {
+  const exists = getDb()
+    .prepare('SELECT 1 FROM paragraphs WHERE id = ? AND deleted_at IS NULL')
+    .get(paragraphId)
+  if (!exists) {
+    throw new AppError('NOT_FOUND', `paragraph ${paragraphId} not found`)
   }
 }
 

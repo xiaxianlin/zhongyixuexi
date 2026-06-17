@@ -3,7 +3,8 @@
  *
  *  generateModern(paragraphId) — AI-01: per-paragraph modern interpretation.
  *     cache → DeepSeek (JSON mode, temp 0.3) → validate → write
- *     paragraphs.content_modern/explanation/analysis + ai_cache. Returns DTO.
+ *     paragraph_analyses active version + compatibility columns + ai_cache.
+ *     Returns DTO.
  *  ask(query, opts) — AI-02: RAG Q&A. guard pre-check → FTS5 top-k → prompt →
  *     DeepSeek (temp 0.5) → parse trailing cites JSON → guard post-sanitize →
  *     cache. Returns answer + cites with paragraphId (jumpable).
@@ -53,8 +54,10 @@ import {
 import { aiError } from '../ai/errors'
 import { createHash } from 'node:crypto'
 import {
+  getActiveParagraphAnalysisMeta,
   hasActiveParagraphAnalysis,
-  syncParagraphAnalysisColumns,
+  syncLegacyParagraphAnalysisColumns,
+  type ParagraphAnalysisMeta,
   writeActiveParagraphAnalysis,
 } from './paragraph-analysis'
 
@@ -72,11 +75,20 @@ type AiCacheKind = 'modern' | 'qa' | 'cards' | 'annotation' | 'parse'
 export interface ModernResultDTO {
   paragraphId: string
   fromCache: boolean
+  analysisMeta: ParagraphAnalysisMeta | null
+  interpretation: ModernInterpretationDTO
   sentences: ModernSentence[]
   analysis: string
   summary: string
   model: string
   tokens: number
+}
+
+export interface ModernInterpretationDTO {
+  modern: string | null
+  explanation: string | null
+  analysis: string | null
+  meta: ParagraphAnalysisMeta | null
 }
 
 export interface QaCiteDTO {
@@ -256,8 +268,8 @@ function stripLeadingNumber(text: string): string {
  * Generate (or return cached) modern-language interpretation for a paragraph.
  *
  * Flow: cache lookup by prompt_hash → on miss, call DeepSeek (JSON mode,
- * temp 0.3) → validate → write paragraphs.content_modern/explanation/analysis AND
- * ai_cache in one transaction → return DTO.
+ * temp 0.3) → validate → write active paragraph_analyses version,
+ * compatibility paragraph columns, and ai_cache in one transaction → return DTO.
  */
 export function generateModern(paragraphId: string, opts: { force?: boolean } = {}): Promise<ModernResultDTO> {
   const cacheKey = `modern:${paragraphId}`
@@ -283,24 +295,17 @@ function generateModernImpl(
   )
   if (hit) {
     const parsed = validateModernJson(parseJsonLoose<ModernJson>(hit.response))
-    const modernText = parsed.sentences.map((s) => s.modern).join('\n')
-    const explainText = parsed.sentences
-      .map((s, i) => `${i + 1}. ${s.commentary}`)
-      .join('\n')
-    const analysisText = parsed.analysis || parsed.summary
-    getDb().transaction(() => {
-      syncParagraphAnalysisColumns({
+    const interpretation = modernJsonToInterpretation(parsed, null)
+    const analysisView = interpretationToAnalysisView(interpretation)
+    const analysisMeta = getDb().transaction(() => {
+      syncLegacyParagraphAnalysisColumns({
         paragraphId,
-        modern: modernText,
-        explanation: explainText,
-        analysis: analysisText,
+        ...analysisView,
       })
       if (!hasActiveParagraphAnalysis(paragraphId, hit.id)) {
-        writeActiveParagraphAnalysis({
+        return writeActiveParagraphAnalysis({
           paragraphId,
-          modern: modernText,
-          explanation: explainText,
-          analysis: analysisText,
+          ...analysisView,
           summary: parsed.summary,
           model: hit.model,
           promptHash,
@@ -309,8 +314,11 @@ function generateModernImpl(
           meta: { fromCache: true, sentenceCount: parsed.sentences.length },
         })
       }
+      return getActiveParagraphAnalysisMeta(paragraphId)
     })()
-    return Promise.resolve(toModernDTO(paragraphId, parsed, hit.model, hit.totalTokens, true))
+    return Promise.resolve(
+      toModernDTO(paragraphId, parsed, hit.model, hit.totalTokens, true, analysisMeta),
+    )
   }
 
   // 2. miss → call DeepSeek
@@ -347,20 +355,15 @@ function generateModernImpl(
       throw aiError('AI_PARSE_ERROR', '模型未返回有效解读')
     }
 
-    // 3. write paragraphs + ai_cache atomically.
-    const modernText = parsed.sentences.map((s) => s.modern).join('\n')
-    const explainText = parsed.sentences
-      .map((s, i) => `${i + 1}. ${s.commentary}`)
-      .join('\n')
-    const analysisText = parsed.analysis || parsed.summary
+    // 3. write active analysis + compatibility columns + ai_cache atomically.
+    const interpretation = modernJsonToInterpretation(parsed, null)
+    const analysisView = interpretationToAnalysisView(interpretation)
 
     const db = getDb()
     const tx = db.transaction(() => {
-      syncParagraphAnalysisColumns({
+      syncLegacyParagraphAnalysisColumns({
         paragraphId,
-        modern: modernText,
-        explanation: explainText,
-        analysis: analysisText,
+        ...analysisView,
       })
       const cacheId = writeCache({
         scope: 'paragraph',
@@ -375,11 +378,9 @@ function generateModernImpl(
         totalTokens: lastResp.usage?.total_tokens ?? 0,
         meta: { summary: parsed.summary, sentenceCount: parsed.sentences.length },
       })
-      writeActiveParagraphAnalysis({
+      return writeActiveParagraphAnalysis({
         paragraphId,
-        modern: modernText,
-        explanation: explainText,
-        analysis: analysisText,
+        ...analysisView,
         summary: parsed.summary,
         model: cfg.model,
         promptHash,
@@ -391,9 +392,16 @@ function generateModernImpl(
         },
       })
     })
-    tx()
+    const analysisMeta = tx()
 
-    return toModernDTO(paragraphId, parsed, cfg.model, lastResp.usage?.total_tokens ?? 0, false)
+    return toModernDTO(
+      paragraphId,
+      parsed,
+      cfg.model,
+      lastResp.usage?.total_tokens ?? 0,
+      false,
+      analysisMeta,
+    )
   })()
 }
 
@@ -403,10 +411,14 @@ function toModernDTO(
   model: string,
   tokens: number,
   fromCache: boolean,
+  analysisMeta: ParagraphAnalysisMeta | null,
 ): ModernResultDTO {
+  const interpretation = modernJsonToInterpretation(parsed, analysisMeta)
   return {
     paragraphId,
     fromCache,
+    analysisMeta,
+    interpretation,
     sentences: parsed.sentences.map((s) => ({
       original: s.original,
       modern: s.modern,
@@ -416,6 +428,28 @@ function toModernDTO(
     summary: parsed.summary,
     model,
     tokens,
+  }
+}
+
+export function modernJsonToInterpretation(
+  parsed: ModernJson,
+  analysisMeta: ParagraphAnalysisMeta | null,
+): ModernInterpretationDTO {
+  return {
+    modern: parsed.sentences.map((s) => s.modern).join('\n'),
+    explanation: parsed.sentences.map((s, i) => `${i + 1}. ${s.commentary}`).join('\n'),
+    analysis: parsed.analysis || parsed.summary,
+    meta: analysisMeta,
+  }
+}
+
+function interpretationToAnalysisView(
+  interpretation: ModernInterpretationDTO,
+): { modern: string; explanation: string; analysis: string } {
+  return {
+    modern: interpretation.modern ?? '',
+    explanation: interpretation.explanation ?? '',
+    analysis: interpretation.analysis ?? '',
   }
 }
 

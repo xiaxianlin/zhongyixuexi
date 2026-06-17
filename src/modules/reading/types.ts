@@ -11,11 +11,26 @@ export interface ParagraphDTO {
   chapter_id: string
   order_index: number
   text: string
+  /** @deprecated Use interpretation.modern. Kept while legacy paragraph columns exist. */
   content_modern: string | null
+  /** @deprecated Use interpretation.explanation. Kept while legacy paragraph columns exist. */
   content_explanation: string | null
+  /** @deprecated Use interpretation.analysis. Kept while legacy paragraph columns exist. */
   content_analysis: string | null
+  /** @deprecated Use interpretation.meta. Kept for compatibility with older UI code. */
+  analysis_meta: ParagraphAnalysisMeta | null
+  interpretation: InterpretationViewDTO
   edited: number
   is_noise: number
+}
+
+export interface ParagraphAnalysisMeta {
+  id: string
+  version: number
+  source: string
+  model: string | null
+  created_at: number
+  updated_at: number
 }
 
 export interface ChapterDTO {
@@ -83,7 +98,22 @@ export interface InterpretationDTO {
   modern: string | null
   explanation: string | null
   analysis: string | null
+  meta: ParagraphAnalysisMeta | null
   cached: boolean
+}
+
+export interface InterpretationViewDTO {
+  modern: string | null
+  explanation: string | null
+  analysis: string | null
+  meta: ParagraphAnalysisMeta | null
+}
+
+export interface ParagraphAnalysisHistoryDTO extends ParagraphAnalysisMeta {
+  is_active: boolean
+  summary: string | null
+  prompt_hash: string | null
+  cache_id: string | null
 }
 
 export interface TermLookupDTO {
