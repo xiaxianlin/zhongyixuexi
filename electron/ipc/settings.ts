@@ -114,11 +114,6 @@ export function registerSettingsHandlers(): void {
   // ---- SET-04: Book file management ----
   handle('settings:listBookFiles', () => settings.listBookFiles())
 
-  handle('settings:triggerReparse', (_event, payload: unknown) => {
-    const { bookId } = payload as { bookId: string }
-    return settings.triggerReparse(bookId)
-  })
-
   handle('settings:scanOrphans', () => settings.scanOrphans())
 
   handle('settings:cleanOrphans', (_event, payload: unknown) => {

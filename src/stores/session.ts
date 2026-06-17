@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-export type View = 'library' | 'reading' | 'review' | 'notes' | 'settings' | 'search'
+export type View = 'home' | 'library' | 'reading' | 'notes' | 'settings' | 'search'
 
 /**
  * Cross-module shared session state (00-architecture §6): the book/chapter/
@@ -19,7 +19,7 @@ interface SessionState {
 }
 
 export const useSessionStore = create<SessionState>((set) => ({
-  view: 'library',
+  view: 'home',
   activeBookId: null,
   activeChapterId: null,
   activeParagraphId: null,

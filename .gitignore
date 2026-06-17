@@ -18,3 +18,5 @@ coverage/
 *.tcmz
 .env
 .env.local
+
+books

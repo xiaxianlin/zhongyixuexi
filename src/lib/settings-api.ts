@@ -23,7 +23,6 @@ import type {
   VerifyResult,
   ImportResult,
 } from '@/modules/settings/types'
-import type { ImportResult as EpubImportResult } from './types'
 
 /** settings:* — SET-01..SET-05 provider CRUD, appearance, backup, file mgmt. */
 export const settingsApi = {
@@ -58,9 +57,6 @@ export const settingsApi = {
 
   // ---- SET-04: Book file management ----
   listBookFiles: () => invokeRaw<BookFileEntry[]>('settings:listBookFiles'),
-
-  triggerReparse: (bookId: string) =>
-    invokeRaw<EpubImportResult>('settings:triggerReparse', { bookId }),
 
   scanOrphans: () => invokeRaw<OrphanScanResult>('settings:scanOrphans'),
 

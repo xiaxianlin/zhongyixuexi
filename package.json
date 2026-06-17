@@ -4,6 +4,13 @@
   "description": "中医经典本地学习软件",
   "author": "loop",
   "main": "./out/main/index.js",
+  "build": {
+    "files": [
+      "out/**/*",
+      "data/**/*",
+      "package.json"
+    ]
+  },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",

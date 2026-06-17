@@ -25,20 +25,6 @@ export interface ChapterNode {
   children: ChapterNode[]
 }
 
-export interface ImportResult {
-  bookId: string
-  chapterCount: number
-  paragraphCount: number
-  taskCount?: number
-}
-
-export interface ImportProgress {
-  stage: string
-  current?: number
-  total?: number
-  message?: string
-}
-
 export interface SegmentParagraph {
   id: string
   order_index: number

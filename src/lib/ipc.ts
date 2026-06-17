@@ -4,7 +4,7 @@
  * Module-specific APIs are added here as slices land.
  */
 
-import type { BookListItem, ChapterNode, ImportResult, SegmentParagraph } from './types'
+import type { BookListItem, ChapterNode, SegmentParagraph } from './types'
 
 export type ErrorCode =
   | 'DB'
@@ -55,17 +55,10 @@ export const appApi = {
   getInfo: () => invokeRaw<{ version: string; platform: string; electron: string }>('app:getInfo'),
 }
 
-/** import:* — main process owns the file picker; progress arrives via event. */
-export const importApi = {
-  pickAndImport: () => invokeRaw<ImportResult | null>('import:pickAndImport'),
-  reparse: (bookId: string) => invokeRaw<ImportResult>('import:reparse', { bookId }),
-}
-
-/** library:* — book list, chapter tree, delete. */
+/** library:* — book list and chapter tree. */
 export const libraryApi = {
   list: () => invokeRaw<BookListItem[]>('library:list'),
   tree: (bookId: string) => invokeRaw<ChapterNode[]>('library:tree', bookId),
-  delete: (bookId: string) => invokeRaw<null>('library:delete', bookId),
 }
 
 /** segment:* — paragraph-level proofreading/editing (IMP-03). */

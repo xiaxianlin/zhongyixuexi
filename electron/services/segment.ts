@@ -14,7 +14,7 @@
  */
 import { createHash, randomUUID } from 'node:crypto'
 import { getDb } from '../db'
-import { normalize } from './import'
+import { normalize } from './content-normalize'
 
 export interface SegmentParagraph {
   id: string

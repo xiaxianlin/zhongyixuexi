@@ -1,16 +1,16 @@
 /**
  * Dev-only end-to-end check. Triggered by ZYXX_INTEGRATION=1 env var in main.
  *
- * NOTE: import is now AI-driven (requires a configured DeepSeek key), so this
- * check no longer calls importEpubFile. Instead it inserts a small test book
- * directly (bypassing AI) and verifies the list → tree → FTS → segment-edit →
- * search → cascade-delete chain. To test the AI import path itself, configure
- * a key and import a real EPUB via the UI.
+ * The app ships built-in content, so this check inserts a small transient book
+ * directly and verifies the list → tree → FTS → segment-edit → search →
+ * cascade-delete chain.
  */
 import { randomUUID } from 'node:crypto'
 import { listBooks, getChapterTree, deleteBook } from '../services/library'
 import { getChapterParagraphs, updateParagraphText, splitParagraph } from '../services/segment'
 import { searchParagraphs } from '../services/search'
+import { getActiveApiKey } from '../services/settings'
+import { deepseek } from '../ai/deepseek'
 import { getDb } from '../db'
 
 const TEST_TITLE = '神农本草经（集成测试）'
@@ -64,6 +64,12 @@ function insertTestBook(): string {
 }
 
 export async function runIntegrationCheck(): Promise<void> {
+  const aiDebug = process.env.ZYXX_AI_DEBUG
+  if (aiDebug === 'short') {
+    await runAiDebug()
+    return
+  }
+
   // pre-clean leftover test books
   for (const b of listBooks().filter((x) => x.title === TEST_TITLE)) {
     deleteBook(b.id)
@@ -112,4 +118,43 @@ export async function runIntegrationCheck(): Promise<void> {
   assert(ftsMatchCount() === 0, `fts rows survived delete: ${ftsMatchCount()}`)
 
   console.log('[integration] PASS — insert / list / tree / fts / segment / search / delete verified')
+}
+
+async function runAiDebug(): Promise<void> {
+  const cfg = getActiveApiKey()
+  if (!cfg) throw new Error('[ai-debug] no active provider')
+  console.log(
+    `[ai-debug] provider=${cfg.provider} baseUrl=${cfg.baseUrl} model=${cfg.model} mode=short`,
+  )
+
+  const started = Date.now()
+  const req = {
+    model: cfg.model,
+    messages: [
+      { role: 'system' as const, content: '你只输出 JSON。' },
+      { role: 'user' as const, content: '输出 {"ok":true,"name":"难经"}' },
+    ],
+    temperature: 0,
+    max_tokens: 1024,
+    response_format: { type: 'json_object' as const },
+    stream: false as const,
+  }
+
+  const chatResp = await deepseek.chat(req, cfg, { timeoutMs: 10 * 60_000 })
+  const raw = chatResp.choices[0]?.message?.content ?? ''
+  const finish = chatResp.choices[0]?.finish_reason
+  const usage = chatResp.usage
+  console.log(
+    `[ai-debug] ok elapsedMs=${Date.now() - started} finish=${finish} chars=${raw.length} usage=${JSON.stringify(usage)}`,
+  )
+  try {
+    const parsed = JSON.parse(raw) as unknown
+    console.log(
+      `[ai-debug] json ok keys=${Object.keys((parsed as Record<string, unknown>) ?? {}).join(',')}`,
+    )
+  } catch (e) {
+    console.log(`[ai-debug] json failed: ${(e as Error).message}`)
+    console.log(`[ai-debug] head=${raw.slice(0, 200).replace(/\s+/g, ' ')}`)
+    console.log(`[ai-debug] tail=${raw.slice(-200).replace(/\s+/g, ' ')}`)
+  }
 }

@@ -10,9 +10,6 @@
  *  generateCards(paragraphIds) — AI-06: extract card drafts. DeepSeek (JSON
  *     mode, temp 0.4) per paragraph → createCards() into LRN cards table
  *     (source='ai_batch'). Returns batch result.
- *  parseChapterByAI(title, text) — IMP-AI: AI-driven chapter parsing. Judges
- *     isContent + extracts body paragraphs (temp 0.2, JSON mode). Cache by
- *     chapter content hash. Used by importEpubFile/reparseBook.
  *  invalidate(scopeId, kind) — manual regenerate entry point.
  *  status() — whether a key is configured (no plaintext).
  *
@@ -780,10 +777,11 @@ function validateParseChapterJson(obj: ParseChapterJson): ParseChapterJson {
 
 /**
  * Max tokens for whole-book parse output. The full-book paragraphs JSON can be
- * large; DeepSeek supports up to 8192 completion tokens. For very large books
- * the output may be truncated — see risk note in parseBookByAI.
+ * large; keep this high because the import contract intentionally sends the
+ * whole book in a single request and expects the model to return every parsed
+ * paragraph.
  */
-const PARSE_BOOK_MAX_TOKENS = 8192
+const PARSE_BOOK_MAX_TOKENS = 384_000
 
 /**
  * AI-driven whole-book chapter parsing for the IMP module.
@@ -804,13 +802,12 @@ const PARSE_BOOK_MAX_TOKENS = 8192
  * @returns         ParseChapterResult[] in the SAME ORDER as input chapters
  *
  * RISK: For very large books (many chapters × long text), the output JSON may
- * exceed PARSE_BOOK_MAX_TOKENS, causing truncation and a JSON parse error.
- * If this occurs, the fallback strategy is batch-sharding (future enhancement).
- * For typical 中医 classics (10–50 chapters, moderate paragraph counts), 8192
- * output tokens is sufficient.
+ * exceed PARSE_BOOK_MAX_TOKENS or the provider's model limit, causing
+ * truncation and a JSON parse error.
  */
 export async function parseBookByAI(
   chapters: { title: string; text: string }[],
+  opts: { onStreamProgress?: (chars: number, chunks: number) => void } = {},
 ): Promise<ParseChapterResult[]> {
   const cfg = loadConfig()
   const built = buildParseBookPrompt(chapters)
@@ -832,19 +829,24 @@ export async function parseBookByAI(
   let lastResp
   let temperature = built.temperature
   for (let attempt = 0; attempt < 2; attempt++) {
-    lastResp = await deepseek.chat(
+    lastResp = await deepseek.chatStream(
       {
         model: cfg.model,
         messages: built.messages,
         temperature,
         max_tokens: PARSE_BOOK_MAX_TOKENS,
         response_format: built.response_format,
-        stream: false,
+        stream: true,
       },
       cfg,
+      {
+        onDelta: (_chunk, snapshot) => {
+          opts.onStreamProgress?.(snapshot.chars, snapshot.chunks)
+        },
+      },
     )
     try {
-      const raw = lastResp.choices[0]?.message?.content ?? ''
+      const raw = lastResp.content
       parsed = parseJsonLoose<ParseBookJson>(raw)
       // Validate immediately — may throw, triggering retry.
       validateParseBookJson(parsed, chapters.length)

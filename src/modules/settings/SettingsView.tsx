@@ -1,422 +1,140 @@
-/**
- * SettingsView — the SET module main panel.
- *
- * Tabbed layout: API Key (SET-01), Appearance (SET-02), Backup (SET-03),
- * File Management (SET-04). Each tab renders its own sub-component.
- *
- * Theme/fontScale reuse useUiStore (src/stores/ui.ts) for live preview —
- * the settings panel reads/writes the DB via settingsApi, but the immediate
- * visual change goes through the existing store's applyTheme/setFontScale.
- */
-
-import { useState, useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { settingsApi } from '@/lib/settings-api'
-import { useUiStore } from '@/stores/ui'
-import { ProviderEditorModal, type ProviderEditorMode } from './ProviderEditorModal'
-import type { ProviderConfig, BookFileEntry, OrphanScanResult } from './types'
+import { ProviderEditorModal } from './ProviderEditorModal'
+import type { ProviderConfig } from './types'
 import './settings.css'
 
-type Tab = 'api' | 'appearance' | 'backup' | 'files'
+interface AiConfigSlot {
+  id: string
+  title: string
+  description: string
+  provider: string
+  baseUrl: string
+  model: string
+}
+
+const AI_CONFIG_SLOTS: AiConfigSlot[] = [
+  {
+    id: 'conversation-ai',
+    title: '会话配置',
+    description: '用于 AI 解读、白话、医理等文本会话能力。',
+    provider: 'deepseek',
+    baseUrl: 'https://api.deepseek.com/v1',
+    model: 'deepseek-chat',
+  },
+  {
+    id: 'image-generation-ai',
+    title: '图片生成配置',
+    description: '用于后续图片生成、图片编辑等视觉生成能力。',
+    provider: 'openai',
+    baseUrl: 'https://api.openai.com/v1',
+    model: 'gpt-image-1',
+  },
+]
 
 export function SettingsView() {
-  const [tab, setTab] = useState<Tab>('api')
-
-  return (
-    <div className="settings">
-      <div className="settings__tabs">
-        <button
-          className={tab === 'api' ? 'settings__tab is-active' : 'settings__tab'}
-          onClick={() => setTab('api')}
-        >
-          API 密钥
-        </button>
-        <button
-          className={tab === 'appearance' ? 'settings__tab is-active' : 'settings__tab'}
-          onClick={() => setTab('appearance')}
-        >
-          外观
-        </button>
-        <button
-          className={tab === 'backup' ? 'settings__tab is-active' : 'settings__tab'}
-          onClick={() => setTab('backup')}
-        >
-          备份
-        </button>
-        <button
-          className={tab === 'files' ? 'settings__tab is-active' : 'settings__tab'}
-          onClick={() => setTab('files')}
-        >
-          文件管理
-        </button>
-      </div>
-
-      <div className="settings__content">
-        {tab === 'api' && <ApiKeyPanel />}
-        {tab === 'appearance' && <AppearancePanel />}
-        {tab === 'backup' && <BackupPanel />}
-        {tab === 'files' && <FileManagerPanel />}
-      </div>
-    </div>
-  )
-}
-
-// ============================================================================
-// SET-01: API Key Panel
-// ============================================================================
-
-function ApiKeyPanel() {
   const [providers, setProviders] = useState<ProviderConfig[]>([])
-  const [modalMode, setModalMode] = useState<ProviderEditorMode | null>(null)
-  const [editingProvider, setEditingProvider] = useState<ProviderConfig | null>(null)
-  const [msg, setMsg] = useState('')
+  const [editingSlot, setEditingSlot] = useState<AiConfigSlot | null>(null)
+  const [message, setMessage] = useState('')
 
   const refresh = useCallback(async () => {
-    const list = await settingsApi.listProviders()
-    setProviders(list)
+    setProviders(await settingsApi.listProviders())
   }, [])
 
   useEffect(() => {
     void refresh()
   }, [refresh])
 
-  const openCreate = useCallback(() => {
-    setEditingProvider(null)
-    setModalMode('create')
-    setMsg('')
-  }, [])
-
-  const openEdit = useCallback((p: ProviderConfig) => {
-    setEditingProvider(p)
-    setModalMode('edit')
-    setMsg('')
-  }, [])
-
-  const closeModal = useCallback(() => {
-    setModalMode(null)
-    setEditingProvider(null)
-  }, [])
-
-  const onSaved = useCallback(async () => {
-    setMsg('已保存')
-    closeModal()
-    await refresh()
-  }, [closeModal, refresh])
-
-  const onActivate = useCallback(
-    async (id: string) => {
-      await settingsApi.setActiveProvider(id)
-      await refresh()
-    },
-    [refresh],
+  const providerById = useCallback(
+    (id: string) => providers.find((provider) => provider.id === id) ?? null,
+    [providers],
   )
 
-  const onDelete = useCallback(
+  const onSaved = useCallback(
     async (id: string) => {
-      await settingsApi.deleteProvider(id)
+      if (editingSlot?.id === 'conversation-ai') {
+        await settingsApi.setActiveProvider(id)
+      }
+      setEditingSlot(null)
+      setMessage('配置已保存')
       await refresh()
     },
-    [refresh],
+    [editingSlot, refresh],
   )
 
   return (
-    <div className="set-panel">
-      <h3 className="set-panel__title">API 密钥管理</h3>
-      <p className="set-panel__hint">
-        密钥使用系统级加密存储（macOS Keychain / Windows DPAPI），不会以明文落盘或进入日志。
-      </p>
+    <div className="settings settings--ai">
+      <header className="settings__hero">
+        <p className="settings__eyebrow">AI 配置</p>
+        <h2>模型服务</h2>
+        <p>每类能力保留一个固定配置，只能编辑，不能新增或删除。</p>
+      </header>
 
-      <div className="provider-list">
-        {providers.map((p) => (
-          <div key={p.id} className="provider-card">
-            <div className="provider-card__head">
-              <span className="provider-card__label">{p.label}</span>
-              <div className="provider-card__badges">
-                {p.isActive && <span className="badge badge--active">当前</span>}
-                <span className={p.hasKey ? 'badge badge--ok' : 'badge badge--warn'}>
-                  {p.hasKey ? '已配置' : '未配置'}
+      <div className="ai-config-grid">
+        {AI_CONFIG_SLOTS.map((slot) => {
+          const provider = providerById(slot.id)
+          return (
+            <article key={slot.id} className="ai-config-card">
+              <div className="ai-config-card__head">
+                <div>
+                  <h3>{slot.title}</h3>
+                  <p>{slot.description}</p>
+                </div>
+                <span className={provider?.hasKey ? 'badge badge--ok' : 'badge badge--warn'}>
+                  {provider?.hasKey ? '已配置' : '未配置'}
                 </span>
               </div>
-            </div>
-            <div className="provider-card__meta">
-              <span>{p.provider}</span>
-              <span>·</span>
-              <code>{p.model}</code>
-            </div>
-            <div className="provider-card__url">
-              <code>{p.baseUrl}</code>
-            </div>
-            <div className="provider-card__actions">
-              {!p.isActive && (
-                <button className="btn btn--small" onClick={() => onActivate(p.id)}>
-                  启用
-                </button>
-              )}
-              <button className="btn btn--small" onClick={() => openEdit(p)}>
+
+              <dl className="ai-config-card__meta">
+                <div>
+                  <dt>厂商</dt>
+                  <dd>{provider?.provider || slot.provider}</dd>
+                </div>
+                <div>
+                  <dt>模型</dt>
+                  <dd>{provider?.model || slot.model}</dd>
+                </div>
+                <div>
+                  <dt>地址</dt>
+                  <dd>{provider?.baseUrl || slot.baseUrl}</dd>
+                </div>
+              </dl>
+
+              <button
+                type="button"
+                className="btn btn--primary"
+                onClick={() => {
+                  setEditingSlot(slot)
+                  setMessage('')
+                }}
+              >
                 编辑
               </button>
-              <button
-                className="btn btn--small btn--danger"
-                onClick={() => onDelete(p.id)}
-              >
-                删除
-              </button>
-            </div>
-          </div>
-        ))}
+            </article>
+          )
+        })}
       </div>
 
-      <button className="btn btn--primary" onClick={openCreate}>
-        + 新增配置
-      </button>
+      {message && <p className="set-panel__msg">{message}</p>}
 
-      <ProviderEditorModal
-        open={modalMode !== null}
-        mode={modalMode ?? 'create'}
-        provider={editingProvider}
-        onClose={closeModal}
-        onSaved={onSaved}
-      />
-
-      {msg && <p className="set-panel__msg">{msg}</p>}
-    </div>
-  )
-}
-
-// ============================================================================
-// SET-02: Appearance Panel
-// ============================================================================
-
-function AppearancePanel() {
-  const fontScale = useUiStore((s) => s.fontScale)
-  const setFontScale = useUiStore((s) => s.setFontScale)
-  const [msg, setMsg] = useState('')
-
-  const onFontScale = useCallback(
-    async (v: number) => {
-      setFontScale(v)
-      try {
-        await settingsApi.setAppearance({ fontScale: v })
-      } catch {
-        setMsg('保存失败')
-      }
-    },
-    [setFontScale],
-  )
-
-  // Load persisted settings on mount
-  useEffect(() => {
-    void (async () => {
-      try {
-        const a = await settingsApi.getAppearance()
-        if (a.fontScale) setFontScale(a.fontScale)
-      } catch {
-        // DB not ready yet — ignore
-      }
-    })()
-  }, [setFontScale])
-
-  return (
-    <div className="set-panel">
-      <h3 className="set-panel__title">外观设置</h3>
-
-      <div className="field-group">
-        <label className="field-label">
-          字号缩放 ({fontScale.toFixed(1)}x)
-        </label>
-        <input
-          type="range"
-          min="0.8"
-          max="1.6"
-          step="0.1"
-          value={fontScale}
-          onChange={(e) => onFontScale(Number(e.target.value))}
-          className="font-slider"
+      {editingSlot && (
+        <ProviderEditorModal
+          open
+          mode={providerById(editingSlot.id) ? 'edit' : 'create'}
+          provider={providerById(editingSlot.id)}
+          fixedProviderId={editingSlot.id}
+          fixedLabel={editingSlot.title}
+          defaults={{
+            provider: editingSlot.provider,
+            baseUrl: editingSlot.baseUrl,
+            model: editingSlot.model,
+          }}
+          title={`编辑${editingSlot.title}`}
+          hint="此配置为固定槽位，保存会覆盖当前槽位内容，不会新增配置。API Key 留空时保留原密钥。"
+          onClose={() => setEditingSlot(null)}
+          onSaved={onSaved}
         />
-      </div>
-
-      {msg && <p className="set-panel__msg">{msg}</p>}
-    </div>
-  )
-}
-
-// ============================================================================
-// SET-03: Backup Panel
-// ============================================================================
-
-function BackupPanel() {
-  const [busy, setBusy] = useState(false)
-  const [progress, setProgress] = useState('')
-  const [includeKey, setIncludeKey] = useState(false)
-
-  const onExport = useCallback(async () => {
-    setBusy(true)
-    setProgress('准备导出…')
-    try {
-      const result = await settingsApi.exportBackup({ includeApiKey: includeKey })
-      if (result) {
-        setProgress(`已导出到: ${result.path} (${(result.bytes / 1024 / 1024).toFixed(1)} MB)`)
-      } else {
-        setProgress('')
-      }
-    } catch (e) {
-      setProgress(`导出失败: ${(e as Error).message}`)
-    } finally {
-      setBusy(false)
-    }
-  }, [includeKey])
-
-  const onImport = useCallback(async () => {
-    setBusy(true)
-    setProgress('准备导入…')
-    try {
-      const result = await settingsApi.importBackup({ mode: 'replace' })
-      if (result) {
-        setProgress(
-          `导入完成: ${result.restoredBooks} 本书已恢复。请重启应用以生效。`,
-        )
-      } else {
-        setProgress('')
-      }
-    } catch (e) {
-      setProgress(`导入失败: ${(e as Error).message}`)
-    } finally {
-      setBusy(false)
-    }
-  }, [])
-
-  return (
-    <div className="set-panel">
-      <h3 className="set-panel__title">数据备份</h3>
-      <p className="set-panel__hint">
-        导出包含完整数据库、资源文件和原始 EPUB 的归档文件。可用于换机迁移或数据备份。
-      </p>
-
-      <div className="backup-section">
-        <label className="checkbox-field">
-          <input
-            type="checkbox"
-            checked={includeKey}
-            onChange={(e) => setIncludeKey(e.target.checked)}
-          />
-          <span>导出时包含 API Key（密文，跨机不可解密；默认不导出更安全）</span>
-        </label>
-      </div>
-
-      <div className="backup-actions">
-        <button className="btn btn--primary" disabled={busy} onClick={onExport}>
-          {busy ? '处理中…' : '导出备份'}
-        </button>
-        <button className="btn" disabled={busy} onClick={onImport}>
-          导入恢复
-        </button>
-      </div>
-
-      {progress && <p className="set-panel__msg">{progress}</p>}
-    </div>
-  )
-}
-
-// ============================================================================
-// SET-04: File Manager Panel
-// ============================================================================
-
-function FileManagerPanel() {
-  const [files, setFiles] = useState<BookFileEntry[]>([])
-  const [orphans, setOrphans] = useState<OrphanScanResult | null>(null)
-  const [msg, setMsg] = useState('')
-
-  const refresh = useCallback(async () => {
-    try {
-      setFiles(await settingsApi.listBookFiles())
-    } catch {
-      // ignore
-    }
-  }, [])
-
-  useEffect(() => {
-    void refresh()
-  }, [refresh])
-
-  const onScanOrphans = useCallback(async () => {
-    try {
-      const result = await settingsApi.scanOrphans()
-      setOrphans(result)
-      setMsg(
-        result.orphanAssets.length + result.orphanFiles.length > 0
-          ? `发现 ${result.orphanFiles.length} 个孤立文件 + ${result.orphanAssets.length} 个孤立资源 (${(result.totalBytes / 1024).toFixed(0)} KB)`
-          : '未发现孤立资源',
-      )
-    } catch (e) {
-      setMsg(`扫描失败: ${(e as Error).message}`)
-    }
-  }, [])
-
-  const onCleanOrphans = useCallback(async () => {
-    if (!orphans) return
-    const allPaths = [...orphans.orphanFiles, ...orphans.orphanAssets]
-    if (allPaths.length === 0) return
-    if (!confirm(`确认删除 ${allPaths.length} 个孤立资源？此操作不可撤销。`)) return
-    try {
-      const result = await settingsApi.cleanOrphans(allPaths)
-      setMsg(`已清理 ${result.cleaned} 项，释放 ${(result.freedBytes / 1024).toFixed(0)} KB`)
-      setOrphans(null)
-      await refresh()
-    } catch (e) {
-      setMsg(`清理失败: ${(e as Error).message}`)
-    }
-  }, [orphans, refresh])
-
-  const fmtSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-    return `${(bytes / 1024 / 1024).toFixed(1)} MB`
-  }
-
-  return (
-    <div className="set-panel">
-      <h3 className="set-panel__title">书籍文件管理</h3>
-
-      <div className="file-actions">
-        <button className="btn" onClick={onScanOrphans}>
-          扫描孤立资源
-        </button>
-        {orphans && orphans.orphanFiles.length + orphans.orphanAssets.length > 0 && (
-          <button className="btn btn--danger" onClick={onCleanOrphans}>
-            清理全部孤立资源
-          </button>
-        )}
-      </div>
-
-      {files.length === 0 ? (
-        <p className="set-panel__empty">暂无导入文件。</p>
-      ) : (
-        <table className="file-table">
-          <thead>
-            <tr>
-              <th>书名</th>
-              <th>文件名</th>
-              <th>大小</th>
-              <th>导入时间</th>
-            </tr>
-          </thead>
-          <tbody>
-            {files.map((f) => (
-              <tr key={f.filePath}>
-                <td>{f.title || '(未关联)'}</td>
-                <td>
-                  <code>{f.fileName}</code>
-                </td>
-                <td>{fmtSize(f.sizeBytes)}</td>
-                <td>
-                  {f.importedAt ? new Date(f.importedAt).toLocaleDateString() : '-'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
       )}
-
-      {msg && <p className="set-panel__msg">{msg}</p>}
     </div>
   )
 }

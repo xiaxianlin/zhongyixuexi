@@ -5,6 +5,10 @@
   width: 100%;
   height: 100%;
   overflow: hidden;
+  border: 2px solid var(--border);
+  border-radius: var(--card-radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
 }
 
 /* ---- Left: list panel ---- */
@@ -12,11 +16,11 @@
 .notes__list {
   width: 260px;
   min-width: 220px;
-  border-right: 1px solid var(--border, #e0d8cc);
+  border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  background: var(--bg-sidebar, #f9f6f0);
+  background: var(--qianjiang);
 }
 
 .notes__listToolbar {
@@ -28,33 +32,33 @@
 .notes__search {
   flex: 1;
   padding: 4px 8px;
-  border: 1px solid var(--border, #ccc);
-  border-radius: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
   font-size: 13px;
-  background: var(--bg-input, #fff);
-  color: var(--ink, #5c4033);
+  background: var(--surface);
+  color: var(--fg);
 }
 
 .notes__newBtn {
   padding: 4px 10px;
-  border: 1px solid var(--border, #ccc);
-  border-radius: 4px;
-  background: var(--bg-button, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  background: var(--surface);
   cursor: pointer;
   font-size: 13px;
-  color: var(--ink, #5c4033);
+  color: var(--accent);
   white-space: nowrap;
 }
 
 .notes__newBtn:hover {
-  background: var(--bg-button-hover, #f0ebe0);
+  border-color: var(--accent-soft);
 }
 
 .notes__listHeader {
   padding: 6px 10px;
   font-size: 12px;
-  color: var(--ink-light, #8a7a6a);
-  border-top: 1px solid var(--border-light, #ede8de);
+  color: var(--muted-fg);
+  border-top: 1px solid var(--border);
   margin-top: 4px;
 }
 
@@ -62,7 +66,7 @@
 .notes__empty {
   padding: 16px 10px;
   font-size: 13px;
-  color: var(--ink-light, #999);
+  color: var(--muted-fg);
   text-align: center;
 }
 
@@ -75,17 +79,17 @@
 .notes__item {
   position: relative;
   padding: 8px 10px;
-  border-bottom: 1px solid var(--border-light, #f0ebe0);
+  border-bottom: 1px solid rgba(181, 142, 98, 0.22);
   cursor: pointer;
   transition: background 0.1s;
 }
 
 .notes__item:hover {
-  background: var(--bg-item-hover, #f5f0e8);
+  background: rgba(255, 249, 238, 0.52);
 }
 
 .notes__item.is-active {
-  background: var(--bg-item-active, #ede4d4);
+  background: rgba(189, 134, 88, 0.18);
 }
 
 .notes__item.is-pinned .notes__itemTitle::before {
@@ -96,7 +100,7 @@
 .notes__itemTitle {
   font-size: 13px;
   font-weight: 500;
-  color: var(--ink, #333);
+  color: var(--fg);
   margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
@@ -105,7 +109,7 @@
 
 .notes__itemPreview {
   font-size: 11px;
-  color: var(--ink-light, #999);
+  color: var(--muted-fg);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -119,7 +123,7 @@
   border: none;
   background: none;
   font-size: 16px;
-  color: var(--ink-light, #ccc);
+  color: var(--faint-fg);
   cursor: pointer;
   opacity: 0;
   padding: 2px 6px;
@@ -130,20 +134,20 @@
 }
 
 .notes__itemDel:hover {
-  color: var(--danger, #c33);
+  color: var(--accent);
 }
 
 /* ---- Notebooks + tags ---- */
 
 .notes__notebooks {
   padding: 4px 10px;
-  border-bottom: 1px solid var(--border-light, #ede8de);
+  border-bottom: 1px solid var(--border);
 }
 
 .notes__notebook {
   font-size: 13px;
   padding: 2px 0;
-  color: var(--ink, #5c4033);
+  color: var(--fg);
 }
 
 .notes__notebookIcon {
@@ -157,18 +161,18 @@
 
 .notes__notebookChild {
   font-size: 12px;
-  color: var(--ink-light, #8a7a6a);
+  color: var(--muted-fg);
   padding: 1px 0;
 }
 
 .notes__tags {
   padding: 8px 10px;
-  border-top: 1px solid var(--border-light, #ede8de);
+  border-top: 1px solid var(--border);
 }
 
 .notes__tagsHeader {
   font-size: 12px;
-  color: var(--ink-light, #8a7a6a);
+  color: var(--muted-fg);
   margin-bottom: 4px;
 }
 
@@ -182,8 +186,8 @@
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 8px;
-  background: var(--bg-tag, #ede4d4);
-  color: var(--ink, #5c4033);
+  background: var(--surface);
+  color: var(--accent);
 }
 
 /* ---- Center: editor ---- */
@@ -200,7 +204,7 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-bottom: 1px solid var(--border, #e0d8cc);
+  border-bottom: 1px solid var(--border);
 }
 
 .notes__titleInput {
@@ -208,28 +212,30 @@
   border: none;
   font-size: 16px;
   font-weight: 500;
-  color: var(--ink, #333);
+  color: var(--accent);
+  font-family: var(--font-title);
   background: transparent;
   outline: none;
 }
 
 .notes__titleInput:focus {
-  border-bottom: 1px dotted var(--border, #ccc);
+  border-bottom: 1px dotted var(--border);
 }
 
 .notes__viewBtn,
 .notes__exportBtns button {
   padding: 3px 8px;
-  border: 1px solid var(--border, #ccc);
-  border-radius: 3px;
-  background: var(--bg-button, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  background: var(--surface-2);
   cursor: pointer;
   font-size: 12px;
-  color: var(--ink, #5c4033);
+  color: var(--fg);
 }
 
 .notes__viewBtn.is-active {
-  background: var(--bg-button-active, #ede4d4);
+  background: var(--accent);
+  color: var(--accent-contrast);
 }
 
 .notes__exportBtns {
@@ -239,7 +245,7 @@
 
 .notes__saving {
   font-size: 11px;
-  color: var(--ink-light, #999);
+  color: var(--muted-fg);
 }
 
 .notes__editorBody {
@@ -249,7 +255,7 @@
 }
 
 .notes__editorBody.is-split .notes__textarea {
-  border-right: 1px solid var(--border, #e0d8cc);
+  border-right: 1px solid var(--border);
 }
 
 .notes__textarea {
@@ -259,8 +265,8 @@
   font-family: "Noto Serif SC", "Songti SC", serif;
   font-size: 15px;
   line-height: 1.8;
-  color: var(--ink, #333);
-  background: var(--bg-main, #fff);
+  color: var(--fg);
+  background: var(--surface-2);
   resize: none;
   outline: none;
   overflow-y: auto;
@@ -270,7 +276,7 @@
   flex: 1;
   padding: 16px 20px;
   overflow-y: auto;
-  background: var(--bg-preview, #faf8f4);
+  background: var(--surface);
 }
 
 .notes__editorEmpty {
@@ -280,24 +286,24 @@
   align-items: center;
   justify-content: center;
   gap: 12px;
-  color: var(--ink-light, #999);
+  color: var(--muted-fg);
 }
 
 .notes__createBtn {
   padding: 8px 20px;
-  border: 1px solid var(--border, #ccc);
-  border-radius: 4px;
-  background: var(--bg-button, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  background: var(--surface);
   cursor: pointer;
   font-size: 14px;
-  color: var(--ink, #5c4033);
+  color: var(--accent);
 }
 
 .notes__boundInfo {
   padding: 4px 12px;
   font-size: 11px;
-  color: var(--ink-light, #8a7a6a);
-  border-top: 1px solid var(--border-light, #f0ebe0);
+  color: var(--muted-fg);
+  border-top: 1px solid var(--border);
 }
 
 /* ---- Right: context panel ---- */
@@ -305,25 +311,25 @@
 .notes__context {
   width: 220px;
   min-width: 180px;
-  border-left: 1px solid var(--border, #e0d8cc);
+  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  background: var(--bg-sidebar, #f9f6f0);
+  background: var(--qianjiang);
 }
 
 .notes__panelTitle {
   padding: 8px 10px 4px;
   font-size: 12px;
   font-weight: 500;
-  color: var(--ink-light, #8a7a6a);
-  border-bottom: 1px solid var(--border-light, #ede8de);
+  color: var(--muted-fg);
+  border-bottom: 1px solid var(--border);
 }
 
 .notes__panelEmpty {
   padding: 12px 10px;
   font-size: 12px;
-  color: var(--ink-light, #bbb);
+  color: var(--muted-fg);
 }
 
 .notes__backlinkList,
@@ -336,22 +342,22 @@
 .notes__backlinkItem,
 .notes__outlinkItem {
   padding: 6px 10px;
-  border-bottom: 1px solid var(--border-light, #f0ebe0);
+  border-bottom: 1px solid rgba(181, 142, 98, 0.22);
   cursor: pointer;
   font-size: 12px;
 }
 
 .notes__backlinkItem:hover {
-  background: var(--bg-item-hover, #f5f0e8);
+  background: rgba(255, 249, 238, 0.52);
 }
 
 .notes__backlinkTitle {
-  color: var(--ink, #5c4033);
+  color: var(--fg);
   font-weight: 500;
 }
 
 .notes__backlinkText {
-  color: var(--ink-light, #8a7a6a);
+  color: var(--muted-fg);
   margin-top: 2px;
 }
 
@@ -361,12 +367,12 @@
   margin-right: 4px;
   font-size: 10px;
   border-radius: 3px;
-  background: var(--bg-tag, #ede4d4);
-  color: var(--ink, #5c4033);
+  background: var(--surface);
+  color: var(--accent);
 }
 
 .notes__outlinkInvalid {
-  color: var(--danger, #c33);
+  color: var(--accent);
   text-decoration: line-through;
 }
 
@@ -383,19 +389,20 @@
 }
 
 .note-preview__wikilink {
-  color: var(--accent, #8b4513);
+  color: var(--accent);
   text-decoration: underline;
   text-decoration-style: dotted;
   cursor: pointer;
 }
 
 .note-preview__wikilink:hover {
-  background: var(--bg-wikilink-hover, #f0ebe0);
+  background: var(--qianjiang);
 }
 
 /* mark from FTS search results */
 .notes__itemPreview mark {
-  background: #ffd54f;
-  border-radius: 2px;
+  background: var(--qianjiang);
+  color: var(--accent);
+  border-radius: 4px;
   padding: 0 2px;
 }

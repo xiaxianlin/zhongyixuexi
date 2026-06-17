@@ -24,6 +24,11 @@ export interface ProviderEditorModalProps {
   mode: ProviderEditorMode
   /** Required in 'edit' mode — the provider being edited. */
   provider?: ProviderConfig | null
+  fixedProviderId?: string
+  fixedLabel?: string
+  defaults?: Partial<typeof DEEPSEEK_DEFAULTS>
+  title?: string
+  hint?: string
   onClose?: () => void
   onSaved?: (id: string) => void
 }
@@ -38,6 +43,11 @@ export function ProviderEditorModal({
   open,
   mode,
   provider,
+  fixedProviderId,
+  fixedLabel,
+  defaults,
+  title: customTitle,
+  hint,
   onClose,
   onSaved,
 }: ProviderEditorModalProps): JSX.Element | null {
@@ -61,11 +71,11 @@ export function ProviderEditorModal({
       setBaseUrl(provider.baseUrl)
       setModel(provider.model)
     } else {
-      setProviderType(DEEPSEEK_DEFAULTS.provider)
-      setBaseUrl(DEEPSEEK_DEFAULTS.baseUrl)
-      setModel(DEEPSEEK_DEFAULTS.model)
+      setProviderType(defaults?.provider ?? DEEPSEEK_DEFAULTS.provider)
+      setBaseUrl(defaults?.baseUrl ?? DEEPSEEK_DEFAULTS.baseUrl)
+      setModel(defaults?.model ?? DEEPSEEK_DEFAULTS.model)
     }
-  }, [open, isEdit, provider])
+  }, [open, isEdit, provider, defaults])
 
   // Esc closes only when the dialog is dismissable.
   useEffect(() => {
@@ -86,9 +96,9 @@ export function ProviderEditorModal({
     setBusy(true)
     try {
       const { id } = await settingsApi.saveProvider({
-        id: isEdit ? provider?.id : undefined,
+        id: fixedProviderId ?? (isEdit ? provider?.id : undefined),
         provider: providerType.trim(),
-        label: providerType.trim(),
+        label: fixedLabel ?? providerType.trim(),
         baseUrl: baseUrl.trim(),
         model: model.trim(),
         apiKey: apiKey.trim() || undefined,
@@ -103,11 +113,22 @@ export function ProviderEditorModal({
     } finally {
       setBusy(false)
     }
-  }, [mode, isEdit, provider, providerType, baseUrl, model, apiKey, onSaved])
+  }, [
+    mode,
+    isEdit,
+    provider,
+    fixedProviderId,
+    fixedLabel,
+    providerType,
+    baseUrl,
+    model,
+    apiKey,
+    onSaved,
+  ])
 
   if (!open) return null
 
-  const title = isEdit ? '编辑配置' : mode === 'force' ? '配置 AI 服务' : '新增配置'
+  const title = customTitle ?? (isEdit ? '编辑配置' : mode === 'force' ? '配置 AI 服务' : '新增配置')
 
   return (
     <div
@@ -136,6 +157,7 @@ export function ProviderEditorModal({
             首次使用需配置一个 AI 服务才能启用解读与问答。密钥使用系统级加密存储，不会以明文落盘或进入日志。
           </p>
         )}
+        {hint && <p className="pmodal__hint">{hint}</p>}
 
         <label className="field">
           <span>厂商标识</span>

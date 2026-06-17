@@ -1,5 +1,5 @@
 /* ==========================================================================
-   水墨中国风 · 大气端庄 —— 主题 token（固定宣纸白）
+   暖纸古籍风 —— 主题 token（固定宣纸白）
    设计语言见 docs/design/ink-wash-research.md
    理念：留白 / 气韵 / 虚实 / 以少胜多；大气端庄 = 敢留白、大字号、沉稳克制
    ========================================================================== */
@@ -31,29 +31,33 @@
   /* ---- 宣纸纤维噪点（背景叠一层极淡纹理） ---- */
   --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
 
-  /* ---- 宣纸白（唯一主题） ---- */
-  --bg: #f4ecd8; /* 宣纸（牙黄） */
-  --surface: #ede3cc; /* 册页/卡片底 */
-  --surface-2: #f7f0de; /* 抬高的浅面 */
+  /* ---- 暖米纸（唯一主题） ---- */
+  --bg: #f5ead6; /* 暖纸底 */
+  --surface: #fff9ee; /* 主纸面 */
+  --surface-2: #fffdf6; /* 抬高纸面 */
 
-  --fg: #1c1a17; /* 焦墨（标题/最重） */
-  --muted-fg: #5a5048; /* 重墨（次级文字） */
-  --faint-fg: #8c8174; /* 清墨（元信息/占位） */
+  --fg: #2f2118; /* 焦墨棕 */
+  --muted-fg: #76604d; /* 次级棕墨 */
+  --faint-fg: #a18466; /* 清墨/占位 */
 
-  --accent: #b23a2e; /* 朱砂：印章/主按钮/选中（克制点睛） */
-  --accent-soft: #c76b5c; /* 朱膘（hover） */
-  --accent-contrast: #f7f0de;
+  --accent: #8c2d25; /* 枣红：标题/选中/主操作 */
+  --accent-soft: #bd8658; /* 棕金：hover/描边 */
+  --accent-contrast: #fff9ee;
 
-  --border: rgba(28, 26, 23, 0.12); /* 淡墨细线 */
-  --border-strong: rgba(28, 26, 23, 0.22);
+  --border: rgba(181, 142, 98, 0.36); /* 驼金细线 */
+  --border-strong: rgba(151, 111, 70, 0.64);
 
-  --huaqing: #3e5c6e; /* 花青（链接/信息） */
-  --zheshi: #8c6a4f; /* 赭石（暖点缀/标签） */
-  --qianjiang: #e4d6be; /* 浅绛（解读栏淡彩底） */
+  --huaqing: #6b7b72; /* 青灰：弱信息 */
+  --zheshi: #9a7654; /* 棕金文字 */
+  --qianjiang: #f1dfc6; /* 浅绛纸笺 */
+
+  --card-radius: 14px;
+  --control-radius: 10px;
+  --shadow-soft: 0 10px 24px rgba(119, 82, 45, 0.06);
 
   /* legacy aliases（兼容现有组件引用 --ink/--paper） */
-  --ink: #1c1a17;
-  --paper: #f4ecd8;
+  --ink: #2f2118;
+  --paper: #f5ead6;
 
   color-scheme: light;
 }

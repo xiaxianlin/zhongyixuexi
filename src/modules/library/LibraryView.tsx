@@ -1,18 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { importApi, libraryApi, subscribe } from '@/lib/ipc'
+import { libraryApi } from '@/lib/ipc'
+import { aiApi, aiSubCodeFrom } from '@/lib/ai-api'
+import { notesApi } from '@/lib/notes-api'
 import { readingApi } from '@/lib/reading-api'
-import type { BookListItem, ChapterNode, ImportProgress } from '@/lib/types'
+import type { BookListItem, ChapterNode } from '@/lib/types'
+import type { Note, NoteListItem } from '@/modules/notes/types'
 import type { ParagraphDTO } from '@/modules/reading/types'
-import { useSessionStore } from '@/stores/session'
 import './library.css'
 
 export function LibraryView() {
   const [books, setBooks] = useState<BookListItem[]>([])
   const [detailBookId, setDetailBookId] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [progress, setProgress] = useState('')
-  const openBook = useSessionStore((s) => s.openBook)
-  const openChapter = useSessionStore((s) => s.openChapter)
   const selectedBook = books.find((b) => b.id === detailBookId) ?? null
 
   const refresh = useCallback(async () => {
@@ -20,154 +18,44 @@ export function LibraryView() {
   }, [])
 
   useEffect(() => {
+    document.body.classList.toggle('is-library-detail', selectedBook !== null)
+    return () => {
+      document.body.classList.remove('is-library-detail')
+    }
+  }, [selectedBook])
+
+  useEffect(() => {
     void refresh()
   }, [refresh])
-
-  const onImport = useCallback(async () => {
-    setBusy(true)
-    setProgress('')
-    const off = subscribe('import:progress', (e) => {
-      const p = e as ImportProgress
-      setProgress(p.message ?? p.stage)
-    })
-    try {
-      const res = await importApi.pickAndImport()
-      if (res) {
-        await refresh()
-        setProgress(
-          `完成解析：${res.chapterCount} 章 / ${res.paragraphCount} 段 / ${res.taskCount ?? 0} 个任务`,
-        )
-      } else {
-        setProgress('')
-      }
-    } catch (err) {
-      const msg = (err as Error).message ?? ''
-      setProgress(
-        msg.includes('未配置') || msg.includes('Key')
-          ? '全书解析需要 AI：请到「设置 → API 密钥」添加 DeepSeek Key'
-          : `导入失败：${msg}`,
-      )
-    } finally {
-      off()
-      setBusy(false)
-    }
-  }, [refresh])
-
-  const onDelete = useCallback(
-    async (id: string) => {
-      await libraryApi.delete(id)
-      setDetailBookId((cur) => (cur === id ? null : cur))
-      await refresh()
-    },
-    [refresh],
-  )
-
-  const onReparse = useCallback(
-    async (id: string) => {
-      setBusy(true)
-      setProgress('全书 AI 重新解析中…')
-      const off = subscribe('import:progress', (e) => {
-        const p = e as ImportProgress
-        setProgress(p.message ?? p.stage)
-      })
-      try {
-        const res = await importApi.reparse(id)
-        await refresh()
-        setProgress(
-          `重新解析完成：${res.chapterCount} 章 / ${res.paragraphCount} 段 / ${res.taskCount ?? 0} 个任务`,
-        )
-      } catch (err) {
-        setProgress(`重新解析失败：${(err as Error).message}`)
-      } finally {
-        off()
-        setBusy(false)
-      }
-    },
-    [refresh],
-  )
 
   return (
     <div className="lib">
       {books.length === 0 ? (
-        /* —— 空态：居中引导，大气端庄 —— */
         <div className="lib__emptyState">
           <div className="lib__emptyIcon" aria-hidden>
             卷
           </div>
-          <p className="lib__emptyDesc">导入你的第一本中医典籍，AI 解析章节内容</p>
-          <button className="lib__sealBtn" disabled={busy} onClick={onImport}>
-            {busy ? '导入中…' : '导入 EPUB'}
-          </button>
-          {progress && <p className="lib__progress">{progress}</p>}
+          <p className="lib__emptyDesc">内置《黄帝八十一难经》正在初始化</p>
         </div>
       ) : selectedBook ? (
         <BookDetail
           book={selectedBook}
-          busy={busy}
-          progress={progress}
           onBack={() => setDetailBookId(null)}
-          onImport={onImport}
-          onDelete={onDelete}
-          onReparse={onReparse}
-          onOpenBook={openBook}
-          onOpenChapter={(chapterId, paragraphId) => {
-            openBook(selectedBook.id)
-            openChapter(chapterId, paragraphId)
-          }}
         />
       ) : (
-        /* —— 列表态：书库标题 + 卡片网格，导入作为网格末尾项 —— */
-        <>
-          <h2 className="lib__heading">书库</h2>
-          {progress && <p className="lib__progress">{progress}</p>}
-          <div className="lib__grid">
-            {books.map((b) => (
-              <div key={b.id} className="bookcard" onClick={() => setDetailBookId(b.id)}>
-                <div className="bookcard__cover">{b.title.slice(0, 1)}</div>
-                <div className="bookcard__body">
-                  <div className="bookcard__title">{b.title}</div>
-                  <div className="bookcard__meta">
-                    {b.author || '佚名'} · {b.chapter_count} 章 · {b.paragraph_count} 段
-                  </div>
+        <div className="lib__grid">
+          {books.map((b) => (
+            <div key={b.id} className="bookcard" onClick={() => setDetailBookId(b.id)}>
+              <div className="bookcard__cover">{b.title.slice(0, 1)}</div>
+              <div className="bookcard__body">
+                <div className="bookcard__title">{b.title}</div>
+                <div className="bookcard__meta">
+                  {b.author || '佚名'} · {b.chapter_count} 章 · {b.paragraph_count} 段
                 </div>
-                <button
-                  className="bookcard__rep"
-                  title="AI 重新解析"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    void onReparse(b.id)
-                  }}
-                >
-                  ↻
-                </button>
-                <button
-                  className="bookcard__del"
-                  title="删除"
-                  aria-label="删除"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    void onDelete(b.id)
-                  }}
-                >
-                  ×
-                </button>
               </div>
-            ))}
-
-            {/* 导入卡片：作为网格末尾项，占一格 */}
-            <button
-              className="lib__addCard"
-              disabled={busy}
-              onClick={onImport}
-              title={busy ? '导入中…' : '导入 EPUB'}
-            >
-              <span className="lib__addIcon" aria-hidden>
-                {busy ? '…' : '+'}
-              </span>
-              <span className="lib__addLabel">{busy ? '导入中' : '导入 EPUB'}</span>
-            </button>
-          </div>
-        </>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   )
@@ -175,50 +63,47 @@ export function LibraryView() {
 
 interface BookDetailProps {
   book: BookListItem
-  busy: boolean
-  progress: string
   onBack: () => void
-  onImport: () => void
-  onDelete: (id: string) => Promise<void>
-  onReparse: (id: string) => Promise<void>
-  onOpenBook: (bookId: string) => void
-  onOpenChapter: (chapterId: string, paragraphId?: string | null) => void
 }
 
 function BookDetail({
   book,
-  busy,
-  progress,
   onBack,
-  onImport,
-  onDelete,
-  onReparse,
-  onOpenBook,
-  onOpenChapter,
 }: BookDetailProps) {
   const [tree, setTree] = useState<ChapterNode[]>([])
   const [treeLoading, setTreeLoading] = useState(true)
   const [selectedChapterId, setSelectedChapterId] = useState<string | null>(null)
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null)
+  const [selectedParagraphId, setSelectedParagraphId] = useState<string | null>(null)
   const [paragraphs, setParagraphs] = useState<ParagraphDTO[]>([])
   const [contentLoading, setContentLoading] = useState(false)
+  const [notes, setNotes] = useState<NoteListItem[]>([])
+  const [notesLoading, setNotesLoading] = useState(false)
+  const [noteDraftTitle, setNoteDraftTitle] = useState('')
+  const [noteDraftContent, setNoteDraftContent] = useState('')
+  const [noteSaving, setNoteSaving] = useState(false)
+  const [noteModalOpen, setNoteModalOpen] = useState(false)
+  const [noteDetail, setNoteDetail] = useState<Note | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<NoteListItem | null>(null)
+  const [deletingNote, setDeletingNote] = useState(false)
+  const [aiGenerating, setAiGenerating] = useState(false)
+  const [actionMessage, setActionMessage] = useState('')
 
   useEffect(() => {
     let alive = true
     setTreeLoading(true)
     setTree([])
     setSelectedChapterId(null)
-    setSelectedSectionId(null)
+    setSelectedParagraphId(null)
     setParagraphs([])
+    setNotes([])
+    setActionMessage('')
     libraryApi
       .tree(book.id)
       .then((nextTree) => {
         if (!alive) return
         setTree(nextTree)
         const firstChapter = nextTree[0] ?? null
-        const firstSection = firstChapter ? firstReadableNode(firstChapter) : null
         setSelectedChapterId(firstChapter?.id ?? null)
-        setSelectedSectionId(firstSection?.id ?? null)
       })
       .catch(() => {
         if (alive) setTree([])
@@ -232,27 +117,28 @@ function BookDetail({
   }, [book.id])
 
   const selectedChapter = tree.find((chapter) => chapter.id === selectedChapterId) ?? null
-  const sections = selectedChapter ? sectionNodes(selectedChapter) : []
-  const selectedSection = sections.find((section) => section.id === selectedSectionId) ?? null
-
-  useEffect(() => {
-    if (!selectedChapter || selectedSectionId !== null) return
-    setSelectedSectionId(firstReadableNode(selectedChapter)?.id ?? null)
-  }, [selectedChapter, selectedSectionId])
+  const selectedParagraph =
+    paragraphs.find((paragraph) => paragraph.id === selectedParagraphId) ?? null
 
   useEffect(() => {
     let alive = true
-    if (!selectedSectionId) {
+    if (!selectedChapterId) {
       setParagraphs([])
       return () => {
         alive = false
       }
     }
     setContentLoading(true)
+    setSelectedParagraphId(null)
+    setNotes([])
+    setActionMessage('')
     readingApi
-      .getChapter(book.id, selectedSectionId)
+      .getChapter(book.id, selectedChapterId)
       .then((content) => {
-        if (alive) setParagraphs(content?.paragraphs ?? [])
+        if (!alive) return
+        const nextParagraphs = content?.paragraphs ?? []
+        setParagraphs(nextParagraphs)
+        setSelectedParagraphId(nextParagraphs[0]?.id ?? null)
       })
       .catch(() => {
         if (alive) setParagraphs([])
@@ -263,13 +149,132 @@ function BookDetail({
     return () => {
       alive = false
     }
-  }, [book.id, selectedSectionId])
+  }, [book.id, selectedChapterId])
+
+  useEffect(() => {
+    let alive = true
+    if (!selectedParagraphId) {
+      setNotes([])
+      return () => {
+        alive = false
+      }
+    }
+    setNotesLoading(true)
+    notesApi
+      .getByParagraph(selectedParagraphId)
+      .then((nextNotes) => {
+        if (alive) setNotes(nextNotes)
+      })
+      .catch((e) => {
+        if (alive) setActionMessage(`笔记加载失败：${(e as Error).message}`)
+      })
+      .finally(() => {
+        if (alive) setNotesLoading(false)
+      })
+    return () => {
+      alive = false
+    }
+  }, [selectedParagraphId])
 
   const selectChapter = useCallback((chapter: ChapterNode) => {
-    const nextSection = firstReadableNode(chapter)
     setSelectedChapterId(chapter.id)
-    setSelectedSectionId(nextSection?.id ?? null)
   }, [])
+
+  const generateModern = useCallback(async () => {
+    if (!selectedParagraph) return
+    setAiGenerating(true)
+    setActionMessage('')
+    try {
+      const result = await aiApi.generateModern(selectedParagraph.id)
+      const contentModern = result.sentences.map((sentence) => sentence.modern).join('\n')
+      const contentExplanation = result.sentences
+        .map((sentence, index) => `${index + 1}. ${sentence.commentary}`)
+        .join('\n\n')
+      setParagraphs((current) =>
+        current.map((paragraph) =>
+          paragraph.id === selectedParagraph.id
+            ? {
+                ...paragraph,
+                content_modern: contentModern,
+                content_explanation: contentExplanation,
+              }
+            : paragraph,
+        ),
+      )
+      setActionMessage(result.fromCache ? '已读取缓存解读' : 'AI 解读已生成')
+    } catch (e) {
+      const subCode = aiSubCodeFrom(e)
+      setActionMessage(
+        subCode === 'AI_KEY_NOT_CONFIGURED'
+          ? '请先在设置中配置 AI API Key'
+          : `AI 解读失败：${(e as Error).message}`,
+      )
+    } finally {
+      setAiGenerating(false)
+    }
+  }, [selectedParagraph])
+
+  const createParagraphNote = useCallback(async () => {
+    if (!selectedParagraph || !selectedChapter) return
+    const content = noteDraftContent.trim()
+    if (!content) {
+      setActionMessage('先写一点笔记内容')
+      return
+    }
+    setNoteSaving(true)
+    setActionMessage('')
+    try {
+      await notesApi.create({
+        book_id: book.id,
+        chapter_id: selectedChapter.id,
+        paragraph_id: selectedParagraph.id,
+        title: noteDraftTitle.trim() || `${selectedChapter.title} · 段落笔记`,
+        content,
+      })
+      setNoteDraftTitle('')
+      setNoteDraftContent('')
+      setNoteModalOpen(false)
+      setNotes(await notesApi.getByParagraph(selectedParagraph.id))
+      setActionMessage('笔记已保存')
+    } catch (e) {
+      setActionMessage(`笔记保存失败：${(e as Error).message}`)
+    } finally {
+      setNoteSaving(false)
+    }
+  }, [
+    book.id,
+    noteDraftContent,
+    noteDraftTitle,
+    selectedChapter,
+    selectedParagraph,
+  ])
+
+  const openNoteDetail = useCallback(async (noteId: string) => {
+    setActionMessage('')
+    try {
+      const nextNote = await notesApi.get(noteId)
+      setNoteDetail(nextNote)
+    } catch (e) {
+      setActionMessage(`笔记详情加载失败：${(e as Error).message}`)
+    }
+  }, [])
+
+  const deleteNote = useCallback(async () => {
+    if (!deleteTarget || !selectedParagraph) return
+    setDeletingNote(true)
+    setActionMessage('')
+    try {
+      await notesApi.delete(deleteTarget.id)
+      setDeleteTarget(null)
+      setNoteDetail((current) => (current?.id === deleteTarget.id ? null : current))
+      setNotes(await notesApi.getByParagraph(selectedParagraph.id))
+      setActionMessage('笔记已删除')
+    } catch (e) {
+      setActionMessage(`删除失败：${(e as Error).message}`)
+    } finally {
+      setDeletingNote(false)
+    }
+  }, [deleteTarget, selectedParagraph])
 
   return (
     <div className="bookdetail">
@@ -277,43 +282,10 @@ function BookDetail({
         <button type="button" className="bookdetail__back" onClick={onBack} title="返回书库">
           ‹
         </button>
-        <div className="bookdetail__cover" aria-hidden>
-          {book.title.slice(0, 1)}
-        </div>
         <div className="bookdetail__titleBlock">
           <h2 className="bookdetail__title">{book.title}</h2>
-          <div className="bookdetail__meta">
-            {book.author || '佚名'} · {book.chapter_count} 章 · {book.paragraph_count} 段
-          </div>
-        </div>
-        <div className="bookdetail__actions">
-          <button type="button" className="bookdetail__btn" disabled={busy} onClick={onImport}>
-            导入
-          </button>
-          <button
-            type="button"
-            className="bookdetail__btn"
-            disabled={busy}
-            onClick={() => void onReparse(book.id)}
-          >
-            重析
-          </button>
-          <button type="button" className="bookdetail__primary" onClick={() => onOpenBook(book.id)}>
-            阅读
-          </button>
-          <button
-            type="button"
-            className="bookdetail__danger"
-            title="删除"
-            aria-label="删除"
-            onClick={() => void onDelete(book.id)}
-          >
-            ×
-          </button>
         </div>
       </header>
-
-      {progress && <p className="lib__progress">{progress}</p>}
 
       <div className="bookdetail__workspace">
         <aside className="bookdetail__toc" aria-label="章">
@@ -324,7 +296,7 @@ function BookDetail({
             <p className="bookdetail__empty">无章节</p>
           ) : (
             <div className="bookdetail__list">
-              {tree.map((chapter, index) => (
+              {tree.map((chapter) => (
                 <button
                   key={chapter.id}
                   type="button"
@@ -335,7 +307,6 @@ function BookDetail({
                   }
                   onClick={() => selectChapter(chapter)}
                 >
-                  <span className="bookdetail__ord">{index + 1}</span>
                   <span className="bookdetail__name">{chapter.title}</span>
                 </button>
               ))}
@@ -343,84 +314,226 @@ function BookDetail({
           )}
         </aside>
 
-        <aside className="bookdetail__toc" aria-label="节">
-          <div className="bookdetail__railHead">节</div>
-          {selectedChapter ? (
-            <div className="bookdetail__list">
-              {sections.map((section, index) => (
-                <button
-                  key={section.id}
-                  type="button"
-                  className={
-                    section.id === selectedSectionId
-                      ? 'bookdetail__section is-active'
-                      : 'bookdetail__section'
-                  }
-                  onClick={() => setSelectedSectionId(section.id)}
-                >
-                  <span className="bookdetail__ord">{index + 1}</span>
-                  <span className="bookdetail__name">{section.title}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <p className="bookdetail__empty">先选一章</p>
-          )}
-        </aside>
-
         <section className="bookdetail__paragraphs">
           <div className="bookdetail__paraHead">
             <div>
               <div className="bookdetail__railHead">段</div>
-              <h3 className="bookdetail__sectionTitle">{selectedSection?.title ?? '未选择'}</h3>
+              <h3 className="bookdetail__sectionTitle">{selectedChapter?.title ?? '未选择'}</h3>
             </div>
-            <button
-              type="button"
-              className="bookdetail__btn"
-              disabled={!selectedSectionId}
-              onClick={() => {
-                if (selectedSectionId) onOpenChapter(selectedSectionId, null)
-              }}
-            >
-              打开本节
-            </button>
           </div>
 
           {contentLoading ? (
             <p className="bookdetail__empty">加载段落…</p>
           ) : paragraphs.length === 0 ? (
-            <p className="bookdetail__empty">本节暂无段落</p>
+            <p className="bookdetail__empty">本章暂无段落</p>
           ) : (
-            <div className="bookdetail__paragraphGrid">
-              {paragraphs.map((paragraph, index) => (
+            <div className="bookdetail__paragraphList">
+              {paragraphs.map((paragraph) => (
                 <button
                   key={paragraph.id}
                   type="button"
-                  className="bookdetail__paragraph"
-                  onClick={() => onOpenChapter(paragraph.chapter_id, paragraph.id)}
+                  className={
+                    paragraph.id === selectedParagraphId
+                      ? 'bookdetail__paragraph is-active'
+                      : 'bookdetail__paragraph'
+                  }
+                  onClick={() => setSelectedParagraphId(paragraph.id)}
                 >
-                  <span className="bookdetail__paraNo">{index + 1}</span>
                   <span className="bookdetail__paraText">{paragraph.text}</span>
                 </button>
               ))}
             </div>
           )}
         </section>
+
+        <aside className="bookdetail__inspector" aria-label="段落操作">
+          {selectedParagraph ? (
+            <>
+              <div className="bookdetail__inspectHead">
+                <div>
+                  <div className="bookdetail__railHead">析</div>
+                  <h3 className="bookdetail__sectionTitle">当前段</h3>
+                </div>
+                <button
+                  type="button"
+                  className="bookdetail__btn"
+                  disabled={aiGenerating}
+                  onClick={() => void generateModern()}
+                >
+                  {aiGenerating ? '生成中' : 'AI 解读'}
+                </button>
+              </div>
+
+              {actionMessage && <p className="bookdetail__message">{actionMessage}</p>}
+
+              <div className="bookdetail__inspectScroll">
+                <section className="bookdetail__panelBlock">
+                  <div className="bookdetail__panelTitle">白话</div>
+                  {selectedParagraph.content_modern ? (
+                    <p className="bookdetail__modernText">{selectedParagraph.content_modern}</p>
+                  ) : (
+                    <p className="bookdetail__muted">尚未生成</p>
+                  )}
+                </section>
+
+                <section className="bookdetail__panelBlock">
+                  <div className="bookdetail__panelTitle">医理</div>
+                  {selectedParagraph.content_explanation ? (
+                    <pre className="bookdetail__explainText">
+                      {formatMedicalExplanation(selectedParagraph.content_explanation)}
+                    </pre>
+                  ) : (
+                    <p className="bookdetail__muted">暂无点拨</p>
+                  )}
+                </section>
+
+                <section className="bookdetail__panelBlock">
+                  <div className="bookdetail__noteHead">
+                    <div className="bookdetail__panelTitle">笔记</div>
+                    <button
+                      type="button"
+                      className="bookdetail__miniBtn"
+                      onClick={() => setNoteModalOpen(true)}
+                    >
+                      添加
+                    </button>
+                  </div>
+                  {notesLoading ? (
+                    <p className="bookdetail__muted">加载中…</p>
+                  ) : notes.length === 0 ? (
+                    <p className="bookdetail__muted">还没有笔记</p>
+                  ) : (
+                    <div className="bookdetail__noteGrid">
+                      {notes.map((note) => (
+                        <article
+                          key={note.id}
+                          className="bookdetail__noteItem"
+                          onClick={() => void openNoteDetail(note.id)}
+                        >
+                          <div className="bookdetail__noteItemHead">
+                            <strong>{note.title}</strong>
+                            <button
+                              type="button"
+                              className="bookdetail__noteDelete"
+                              title="删除笔记"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                setDeleteTarget(note)
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                          <p>{note.preview || '（空）'}</p>
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              </div>
+            </>
+          ) : (
+            <p className="bookdetail__empty">先选一段</p>
+          )}
+        </aside>
       </div>
+
+      {noteModalOpen && selectedParagraph && (
+        <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
+          <div className="bookdetail__modal">
+            <div className="bookdetail__modalHead">
+              <h3>添加笔记</h3>
+              <button type="button" onClick={() => setNoteModalOpen(false)}>
+                ×
+              </button>
+            </div>
+            <input
+              className="bookdetail__noteTitleInput"
+              value={noteDraftTitle}
+              onChange={(event) => setNoteDraftTitle(event.target.value)}
+              placeholder="标题（可选）"
+            />
+            <textarea
+              className="bookdetail__noteDraft"
+              value={noteDraftContent}
+              onChange={(event) => setNoteDraftContent(event.target.value)}
+              placeholder="记下这一段的疑问、心得或临证联想"
+              rows={8}
+            />
+            <div className="bookdetail__modalActions">
+              <button type="button" className="bookdetail__btn" onClick={() => setNoteModalOpen(false)}>
+                取消
+              </button>
+              <button
+                type="button"
+                className="bookdetail__primary"
+                disabled={noteSaving}
+                onClick={() => void createParagraphNote()}
+              >
+                {noteSaving ? '保存中' : '保存'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {noteDetail && (
+        <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
+          <div className="bookdetail__modal bookdetail__modal--note">
+            <div className="bookdetail__modalHead">
+              <h3>{noteDetail.title}</h3>
+              <button type="button" onClick={() => setNoteDetail(null)}>
+                ×
+              </button>
+            </div>
+            <pre className="bookdetail__noteDetail">{noteDetail.content || '（空）'}</pre>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
+          <div className="bookdetail__modal bookdetail__modal--confirm">
+            <div className="bookdetail__modalHead">
+              <h3>确认删除</h3>
+              <button type="button" onClick={() => setDeleteTarget(null)}>
+                ×
+              </button>
+            </div>
+            <p className="bookdetail__confirmText">删除「{deleteTarget.title}」？此操作不可撤销。</p>
+            <div className="bookdetail__modalActions">
+              <button type="button" className="bookdetail__btn" onClick={() => setDeleteTarget(null)}>
+                取消
+              </button>
+              <button
+                type="button"
+                className="bookdetail__dangerBtn"
+                disabled={deletingNote}
+                onClick={() => void deleteNote()}
+              >
+                {deletingNote ? '删除中' : '删除'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
 
-function firstReadableNode(node: ChapterNode): ChapterNode {
-  return node.children[0] ? firstReadableNode(node.children[0]) : node
-}
-
-function sectionNodes(chapter: ChapterNode): ChapterNode[] {
-  return chapter.children.length > 0 ? flattenReadableNodes(chapter.children) : [chapter]
-}
-
-function flattenReadableNodes(nodes: ChapterNode[]): ChapterNode[] {
-  return nodes.flatMap((node) =>
-    node.children.length > 0 ? flattenReadableNodes(node.children) : [node],
-  )
+function formatMedicalExplanation(explanation: string): string {
+  return explanation
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const lines = block
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean)
+      if (lines.length >= 2 && /^\d+[.、]\s*/.test(lines[0])) {
+        const prefix = lines[0].match(/^(\d+[.、])/)?.[1] ?? ''
+        return `${prefix} ${lines.slice(1).join('\n')}`.trim()
+      }
+      return lines.join('\n')
+    })
+    .join('\n\n')
 }

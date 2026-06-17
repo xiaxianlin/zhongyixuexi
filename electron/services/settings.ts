@@ -17,7 +17,6 @@ import { join, resolve, relative, sep } from 'node:path'
 import { statSync, readdirSync, existsSync, unlinkSync } from 'node:fs'
 import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
-import { reparseBook } from './import'
 import {
   saveProviderCredential,
   deleteProviderCredential,
@@ -261,12 +260,6 @@ export function listBookFiles(): BookFileEntry[] {
   }
 
   return entries.sort((a, b) => b.sizeBytes - a.sizeBytes)
-}
-
-/** Runs IMP-07 stable-ID-preserving reparse for a book. */
-export function triggerReparse(bookId: string): ReturnType<typeof reparseBook> {
-  if (!bookId) throw new AppError('VALIDATION', 'bookId is required')
-  return reparseBook(bookId)
 }
 
 /**

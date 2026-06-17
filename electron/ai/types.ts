@@ -22,8 +22,7 @@ export interface ChatRequest {
   max_tokens?: number
   /** DeepSeek/OpenAI JSON mode: forces a valid JSON object response. */
   response_format?: { type: 'json_object' }
-  /** This module is non-streaming (simpler cache + progress). */
-  stream?: false
+  stream?: boolean
 }
 
 /** Response shape (subset). DeepSeek fills the OpenAI-compatible fields. */
@@ -39,6 +38,13 @@ export interface ChatResponse {
     completion_tokens: number
     total_tokens: number
   }
+}
+
+export interface ChatStreamResult {
+  id: string
+  content: string
+  finish_reason: string | null
+  usage?: ChatResponse['usage']
 }
 
 /** Provider config obtained from getActiveApiKey() (main-process only). */

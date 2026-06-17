@@ -1,8 +1,7 @@
 /**
  * Learning Dashboard (LRN-06 — 04-learning.md §7.5).
  *
- * Shows: mastery ring, streak badge, heatmap (GitHub-style), weak chapters,
- * recent 7-day trend.
+ * Shows: mastery ring, streak badge, total cards, and yearly learning heatmap.
  */
 
 import { useCallback, useEffect, useState } from 'react'
@@ -34,54 +33,24 @@ export function Dashboard() {
 
   return (
     <div className="dashboard">
+      <header className="dashboard__hero">
+        <div>
+          <p className="dashboard__eyebrow">学习仪表盘</p>
+          <h2>学习总览</h2>
+        </div>
+        <p className="dashboard__heroMeta">读过多少，掌握多少，日日积累多少</p>
+      </header>
+
       <div className="dashboard__top">
         <MasteryRing percent={masteryPct} mastered={data.mastered} total={data.totalCards} />
         <div className="dashboard__stats">
-          <StatCard label="今日待复习" value={String(data.dueToday)} />
           <StatCard label="连续学习" value={`${data.streak} 天`} />
-          <StatCard label="总卡片" value={String(data.totalCards)} />
+          <StatCard label="已掌握" value={String(data.mastered)} />
+          <StatCard label="学习卡片" value={String(data.totalCards)} />
         </div>
       </div>
 
       <Heatmap data={data.heatmap} />
-
-      <div className="dashboard__section">
-        <h4>近 7 日复习</h4>
-        <div className="dashboard__recent7">
-          {data.recent7.length === 0 ? (
-            <p className="dashboard__empty">暂无复习记录</p>
-          ) : (
-            data.recent7.map((d) => (
-              <div key={d.day} className="dashboard__recent-bar">
-                <span className="dashboard__recent-day">{d.day.slice(5)}</span>
-                <div className="dashboard__bar">
-                  <div className="dashboard__bar-fill" style={{ width: `${Math.min(d.reviewed * 5, 100)}%` }} />
-                </div>
-                <span className="dashboard__recent-count">{d.reviewed}</span>
-                {d.again > 0 && <span className="dashboard__recent-again">({d.again}重来)</span>}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      <div className="dashboard__section">
-        <h4>薄弱章节</h4>
-        {data.weakChapters.length === 0 ? (
-          <p className="dashboard__empty">暂无薄弱章节数据（需至少 3 张卡的章节）</p>
-        ) : (
-          <ul className="dashboard__weak">
-            {data.weakChapters.map((ch) => (
-              <li key={ch.chapter_id} className="dashboard__weak-item">
-                <span className="dashboard__weak-title">{ch.title}</span>
-                <span className="dashboard__weak-meta">
-                  {ch.card_count} 卡 · 遗忘率 {Math.round(ch.lapse_rate * 100)}%
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
     </div>
   )
 }
@@ -138,7 +107,7 @@ function Heatmap({ data }: { data: Record<string, number> }) {
 
   return (
     <div className="dashboard__section">
-      <h4>{year} 复习热力图</h4>
+      <h4>{year} 学习热力图</h4>
       <div className="heatmap">
         {days.map((d) => (
           <div

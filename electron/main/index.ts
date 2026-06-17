@@ -3,6 +3,7 @@ import { join } from 'node:path'
 import { runMigrations, getDb, closeDb } from '../db'
 import { registerAllIpc } from '../ipc'
 import { runIntegrationCheck } from './integration-check'
+import { seedBuiltinContent } from '../services/builtin-content'
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -39,6 +40,7 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(() => {
   const schemaVersion = runMigrations()
+  const seeded = seedBuiltinContent()
 
   if (process.env.ZYXX_INTEGRATION === '1') {
     runIntegrationCheck()
@@ -56,7 +58,7 @@ app.whenReady().then(() => {
     .prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
     .all() as { name: string }[]
   console.log(
-    `[db] ready · schema v${schemaVersion} · foreign_keys=${foreignKeys} · tables=${tables.map((t) => t.name).join(',')}`,
+    `[db] ready · schema v${schemaVersion} · builtin=${seeded.inserted ? 'inserted' : 'present'} · foreign_keys=${foreignKeys} · tables=${tables.map((t) => t.name).join(',')}`,
   )
 
   registerAllIpc()

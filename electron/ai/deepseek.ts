@@ -9,7 +9,7 @@
  * returned in error.details, and never crosses IPC.
  *
  * Resilience policy:
- *  - 60s per-attempt timeout via AbortController.
+ *  - 10min per-attempt timeout via AbortController by default.
  *  - Up to 3 attempts total (1 + 2 retries) on retryable statuses / network errors.
  *  - Exponential backoff: 500ms, 1000ms (jittered ±20% to avoid thundering herd).
  *  - 401/403/402 → not retried (key/quota problem, retrying wastes budget).
@@ -17,13 +17,22 @@
  * Exported as a class so tests can inject a fake fetch; production uses the
  * module-level singleton `deepseek`.
  */
-import type { ChatRequest, ChatResponse, ProviderConfig } from './types'
+import type { ChatRequest, ChatResponse, ChatStreamResult, ProviderConfig } from './types'
 import { aiError, type AiSubCode } from './errors'
 import { AppError } from '../lib/error'
 
-const TIMEOUT_MS = 60_000
+export const DEFAULT_TIMEOUT_MS = 10 * 60_000
 const MAX_RETRIES = 2 // total attempts = 1 + MAX_RETRIES = 3
 const RETRYABLE_STATUS = new Set([408, 429, 500, 502, 503, 504])
+
+export interface ChatOptions {
+  /** Per-attempt timeout in milliseconds. Defaults to 10 minutes. */
+  timeoutMs?: number
+}
+
+export interface ChatStreamOptions extends ChatOptions {
+  onDelta?: (chunk: string, snapshot: { chars: number; chunks: number }) => void
+}
 
 /** Sleep helper with ±20% jitter to de-sync concurrent retries. */
 function sleep(ms: number): Promise<void> {
@@ -45,7 +54,12 @@ export interface DeepSeekClient {
    * @returns     Parsed ChatResponse on 2xx.
    * @throws      AppError('AI', ...) with aiCode in details on any failure.
    */
-  chat(req: ChatRequest, cfg: ProviderConfig): Promise<ChatResponse>
+  chat(req: ChatRequest, cfg: ProviderConfig, opts?: ChatOptions): Promise<ChatResponse>
+  chatStream(
+    req: ChatRequest,
+    cfg: ProviderConfig,
+    opts?: ChatStreamOptions,
+  ): Promise<ChatStreamResult>
 }
 
 /** Map an HTTP status to (aiCode, message). Non-retryable by default. */
@@ -86,7 +100,11 @@ function statusToError(
 export class DeepSeekHttp implements DeepSeekClient {
   constructor(private readonly fetchImpl: typeof fetch = fetch.bind(globalThis)) {}
 
-  async chat(req: ChatRequest, cfg: ProviderConfig): Promise<ChatResponse> {
+  async chat(
+    req: ChatRequest,
+    cfg: ProviderConfig,
+    opts: ChatOptions = {},
+  ): Promise<ChatResponse> {
     // Key sanity check — never log the key, only that one is present.
     if (!cfg.apiKey) {
       throw aiError('AI_KEY_NOT_CONFIGURED', '未配置 API Key，请在设置中添加')
@@ -94,6 +112,7 @@ export class DeepSeekHttp implements DeepSeekClient {
 
     const url = joinUrl(cfg.baseUrl, '/chat/completions')
     const body = JSON.stringify(req)
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
 
     let lastErr: unknown = null
     let lastSub: AiSubCode = 'AI_UNKNOWN'
@@ -102,7 +121,7 @@ export class DeepSeekHttp implements DeepSeekClient {
       // Per-attempt timeout. A fresh controller per attempt so a retry isn't
       // already-aborted.
       const ctl = new AbortController()
-      const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
+      const timer = setTimeout(() => ctl.abort(), timeoutMs)
 
       try {
         const res = await this.fetchImpl(url, {
@@ -157,7 +176,7 @@ export class DeepSeekHttp implements DeepSeekClient {
         lastSub = isAbort ? 'AI_TIMEOUT' : 'AI_SERVER_ERROR'
         lastErr = aiError(
           lastSub,
-          isAbort ? `AI 请求超时（${TIMEOUT_MS}ms）` : `AI 网络错误：${(e as Error).message || 'unknown'}`,
+          isAbort ? `AI 请求超时（${timeoutMs}ms）` : `AI 网络错误：${(e as Error).message || 'unknown'}`,
           { attempt, cause: String((e as Error).name || e) },
         )
         if (attempt === MAX_RETRIES) throw lastErr
@@ -176,6 +195,128 @@ export class DeepSeekHttp implements DeepSeekClient {
     }
     throw aiError('AI_UNKNOWN', 'AI 调用失败（未知原因）')
   }
+
+  async chatStream(
+    req: ChatRequest,
+    cfg: ProviderConfig,
+    opts: ChatStreamOptions = {},
+  ): Promise<ChatStreamResult> {
+    if (!cfg.apiKey) {
+      throw aiError('AI_KEY_NOT_CONFIGURED', '未配置 API Key，请在设置中添加')
+    }
+
+    const url = joinUrl(cfg.baseUrl, '/chat/completions')
+    const body = JSON.stringify({ ...req, stream: true, stream_options: { include_usage: true } })
+    const timeoutMs = opts.timeoutMs ?? DEFAULT_TIMEOUT_MS
+    const ctl = new AbortController()
+    let timer = setTimeout(() => ctl.abort(), timeoutMs)
+    const resetTimer = (): void => {
+      clearTimeout(timer)
+      timer = setTimeout(() => ctl.abort(), timeoutMs)
+    }
+
+    try {
+      const res = await this.fetchImpl(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${cfg.apiKey}`,
+        },
+        body,
+        signal: ctl.signal,
+      })
+
+      if (!res.ok) {
+        const bodyText = await res.text().catch(() => '')
+        const mapped = statusToError(res.status, bodyText)
+        throw aiError(mapped.sub, mapped.msg, {
+          status: res.status,
+          ...(mapped.hint ? { bodyHint: mapped.hint } : {}),
+        })
+      }
+      if (!res.body) {
+        throw aiError('AI_REQUEST_FAILED', 'AI 流式响应为空')
+      }
+
+      return await readSseStream(res.body, opts.onDelta, resetTimer)
+    } catch (e) {
+      if (e instanceof AppError) throw e
+      const isAbort =
+        (e instanceof DOMException && e.name === 'AbortError') ||
+        (e instanceof Error && e.name === 'AbortError')
+      throw aiError(
+        isAbort ? 'AI_TIMEOUT' : 'AI_SERVER_ERROR',
+        isAbort ? `AI 请求超时（${timeoutMs}ms）` : `AI 网络错误：${(e as Error).message || 'unknown'}`,
+        { cause: String((e as Error).name || e) },
+      )
+    } finally {
+      clearTimeout(timer)
+    }
+  }
+}
+
+async function readSseStream(
+  body: ReadableStream<Uint8Array>,
+  onDelta?: ChatStreamOptions['onDelta'],
+  onActivity?: () => void,
+): Promise<ChatStreamResult> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let content = ''
+  let chunks = 0
+  let id = ''
+  let finishReason: string | null = null
+  let usage: ChatStreamResult['usage']
+
+  const consumeEvent = (event: string): boolean => {
+    const lines = event.split(/\r?\n/)
+    for (const line of lines) {
+      if (!line.startsWith('data:')) continue
+      const data = line.slice(5).trim()
+      if (!data) continue
+      if (data === '[DONE]') return true
+      let parsed: {
+        id?: string
+        choices?: { delta?: { content?: string }; finish_reason?: string | null }[]
+        usage?: ChatStreamResult['usage']
+      }
+      try {
+        parsed = JSON.parse(data) as typeof parsed
+      } catch {
+        continue
+      }
+      if (parsed.id) id = parsed.id
+      if (parsed.usage) usage = parsed.usage
+      const choice = parsed.choices?.[0]
+      if (choice?.finish_reason != null) finishReason = choice.finish_reason
+      const delta = choice?.delta?.content
+      if (delta) {
+        content += delta
+        chunks++
+        onDelta?.(delta, { chars: content.length, chunks })
+      }
+    }
+    return false
+  }
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    onActivity?.()
+    buffer += decoder.decode(value, { stream: true })
+    const events = buffer.split(/\r?\n\r?\n/)
+    buffer = events.pop() ?? ''
+    for (const event of events) {
+      if (consumeEvent(event)) {
+        await reader.cancel().catch(() => undefined)
+        return { id, content, finish_reason: finishReason, usage }
+      }
+    }
+  }
+  buffer += decoder.decode()
+  if (buffer.trim()) consumeEvent(buffer)
+  return { id, content, finish_reason: finishReason, usage }
 }
 
 /** Join a baseUrl and a path, tolerating trailing/leading slashes. */
