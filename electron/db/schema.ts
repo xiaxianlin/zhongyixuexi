@@ -125,106 +125,23 @@ const CURRENT_SCHEMA = `
   CREATE INDEX IF NOT EXISTS idx_credentials_provider ON api_credentials(provider);
   CREATE INDEX IF NOT EXISTS idx_credentials_active ON api_credentials(is_active) WHERE is_active = 1;
 
-  CREATE TABLE IF NOT EXISTS notebooks (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL,
-    parent_id TEXT,
-    sort_order INTEGER NOT NULL DEFAULT 0,
-    icon TEXT,
-    created_at INTEGER NOT NULL,
-    updated_at INTEGER NOT NULL,
-    FOREIGN KEY (parent_id) REFERENCES notebooks(id) ON DELETE CASCADE
-  );
-  CREATE INDEX IF NOT EXISTS idx_notebooks_parent ON notebooks(parent_id, sort_order);
-
   CREATE TABLE IF NOT EXISTS notes (
     id TEXT PRIMARY KEY,
-    title TEXT NOT NULL DEFAULT '',
     content TEXT NOT NULL DEFAULT '',
     book_id TEXT,
     chapter_id TEXT,
     paragraph_id TEXT,
-    notebook_id TEXT,
-    word_count INTEGER NOT NULL DEFAULT 0,
-    pinned INTEGER NOT NULL DEFAULT 0,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL,
     deleted_at INTEGER,
     FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE SET NULL,
     FOREIGN KEY (chapter_id) REFERENCES chapters(id) ON DELETE SET NULL,
-    FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE SET NULL,
-    FOREIGN KEY (notebook_id) REFERENCES notebooks(id) ON DELETE SET NULL
+    FOREIGN KEY (paragraph_id) REFERENCES paragraphs(id) ON DELETE SET NULL
   );
   CREATE INDEX IF NOT EXISTS idx_notes_paragraph ON notes(paragraph_id, deleted_at);
-  CREATE INDEX IF NOT EXISTS idx_notes_notebook ON notes(notebook_id, deleted_at, updated_at);
   CREATE INDEX IF NOT EXISTS idx_notes_chapter ON notes(chapter_id, deleted_at);
   CREATE INDEX IF NOT EXISTS idx_notes_book ON notes(book_id, deleted_at);
   CREATE INDEX IF NOT EXISTS idx_notes_updated ON notes(deleted_at, updated_at DESC);
-
-  CREATE TABLE IF NOT EXISTS note_links (
-    id TEXT PRIMARY KEY,
-    source_note_id TEXT NOT NULL,
-    target_type TEXT NOT NULL,
-    target_id TEXT NOT NULL,
-    target_alias TEXT,
-    display_text TEXT,
-    position INTEGER NOT NULL DEFAULT 0,
-    created_at INTEGER NOT NULL,
-    FOREIGN KEY (source_note_id) REFERENCES notes(id) ON DELETE CASCADE
-  );
-  CREATE INDEX IF NOT EXISTS idx_note_links_target ON note_links(target_type, target_id);
-  CREATE INDEX IF NOT EXISTS idx_note_links_source ON note_links(source_note_id);
-  CREATE UNIQUE INDEX IF NOT EXISTS uq_note_links ON note_links(source_note_id, target_type, target_id);
-
-  CREATE TABLE IF NOT EXISTS tags (
-    id TEXT PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE,
-    color TEXT,
-    created_at INTEGER NOT NULL
-  );
-
-  CREATE TABLE IF NOT EXISTS tag_refs (
-    id TEXT PRIMARY KEY,
-    tag_id TEXT NOT NULL,
-    ref_type TEXT NOT NULL,
-    ref_id TEXT NOT NULL,
-    created_at INTEGER NOT NULL,
-    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE,
-    UNIQUE (tag_id, ref_type, ref_id)
-  );
-  CREATE INDEX IF NOT EXISTS idx_tag_refs_target ON tag_refs(ref_type, ref_id);
-  CREATE INDEX IF NOT EXISTS idx_tag_refs_tag ON tag_refs(tag_id);
-
-  CREATE VIRTUAL TABLE IF NOT EXISTS fts_notes USING fts5(
-    note_id UNINDEXED,
-    title,
-    content,
-    tokenize = 'unicode61 remove_diacritics 2'
-  );
-
-  CREATE TRIGGER IF NOT EXISTS trg_notes_ai AFTER INSERT ON notes
-  WHEN new.deleted_at IS NULL
-  BEGIN
-    INSERT INTO fts_notes(note_id, title, content) VALUES (new.id, new.title, new.content);
-  END;
-
-  CREATE TRIGGER IF NOT EXISTS trg_notes_ad AFTER DELETE ON notes
-  BEGIN
-    DELETE FROM fts_notes WHERE note_id = old.id;
-  END;
-
-  CREATE TRIGGER IF NOT EXISTS trg_notes_au AFTER UPDATE OF title, content ON notes
-  WHEN new.deleted_at IS NULL
-  BEGIN
-    DELETE FROM fts_notes WHERE note_id = old.id;
-    INSERT INTO fts_notes(note_id, title, content) VALUES (new.id, new.title, new.content);
-  END;
-
-  CREATE TRIGGER IF NOT EXISTS trg_notes_softdel AFTER UPDATE OF deleted_at ON notes
-  WHEN new.deleted_at IS NOT NULL AND old.deleted_at IS NULL
-  BEGIN
-    DELETE FROM fts_notes WHERE note_id = new.id;
-  END;
 
   CREATE TABLE IF NOT EXISTS ai_cache (
     id TEXT PRIMARY KEY,

@@ -7,13 +7,11 @@ import { SearchPanel } from '@/modules/search/SearchPanel'
 import { SettingsView } from '@/modules/settings/SettingsView'
 import { ProviderEditorModal } from '@/modules/settings/ProviderEditorModal'
 import { Dashboard } from '@/modules/learning/Dashboard'
-import { NotesView } from '@/modules/notes/NotesView'
 import { DegradedNotice } from '@/modules/ai/DegradedNotice'
 
 const NAV: { view: import('@/stores/session').View; label: string }[] = [
   { view: 'home', label: '首页' },
   { view: 'library', label: '书库' },
-  { view: 'notes', label: '笔记' },
   { view: 'settings', label: '设置' },
 ]
 
@@ -117,8 +115,6 @@ export default function App() {
       <main className="app__main">
         {view === 'search' ? (
           <SearchPanel />
-        ) : view === 'notes' ? (
-          <NotesView />
         ) : view === 'settings' ? (
           <SettingsView />
         ) : view === 'library' ? (
