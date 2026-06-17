@@ -10,8 +10,7 @@
  * These pure functions live in src/modules/notes/wikiLinks.ts (renderer-side
  * canonical copy) because electron/services/notes.ts imports better-sqlite3 +
  * electron at the top level, which cannot load under vitest/node (ABI mismatch).
- * The service mirrors these implementations — keep in sync. Same pattern as
- * src/modules/learning/sm2.ts.
+ * The service mirrors these implementations — keep in sync.
  */
 
 import { describe, it, expect } from 'vitest'

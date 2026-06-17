@@ -5,7 +5,7 @@
  *
  * Long-task progress: ai:generateModernBatch sends 'ai:progress' events via
  * event.sender.send() as it walks the chapter's paragraphs. Single-segment
- * generation (ai:generateModern, ai:ask, ai:generateCards) completes within one
+ * generation (ai:generateModern, ai:ask) completes within one
  * HTTP round-trip and does not emit progress.
  *
  * Renderer→main typed wrappers live in src/lib/ai-api.ts.
@@ -31,12 +31,6 @@ export function registerAiHandlers(): void {
   handle('ai:generateModernBatch', async (event, payload: unknown) => {
     const { chapterId } = payload as { chapterId: string }
     return ai.generateModernBatch(chapterId, (p) => event.sender.send('ai:progress', p))
-  })
-
-  // AI-06: card batch generation (persists via LRN createCards, source='ai_batch').
-  handle('ai:generateCards', (_event, payload: unknown) => {
-    const { paragraphIds } = payload as { paragraphIds: string[] }
-    return ai.generateCards(paragraphIds)
   })
 
   // Manual cache invalidation (triggers regenerate on next call).

@@ -39,13 +39,6 @@ export interface QaAnswerDTO {
   scrubbed: boolean
 }
 
-export interface CardsBatchResultDTO {
-  created: number
-  skipped: number
-  errors: string[]
-  ids: string[]
-}
-
 export interface AiStatusDTO {
   configured: boolean
   provider: string | null

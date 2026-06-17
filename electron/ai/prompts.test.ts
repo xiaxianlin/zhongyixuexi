@@ -10,7 +10,6 @@ import {
   RED_LINE_PROMPT,
   buildModernPrompt,
   buildQaPrompt,
-  buildCardsPrompt,
   buildAnnotationPrompt,
 } from './prompts'
 
@@ -29,7 +28,6 @@ describe('red-line presence (layer 1)', () => {
     const cases = [
       buildModernPrompt({ text: '人参' }).messages,
       buildQaPrompt({ query: 'q', contexts: [] }).messages,
-      buildCardsPrompt({ text: '人参' }).messages,
       buildAnnotationPrompt({ text: '人参' }).messages,
     ]
     for (const msgs of cases) {
@@ -78,20 +76,5 @@ describe('buildQaPrompt', () => {
     const p = buildQaPrompt({ query: 'q', contexts: [] })
     expect(p.temperature).toBe(0.5)
     expect(p).not.toHaveProperty('response_format')
-  })
-})
-
-describe('buildCardsPrompt', () => {
-  it('injects the source text and constrains output', () => {
-    const { messages } = buildCardsPrompt({ text: '黄芪补气固表。' })
-    const user = messages.find((m) => m.role === 'user')!.content
-    expect(user).toContain('黄芪补气固表。')
-    expect(user).toContain('"cards"')
-    expect(user).toContain('禁止诊疗')
-  })
-  it('uses temperature 0.4 and JSON mode', () => {
-    const p = buildCardsPrompt({ text: 'x' })
-    expect(p.temperature).toBe(0.4)
-    expect(p.response_format).toEqual({ type: 'json_object' })
   })
 })

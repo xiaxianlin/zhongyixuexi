@@ -4,7 +4,7 @@
  * This is the renderer-side canonical copy of the wiki-link logic. It exists
  * here (not in electron/services/notes.ts) so the pure functions are unit-
  * testable without better-sqlite3 (which cannot load under vitest/node ABI
- * mismatch — same pattern as src/modules/learning/sm2.ts).
+ * mismatch.
  *
  * The service (electron/services/notes.ts) mirrors these implementations.
  * Keep them in sync.

@@ -157,54 +157,6 @@ ${input.query}
 }
 
 // ============================================================================
-// AI-06 记忆卡批量生成 (cards) — temperature 0.4, JSON mode
-// ============================================================================
-
-export interface CardsInput {
-  text: string
-}
-
-export interface CardDraftJson {
-  front: string
-  back: string
-  tag: string
-}
-export interface CardsJson {
-  cards: CardDraftJson[]
-}
-
-/** Build the chat messages for AI-06 card-draft generation. */
-export function buildCardsPrompt(input: CardsInput): {
-  messages: ChatMessage[]
-  temperature: number
-  response_format: { type: 'json_object' }
-} {
-  const task = `任务：从给定原文抽取要点，生成"问答型记忆卡"草稿，供学习者背诵复习。
-卡片应为原文知识点的忠实提炼，不得添加剂量/处方类信息。`
-  const user = `原文：
-"""
-${input.text}
-"""
-
-输出 JSON：
-{
-  "cards": [
-    {
-      "front": "问题/正面提示（如术语、原文上句）",
-      "back": "答案/释义（对应原文要点，白话）",
-      "tag": "术语|原文|功效|性味|其他"
-    }
-  ]
-}
-规则：每段生成 2-5 张卡；front 简洁；back 不超过 60 字；禁止诊疗/剂量。`
-  return {
-    messages: [system(task), { role: 'user', content: user }],
-    temperature: 0.4,
-    response_format: { type: 'json_object' },
-  }
-}
-
-// ============================================================================
 // AI-04 结构化标注 (annotation) — temperature 0.3, JSON mode (P2 stub)
 // ============================================================================
 

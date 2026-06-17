@@ -11,7 +11,6 @@
 import { invokeRaw, subscribe, type IpcError } from './ipc'
 import type {
   ModernResultDTO,
-  CardsBatchResultDTO,
   AiStatusDTO,
   AiProgressPayload,
   AiSubCode,
@@ -28,7 +27,7 @@ export function aiSubCodeFrom(e: unknown): AiSubCode {
 
 export type { IpcError }
 
-/** ai:* — status, modern interpretation, RAG Q&A, card generation, invalidate. */
+/** ai:* — status, modern interpretation, RAG Q&A, invalidate. */
 export const aiApi = {
   status: () => invokeRaw<AiStatusDTO>('ai:status'),
 
@@ -39,9 +38,6 @@ export const aiApi = {
     invokeRaw<{ done: number; total: number; errors: string[] }>('ai:generateModernBatch', {
       chapterId,
     }),
-
-  generateCards: (paragraphIds: string[]) =>
-    invokeRaw<CardsBatchResultDTO>('ai:generateCards', { paragraphIds }),
 
   invalidate: (scopeId: string, kind: 'modern' | 'qa' | 'cards' | 'annotation') =>
     invokeRaw<{ invalidated: number }>('ai:invalidate', { scopeId, kind }),

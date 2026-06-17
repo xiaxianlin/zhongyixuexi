@@ -8,21 +8,7 @@
  */
 
 import { IpcError, type SerializedError } from './ipc'
-import type {
-  Card,
-  CardInput,
-  CardDraft,
-  BatchResult,
-  ReviewInput,
-  ReviewResult,
-  DueQueueInput,
-  QuizGenInput,
-  QuizQuestion,
-  QuizAnswerInput,
-  QuizAnswerResult,
-  SessionSummary,
-  DashboardDTO,
-} from '@/modules/learning/types'
+import type { DashboardDTO } from '@/modules/learning/types'
 
 type IpcResult<T> = { __ok: true; data: T } | { __ok: false; error: SerializedError }
 
@@ -35,33 +21,8 @@ async function invokeRaw<T>(channel: string, ...args: unknown[]): Promise<T> {
   return result.data
 }
 
-/** learning:* — LRN module IPC wrappers. */
+/** learning:* — dashboard-only renderer API. */
 export const learningApi = {
-  // Card CRUD
-  createCard: (input: CardInput) => invokeRaw<Card>('learning:createCard', input),
-  createCardsBatch: (drafts: CardDraft[]) =>
-    invokeRaw<BatchResult>('learning:createCardsBatch', drafts),
-  getCard: (id: string) => invokeRaw<Card | null>('learning:getCard', id),
-  updateCard: (id: string, patch: Partial<CardInput>) =>
-    invokeRaw<Card>('learning:updateCard', { id, patch }),
-  deleteCard: (id: string) => invokeRaw<null>('learning:deleteCard', id),
-
-  // Review queue & grading
-  getDueQueue: (input: DueQueueInput) => invokeRaw<Card[]>('learning:getDueQueue', input),
-  reviewCard: (input: ReviewInput) => invokeRaw<ReviewResult>('learning:reviewCard', input),
-  undoReview: (cardId: string) => invokeRaw<Card>('learning:undoReview', cardId),
-
-  // Quiz
-  generateQuiz: (input: QuizGenInput) =>
-    invokeRaw<{ session_id: string; questions: QuizQuestion[] }>('learning:generateQuiz', input),
-  submitQuizAnswer: (input: QuizAnswerInput) =>
-    invokeRaw<QuizAnswerResult>('learning:submitQuizAnswer', input),
-  finishQuizSession: (sessionId: string) =>
-    invokeRaw<SessionSummary>('learning:finishQuizSession', { session_id: sessionId }),
-  turnErrorToCard: (quizResultId: string) =>
-    invokeRaw<Card>('learning:turnErrorToCard', { quiz_result_id: quizResultId }),
-
-  // Dashboard
   getDashboard: (rangeDays?: number) =>
     invokeRaw<DashboardDTO>('learning:getDashboard', { rangeDays }),
   getHeatmap: (year: number) =>

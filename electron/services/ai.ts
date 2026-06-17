@@ -8,9 +8,6 @@
  *  ask(query, opts) — AI-02: RAG Q&A. guard pre-check → FTS5 top-k → prompt →
  *     DeepSeek (temp 0.5) → parse trailing cites JSON → guard post-sanitize →
  *     cache. Returns answer + cites with paragraphId (jumpable).
- *  generateCards(paragraphIds) — AI-06: extract card drafts. DeepSeek (JSON
- *     mode, temp 0.4) per paragraph → createCards() into LRN cards table
- *     (source='ai_batch'). Returns batch result.
  *  invalidate(scopeId, kind) — manual regenerate entry point.
  *  status() — whether a key is configured (no plaintext).
  *
@@ -26,20 +23,17 @@ import { getDb } from '../db/connection'
 import { AppError } from '../lib/error'
 import { getActiveApiKey } from './settings'
 import { searchParagraphs, type SearchHit } from './search'
-import { createCards, type CardDraft } from './learning'
 import { deepseek } from '../ai/deepseek'
 import type { ProviderConfig } from '../ai/types'
 import {
   buildModernPrompt,
   buildQaPrompt,
-  buildCardsPrompt,
   buildParseChapterPrompt,
   buildParseBookPrompt,
   type ModernJson,
   type ModernSentence,
   type QaContext,
   type QaTrailingJson,
-  type CardsJson,
   type ParseChapterJson,
   type ParseBookJson,
 } from '../ai/prompts'
@@ -103,13 +97,6 @@ export interface QaAnswerDTO {
   tokens: number
   /** true when the post-guard scrubbed dosage expressions from the answer. */
   scrubbed: boolean
-}
-
-export interface CardsBatchResultDTO {
-  created: number
-  skipped: number
-  errors: string[]
-  ids: string[]
 }
 
 export interface AiStatusDTO {
@@ -632,107 +619,6 @@ export function splitAnswerAndCites(
     // fall through
   }
   return { answer: text.trim(), citesJson: null }
-}
-
-// ============================================================================
-// S5.6 — AI-06 card batch generation
-// ============================================================================
-
-/**
- * Generate card drafts from the given paragraphs and persist them via the LRN
- * module's createCards() (source='ai_batch'). Returns the batch result.
- *
- * One DeepSeek call per paragraph (each gets its own cache entry); results are
- * accumulated and written in a single createCards transaction.
- */
-export async function generateCards(paragraphIds: string[]): Promise<CardsBatchResultDTO> {
-  if (!paragraphIds || paragraphIds.length === 0) {
-    throw new AppError('VALIDATION', '请至少选择一个段落')
-  }
-  const cfg = loadConfig()
-  const db = getDb()
-
-  const drafts: CardDraft[] = []
-  for (const paragraphId of paragraphIds) {
-    const para = db
-      .prepare('SELECT id, text FROM paragraphs WHERE id = ? AND deleted_at IS NULL')
-      .get(paragraphId) as { id: string; text: string } | undefined
-    if (!para) throw new AppError('NOT_FOUND', `段落 ${paragraphId} 不存在`)
-    if (!para.text?.trim()) continue
-
-    const draftsForPara = await generateCardsForParagraph(para.id, para.text, cfg)
-    for (const d of draftsForPara) {
-      drafts.push({
-        front: d.front,
-        back: d.back,
-        type: tagToCardType(d.tag),
-        paragraphId: para.id,
-      })
-    }
-  }
-
-  if (drafts.length === 0) {
-    return { created: 0, skipped: 0, errors: ['模型未生成任何卡片'], ids: [] }
-  }
-  return createCards(drafts)
-}
-
-async function generateCardsForParagraph(
-  paragraphId: string,
-  text: string,
-  cfg: ProviderConfig,
-): Promise<{ front: string; back: string; tag: string }[]> {
-  const built = buildCardsPrompt({ text })
-  const promptHash = computePromptHash(built.messages, cfg.model, built.temperature)
-
-  const hit = findCache(paragraphId, 'cards', promptHash)
-  if (hit) {
-    const cached = parseJsonLoose<CardsJson>(hit.response)
-    return cached.cards ?? []
-  }
-
-  const resp = await deepseek.chat(
-    {
-      model: cfg.model,
-      messages: built.messages,
-      temperature: built.temperature,
-      response_format: built.response_format,
-      stream: false,
-    },
-    cfg,
-  )
-  const raw = resp.choices[0]?.message?.content ?? ''
-  let parsed: CardsJson
-  try {
-    parsed = parseJsonLoose<CardsJson>(raw)
-  } catch (e) {
-    throw aiError('AI_PARSE_ERROR', `卡片 JSON 解析失败：${(e as Error).message}`)
-  }
-  const cards = Array.isArray(parsed.cards) ? parsed.cards : []
-
-  writeCache({
-    scope: 'paragraph',
-    scopeId: paragraphId,
-    kind: 'cards',
-    paragraphId,
-    promptHash,
-    response: JSON.stringify({ cards }),
-    model: cfg.model,
-    promptTokens: resp.usage?.prompt_tokens ?? 0,
-    completionTokens: resp.usage?.completion_tokens ?? 0,
-    totalTokens: resp.usage?.total_tokens ?? 0,
-    meta: { count: cards.length },
-  })
-  return cards
-}
-
-/** Map the prompt's free-text tag to the LRN CardType union conservatively. */
-function tagToCardType(tag: string): CardDraft['type'] {
-  const t = (tag ?? '').trim()
-  if (t.includes('术语') || t.includes('性味')) return 'term_to_meaning'
-  if (t.includes('原文')) return 'original_to_interpret'
-  if (t.includes('功效')) return 'title_to_points'
-  return 'original_to_interpret'
 }
 
 // ============================================================================
