@@ -1,0 +1,132 @@
+/* SRH module styles (token vocabulary from styles/theme.css). */
+
+.search__back {
+  flex: 0 0 auto;
+}
+
+.search {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.search__bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.search__input {
+  flex: 1;
+  height: 34px;
+  box-sizing: border-box;
+  background: var(--surface);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
+  padding: 0 34px 0 14px;
+  font-size: 15px;
+  font-family: inherit;
+  box-shadow: var(--shadow-soft);
+}
+
+.search__input:focus {
+  outline: none;
+  border-color: var(--accent-soft);
+}
+
+.search__clear {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  color: var(--muted-fg);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.search__clear:hover {
+  color: var(--accent);
+}
+
+.search__status {
+  color: var(--muted-fg);
+  font-size: 13px;
+}
+
+.search__status--err {
+  color: var(--accent);
+}
+
+/* results */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.results__meta {
+  color: var(--muted-fg);
+  font-size: 12px;
+}
+
+.results__hint {
+  color: var(--accent);
+}
+
+.results__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.result {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 14px 16px;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+.result:hover {
+  border-color: var(--accent-soft);
+}
+
+.result__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted-fg);
+  margin-bottom: 6px;
+}
+
+.result__book {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.result__sep {
+  opacity: 0.6;
+}
+
+.result__snippet {
+  font-size: 14px;
+  line-height: 1.7;
+  word-break: break-word;
+}
+
+.result__mark {
+  background: var(--qianjiang);
+  color: var(--accent);
+  border-radius: 6px;
+  padding: 0 2px;
+}

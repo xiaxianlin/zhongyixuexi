@@ -41,9 +41,7 @@ body {
   align-items: center;
   gap: 14px;
   padding: 20px 44px;
-  border-bottom: 1px solid var(--border);
   background: rgba(255, 249, 238, 0.58);
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.5);
 }
 
 body.is-library-detail .app__header {
@@ -104,8 +102,8 @@ body[data-view='search'] .app__header {
 }
 
 .app__navBtn {
-  background: rgba(255, 249, 238, 0.46);
-  border: 1px solid transparent;
+  background: transparent;
+  border: 1px solid var(--border);
   color: var(--fg);
   padding: 8px 18px;
   border-radius: 999px;
@@ -113,10 +111,11 @@ body[data-view='search'] .app__header {
   font-size: var(--fs-small);
   font-family: var(--font-title);
   letter-spacing: 0.08em;
+  text-decoration: none;
 }
 
 .app__navBtn:hover {
-  border-color: var(--border);
+  border-color: var(--accent-soft);
   color: var(--accent);
 }
 
