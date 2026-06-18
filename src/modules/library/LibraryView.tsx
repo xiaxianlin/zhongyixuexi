@@ -384,20 +384,21 @@ function BookDetail({
             <p className="bookdetail__empty">本章暂无段落</p>
           ) : (
             <div className="bookdetail__paragraphList">
-              {paragraphs.map((paragraph) => (
-                <button
-                  key={paragraph.id}
-                  type="button"
-                  className={
-                    paragraph.id === selectedParagraphId
-                      ? 'bookdetail__paragraph is-active'
-                      : 'bookdetail__paragraph'
-                  }
-                  onClick={() => setSelectedParagraphId(paragraph.id)}
-                >
-                  <span className="bookdetail__paraText">{paragraph.text}</span>
-                </button>
-              ))}
+              <div className="bookdetail__paragraphScroll">
+                {paragraphs.map((paragraph) => (
+                  <div
+                    key={paragraph.id}
+                    className={
+                      paragraph.id === selectedParagraphId
+                        ? 'bookdetail__paragraph is-active'
+                        : 'bookdetail__paragraph'
+                    }
+                    onClick={() => setSelectedParagraphId(paragraph.id)}
+                  >
+                    <span className="bookdetail__paraText">{paragraph.text}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </section>

@@ -165,6 +165,8 @@ body[data-view='search'] .app__header {
 body.is-library-detail .app__main {
   overflow: hidden;
   padding: 24px;
+  display: flex;
+  flex-direction: column;
 }
 
 body[data-view='search'] .app__main {
