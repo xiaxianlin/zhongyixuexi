@@ -1,8 +1,16 @@
 # 笔记模块技术设计文档（06-notes）
 
-> 本文件遵循 `00-architecture.md` 附录 A 模板。需求依据见 `docs/PRD.md` §3.7（NOTE 模块）与 §5（数据模型）。
-
----
+> ⚠️ **状态：大幅收敛为"段绑定笔记 CRUD"（v3.0 收敛重构后）**
+>
+> 本文档描述的 Markdown 分屏编辑器/双链 `[[ ]]`/反向链接/标签/笔记本/笔记全文搜索/导出 MD/HTML/PDF **均未保留**。`note_links`/`tags`/`tag_refs`/`notebooks`/`fts_notes` 表已删除。`refactor(notes): keep paragraph note surface only`。
+>
+> **当前实际状态**（`electron/services/notes.ts` + `src/modules/library/LibraryView.tsx` 内的笔记抽屉/弹窗）：
+> - ✅ 保留：3 个 IPC —— `notes:create`（绑 book/chapter/paragraph + Markdown 文本）、`notes:delete`、`notes:getByParagraph`。
+> - ✅ `notes` 表字段：id/content/book_id/chapter_id/paragraph_id（SET NULL 降级）/created_at/updated_at/deleted_at。**无 title/notebook_id/word_count/pinned**。
+> - ✅ UI：详情页"添加笔记"弹窗 + 笔记抽屉（三列网格展示该段笔记），均在 `BookDetail` 内。
+> - ❌ 已删除：双链解析 `wikiLinks.ts`、`note_links`、backlinks、`tags`/`tag_refs`/`notebooks`、`fts_notes`、导出（`notes:export`/`exportParagraph`，含 printToPDF）、`src/modules/notes/` 仅剩 `types.ts`。
+>
+> **权威参考**：`docs/PRD.md` v3.0 §3.5、`docs/dev/00-architecture.md` §5。下文为原始愿景设计存档。
 
 ## 1. 概述
 

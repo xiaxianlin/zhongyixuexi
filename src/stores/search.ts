@@ -1,12 +1,11 @@
 /**
- * Search store. Session/UI cache only. Jump-to-paragraph is delegated to the
- * library detail page via the session store.
+ * Search store. Session/UI cache only. Navigation is handled by the component
+ * via react-router's useNavigate (store doesn't do routing).
  */
 
 import { create } from 'zustand'
 import { searchApi } from '@/lib/search-api'
-import { useSessionStore } from '@/stores/session'
-import type { SearchResult, SearchHit } from '@/lib/types'
+import type { SearchResult } from '@/lib/types'
 
 interface SearchState {
   query: string
@@ -16,9 +15,6 @@ interface SearchState {
 
   runSearch: (q: string) => Promise<void>
   clear: () => void
-
-  /** Jump to a search hit in the library detail page. */
-  openHit: (hit: SearchHit) => void
 }
 
 export const useSearchStore = create<SearchState>((set) => ({
@@ -43,8 +39,4 @@ export const useSearchStore = create<SearchState>((set) => ({
   },
 
   clear: () => set({ query: '', result: null, error: null }),
-
-  openHit: (hit) => {
-    useSessionStore.getState().openBookDetail(hit.bookId, hit.chapterId, hit.paragraphId)
-  },
 }))

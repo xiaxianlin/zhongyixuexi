@@ -1,8 +1,17 @@
 # 设置与数据 技术设计文档（08-settings-data）
 
-> 本文件遵循 `docs/dev/00-architecture.md` 附录 A 模板。需求依据 `docs/PRD.md` §3.9（SET）、§8（技术架构含更新策略）、§5（数据模型）。
-
----
+> ⚠️ **状态：仅"AI 凭证 provider CRUD + 外观"保留（v3.0 收敛重构后）**
+>
+> 本文档描述的数据备份导出/导入（`.tcmz`）、书籍文件管理（scanOrphans/cleanOrphans/triggerReparse）、免责声明门、版本化迁移 runner **均未保留**。
+>
+> **当前实际状态**（`electron/services/settings.ts` + `electron/lib/keystore.ts` + `src/modules/settings/`）：
+> - ✅ 保留：3 个 IPC —— `settings:listProviders`、`settings:saveProvider`、`settings:setActiveProvider`。返回安全 DTO（`hasKey` 布尔，**不含明文 Key**）。
+> - ✅ 凭证：`api_credentials` 表（provider/label/base_url/model/api_key_enc safeStorage 加密/key_iv_hint/is_active）。`electron/lib/keystore.ts`：safeStorage 优先 + 机器绑定 AES fallback；`getActiveApiKey()` 明文仅存在于主进程单次调用局部变量，不日志、不过 IPC。
+> - ✅ 外观：主题（paper/ink/dark）+ 字号，经 `ui` store + `data-theme` CSS token；设置页 `SettingsView` + `ProviderEditorModal`（未配置 Key 时 `App.tsx` 强制弹窗）。
+> - ❌ 已删除：`backup.ts`（`.tcmz` 导入导出）、`filemgmt/`（orphan cleaner）、`security/` 目录、免责声明门/页脚、版本化迁移 runner（现 schema 为 reset 式，`migrations/` 空）。
+> - 📌 `settings` 表仍存（KV），但当前主要用户设置经 Zustand `ui` store + 主题 CSS，凭证走 `api_credentials`。
+>
+> **权威参考**：`docs/PRD.md` v3.0 §3.7、`docs/dev/00-architecture.md` §5/§10。下文为原始愿景设计存档（safeStorage 加密 + 机器绑定 AES fallback 设计仍然准确，是当前实现的基础）。
 
 ## 1. 概述
 

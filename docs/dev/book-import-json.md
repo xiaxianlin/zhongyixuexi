@@ -197,4 +197,10 @@ interface NodeQuality {
 
 ## 当前样例产物
 
-`data/huangdi-neijing-original.json` 按本结构从 `books/黄帝内经.pdf` 解析生成。源 PDF 为文本层 PDF，但存在 OCR/校勘残片，且未检测到《素问》第七十二、七十三篇标题，因此全书 `quality.status` 标为 `suspect`。
+随包内置三本经典均按本结构组织，位于 `data/`：
+
+- `data/suwen-original.json`（《素问》，79 章 / 694 段，book.id = `huangdi-suwen`）
+- `data/lingshu-original.json`（《灵枢》，81 章，book.id = `huangdi-lingshu`）
+- `data/nanjing-original.json`（《难经》，81 章，book.id 随机 UUID）
+
+启动时由 `electron/services/builtin-content.ts` 的 `seedBuiltinContent()` 读取并事务写入 `books`/`chapters`/`paragraphs`，已存在则跳过（幂等）。各文件的 `quality.chapterCount` / `quality.paragraphCount` 用于落库前校验段落数一致性。

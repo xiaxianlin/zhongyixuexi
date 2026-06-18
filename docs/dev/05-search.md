@@ -1,5 +1,17 @@
 # 检索与知识图谱 技术设计文档（05-search）
 
+> ⚠️ **状态：仅 FTS5 全文检索保留（v3.0 收敛重构后）**
+>
+> 本文档描述的术语词典/结构化筛选/知识图谱/向量检索/全库高亮 overlay **均未保留**。`dictionary_terms`/`term_occurrences`/`entities`/`relations`/`vec_paragraphs` 表已删除。
+>
+> **当前实际状态**（`electron/services/search.ts` + `electron/ipc/search.ts` + `src/modules/search/`）：
+> - ✅ 保留：`search:fulltext`（FTS5 trigram + BM25 + snippet 高亮 + 短词降级 LIKE）；`src/modules/search/{SearchPanel,ResultList,snippet}`；Cmd/Ctrl+K 快速检索（在 `App.tsx`）。
+> - ✅ `fts_paragraphs` 同步触发器（ai/ad/au，软删/噪声过滤）仍在运行路径（`schema.ts`）。
+> - ❌ 已删除：`search:{filter,highlightAll,clearHighlight,termList,termGet,termUpsert,termDelete,termAiSuggest,kgSubgraph,kgSearch,semantic}` 等 IPC；`DictionaryView`/`KgGraph`/`HighlightOverlay`/`TermPopup` 组件；术语词典与知识图谱全部能力。
+> - 📌 命中跳转：经 session store 设 `activeBookId/activeChapterId/activeParagraphId`，由 `LibraryView.BookDetail` 接收定位。
+>
+> **权威参考**：`docs/PRD.md` v3.0 §3.4、`docs/dev/00-architecture.md` §5。下文为原始愿景设计存档（FTS5 trigram 与外部内容表设计仍然准确，是当前实现的基础）。
+
 ## 1. 概述
 
 ### 1.1 职责

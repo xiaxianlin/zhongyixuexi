@@ -1,8 +1,16 @@
 # 学习闭环模块 技术设计文档（04-Learning）
 
-> 本文件遵循 `00-architecture.md` 附录 A 模板。需求依据见 `docs/PRD.md` §3.5（LRN）及相关条目（AI-06、RD-09）。
-
----
+> ⚠️ **状态：记忆卡/SM-2/测验全部删除，重新定义为"阅读足迹仪表盘"（v3.0 收敛重构后）**
+>
+> 本文档描述的 SM-2 间隔重复/翻卡/每日复习计划/测验/错题转卡/掌握度等**均未保留**。`cards`/`review_log`/`quiz_questions`/`quiz_results` 表已全部删除。
+>
+> **当前实际状态**（`electron/services/learning.ts` + `src/modules/learning/Dashboard.tsx`）：
+> - service 文件头注释明确写明：*"The current product no longer has review cards or quizzes. Learning is the user's real reading/study footprint."*
+> - ✅ 现存：`learning:getDashboard` 一个 IPC，聚合阅读足迹：书/章/段总数、已 AI 解读段数与覆盖率、笔记数、活跃阅读书数、累计阅读秒数、年度热力图（基于 `reading_progress.updated_at`）、最近阅读书目。
+> - ❌ 已删除：`cards`/`review_log`/`quiz_*` 表、`lib/sm2.ts`、`FlashcardView`/`QuizView`/`DailyPlan`/`CardEditor`、`learning:{createCard,reviewCard,getDueQueue,generateQuiz,submitQuizAnswer,turnErrorToCard,...}` 全部 IPC。
+> - 📌 热力图数据源从 `review_log.reviewed_at` 改为 `reading_progress.updated_at`。
+>
+> **权威参考**：`docs/PRD.md` v3.0 §3.8、`docs/dev/00-architecture.md` §5。下文为原始愿景设计存档（SM-2 算法描述仍有参考价值，若未来恢复记忆卡可复用）。
 
 ## 1. 概述
 

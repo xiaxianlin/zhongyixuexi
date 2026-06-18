@@ -1,5 +1,16 @@
 # 导入与解析模块 技术设计文档（01-import-parse）
 
+> ⚠️ **状态：已移出应用运行路径（v3.0 收敛重构后）**
+>
+> 本文档描述的 EPUB 导入/段级校对/章级编辑/重新解析等**均不在当前应用运行路径内**。应用内容来源已改为**内置三本经典**（`data/{nanjing,suwen,lingshu}-original.json`），启动时由 `electron/services/builtin-content.ts` 的 `seedBuiltinContent()` 幂等写入。
+>
+> **当前实际状态**：
+> - 现存代码：`electron/services/{epub,paragraph,import,content-normalize}.ts`、`electron/db/fts.ts` —— 仅作为**离线内容生产工具链**，用于把来源文本加工成 `data/*.json`，不在应用运行时调用。
+> - 已删除：导入 UI（`src/modules/import/` 空目录）、段级校对编辑器、章级编辑、去重 UI、`import:*` / `library:deleteBook` / `library:updateMeta` 等 IPC channel。
+> - FTS5 同步触发器与 `rebuildFts` **仍在运行路径**（`electron/db/schema.ts` + `fts.ts`），归内置 seed 与段落写入使用。
+>
+> **权威参考**：`docs/PRD.md` v3.0、`docs/dev/00-architecture.md` §5、`docs/dev/PROGRESS.md`、`docs/dev/book-import-json.md`（JSON 中间格式定义）。下文为原始愿景设计存档。
+
 ## 1. 概述
 
 ### 1.1 职责

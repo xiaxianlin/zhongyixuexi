@@ -1,5 +1,17 @@
 # 书库管理 技术设计文档（02-library）
 
+> ⚠️ **状态：部分实现（v3.0 收敛重构后）**
+>
+> 本文档描述的是原始愿景（含元信息编辑 LIB-03、删除级联 LIB-04、封面管理等）。当前实现收敛为**内置经典的浏览与详情**。
+>
+> **当前实际状态**（`electron/services/library.ts` + `src/modules/library/LibraryView.tsx`）：
+> - ✅ 保留：`library:list`（书卡 + 章数/段数/进度聚合）、`library:tree`（章节树，内存 `buildChapterTree`）、书籍详情页 `BookDetail`（章/段/析三栏）。
+> - ❌ 已删除：LIB-03 元信息编辑（`updateMeta`/`replaceCover`）、LIB-04 删除级联 UI（`deleteBook`）；对应 IPC channel 与服务函数均已移除。内置经典不可删不可编辑。
+> - 📌 schema 字段：当前 `books.id`（非 `book_id`）；`chapters.id`/`paragraphs.id` 同。本文下方 DDL 中 `book_id`/`chapter_id`/`paragraph_id` 列名为历史命名，以 `00-architecture.md` §5 与 `schema.ts` 为准。
+> - 📌 进度聚合：`reading_progress` 现按 `book_id` 唯一（一书一行），字段含 `scroll_ratio`/`read_seconds`/`percent`；非本文描述的多段多行模型。
+>
+> **权威参考**：`docs/PRD.md` v3.0 §3.2、`docs/dev/00-architecture.md` §5。下文为原始愿景设计存档。
+
 ## 1. 概述
 
 ### 1.1 职责

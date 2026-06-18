@@ -1,4 +1,6 @@
+import { useNavigate } from 'react-router-dom'
 import { useSearchStore } from '@/stores/search'
+import { useSessionStore } from '@/stores/session'
 import { parseSnippet } from './snippet'
 import type { SearchHit } from '@/lib/types'
 
@@ -21,9 +23,16 @@ function Snippet({ html }: { html: string }) {
 }
 
 function ResultItem({ hit }: { hit: SearchHit }) {
-  const openHit = useSearchStore((s) => s.openHit)
+  const navigate = useNavigate()
+  const setActiveParagraph = useSessionStore((s) => s.setActiveParagraph)
   return (
-    <li className="result" onClick={() => openHit(hit)}>
+    <li
+      className="result"
+      onClick={() => {
+        setActiveParagraph(hit.paragraphId)
+        navigate(`/book/${hit.bookId}/chapter/${hit.chapterId}`)
+      }}
+    >
       <div className="result__head">
         <span className="result__book">{hit.bookTitle}</span>
         <span className="result__sep">›</span>

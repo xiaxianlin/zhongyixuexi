@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { libraryApi } from '@/lib/ipc'
 import { aiApi, aiSubCodeFrom } from '@/lib/ai-api'
 import { notesApi } from '@/lib/notes-api'
@@ -10,14 +11,11 @@ import type { ParagraphDTO } from '@/modules/reading/types'
 import './library.css'
 
 export function LibraryView() {
-  const activeBookId = useSessionStore((s) => s.activeBookId)
-  const activeChapterId = useSessionStore((s) => s.activeChapterId)
+  const { bookId, chapterId } = useParams<{ bookId?: string; chapterId?: string }>()
+  const navigate = useNavigate()
   const activeParagraphId = useSessionStore((s) => s.activeParagraphId)
-  const clearBookTarget = useSessionStore((s) => s.clearBookTarget)
   const [books, setBooks] = useState<BookListItem[]>([])
-  const [localDetailBookId, setLocalDetailBookId] = useState<string | null>(null)
-  const detailBookId = activeBookId ?? localDetailBookId
-  const selectedBook = books.find((b) => b.id === detailBookId) ?? null
+  const selectedBook = bookId ? (books.find((b) => b.id === bookId) ?? null) : null
 
   const refresh = useCallback(async () => {
     setBooks(await libraryApi.list())
@@ -46,12 +44,9 @@ export function LibraryView() {
       ) : selectedBook ? (
         <BookDetail
           book={selectedBook}
-          targetChapterId={selectedBook.id === activeBookId ? activeChapterId : null}
-          targetParagraphId={selectedBook.id === activeBookId ? activeParagraphId : null}
-          onBack={() => {
-            clearBookTarget()
-            setLocalDetailBookId(null)
-          }}
+          targetChapterId={chapterId ?? null}
+          targetParagraphId={activeParagraphId}
+          onBack={() => navigate('/')}
         />
       ) : (
         <div className="lib__grid">
@@ -59,10 +54,7 @@ export function LibraryView() {
             <div
               key={b.id}
               className="bookcard"
-              onClick={() => {
-                clearBookTarget()
-                setLocalDetailBookId(b.id)
-              }}
+              onClick={() => navigate(`/book/${b.id}`)}
             >
               <div className="bookcard__cover">{b.title.slice(0, 1)}</div>
               <div className="bookcard__body">

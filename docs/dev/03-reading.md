@@ -1,8 +1,15 @@
 # 阅读模块技术设计文档（03-reading）
 
-> 本文是中医经典本地学习软件**阅读模块（RD）**的技术设计，严格遵循 `docs/dev/00-architecture.md` 附录 A 模板。需求依据见 `docs/PRD.md` §3.4（RD 模块）、§3.2（段落解析）、§10（UI 规范）。
-
----
+> ⚠️ **状态：大幅收敛（v3.0 收敛重构后）**
+>
+> 本文档描述的三栏工作台/拖拽调宽/布局预设/繁简拼音/逐段锁定同步滚动/词条浮窗/沉浸模式/多 Tab 多窗/快捷键体系/书签等**绝大部分已不在当前实现内**。阅读能力已并入书库的**书籍详情页 `BookDetail`**。
+>
+> **当前实际状态**（`src/modules/library/LibraryView.tsx` 的 `BookDetail` + `electron/services/reading.ts`）：
+> - ✅ 保留：`reading:getChapter`（取章 + 段落列表 + 段落解读 `interpretation`）；段级阅读进度（`reading_progress`，按 book_id 唯一，含 chapter_id/paragraph_id/scroll_ratio/read_seconds/percent）。
+> - ❌ 已删除：独立 `ReadingWorkbench`、拖拽/折叠/布局预设、繁简/拼音、同步滚动 `useSyncScroll`、`TermPopover`、`BookmarkBar`、沉浸模式、多 Tab/多窗、`KeyboardLayer`、`reading:{getProgress,saveProgress,listBookmarks,addBookmark,updateBookmark,removeBookmark,getLayout,saveLayout,getInterpretation,lookupTerm,compareVersions,openTab,closeTab}` 等 IPC。
+> - 📌 `src/modules/reading/` 仅剩 `types.ts`；`bookmarks` 表已删。解读栏改为在详情页右侧"析"面板内，由 `ai:generateModern` 按需生成。
+>
+> **权威参考**：`docs/PRD.md` v3.0 §3.3、`docs/dev/00-architecture.md` §5。下文为原始愿景设计存档。
 
 ## 1. 概述
 
