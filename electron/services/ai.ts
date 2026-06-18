@@ -23,7 +23,6 @@ import type { ProviderConfig } from '../ai/types'
 import {
   buildModernPrompt,
   type ModernJson,
-  type ModernSentence,
 } from '../ai/prompts'
 import {
   computePromptHash,
@@ -55,7 +54,6 @@ export interface ModernResultDTO {
   fromCache: boolean
   analysisMeta: ParagraphAnalysisMeta | null
   interpretation: ParagraphInterpretationView
-  sentences: ModernSentence[]
   analysis: string
   summary: string
   model: string
@@ -147,33 +145,36 @@ function parseJsonLoose<T>(raw: string): T {
 }
 
 /**
- * Validate the modern-interpretation JSON. sentences must be a non-empty array
- * with the required string fields. We do NOT strictly enforce sentence-count
- * parity with the source (07-ai.md §6.2.2 allows ±1 tolerance) because model
- * sentence-splitting of classical text is inherently fuzzy.
+ * Validate the modern-interpretation JSON (version 2, whole-paragraph form).
+ * modern/explanation/analysis must be non-empty strings. We also strip stray
+ * leading prefixes the model may still emit despite the prompt (「白话：」 etc.)
+ * and collapse blank lines so the rendered text is clean prose.
  */
 function validateModernJson(obj: ModernJson): ModernJson {
   if (!obj || typeof obj !== 'object') {
     throw aiError('AI_PARSE_ERROR', '模型输出不是有效 JSON 对象')
   }
-  if (!Array.isArray(obj.sentences) || obj.sentences.length === 0) {
-    throw aiError('AI_PARSE_ERROR', '模型输出缺少 sentences 数组')
-  }
-  for (const s of obj.sentences) {
-    if (typeof s.original !== 'string' || typeof s.modern !== 'string' || typeof s.commentary !== 'string') {
-      throw aiError('AI_PARSE_ERROR', 'sentences 项缺少 original/modern/commentary 字段')
+  for (const key of ['modern', 'explanation', 'analysis'] as const) {
+    if (typeof obj[key] !== 'string' || !obj[key].trim()) {
+      throw aiError('AI_PARSE_ERROR', `模型输出缺少 ${key} 字段`)
     }
   }
   if (typeof obj.summary !== 'string') obj.summary = ''
-  if (typeof obj.analysis !== 'string') obj.analysis = obj.summary
+  obj.modern = cleanProse(obj.modern)
+  obj.explanation = cleanProse(obj.explanation)
+  obj.analysis = cleanProse(obj.analysis)
   obj.summary = compactAiText(obj.summary)
-  obj.analysis = compactAiText(obj.analysis)
-  obj.sentences = obj.sentences.map((sentence) => ({
-    original: stripLeadingNumber(compactAiText(sentence.original)),
-    modern: stripLeadingNumber(compactAiText(sentence.modern)),
-    commentary: stripLeadingNumber(compactAiText(sentence.commentary)),
-  }))
   return obj
+}
+
+/** Collapse blank lines + strip a leading prefix label like 「白话：」「医理：」「解读：」. */
+function cleanProse(text: string): string {
+  return compactAiText(stripLeadingLabel(text))
+}
+
+/** Remove a leading 「xxx：」/「xxx:」 label (e.g. 白话：, 医理：, 解读：, 此句：). */
+function stripLeadingLabel(text: string): string {
+  return text.replace(/^\s*(?:白话|医理|解读|此句|原文|译文|点拨|注释)[:：]\s*/u, '')
 }
 
 function compactAiText(text: string): string {
@@ -182,10 +183,6 @@ function compactAiText(text: string): string {
     .map((line) => line.trim())
     .filter(Boolean)
     .join('\n')
-}
-
-function stripLeadingNumber(text: string): string {
-  return text.replace(/^\s*(?:\d+[.、)]|[（(]\d+[）)]|[一二三四五六七八九十]+[、.])\s*/u, '')
 }
 
 // ============================================================================
@@ -233,7 +230,7 @@ function generateModernImpl(
         promptHash,
         cacheId: hit.id,
         source: 'cache',
-        meta: { fromCache: true, sentenceCount: parsed.sentences.length },
+        meta: { fromCache: true, chars: parsed.modern.length },
       })
       return ensureActiveParagraphAnalysis(analysisInput)
     })()
@@ -292,7 +289,7 @@ function generateModernImpl(
         promptTokens: lastResp.usage?.prompt_tokens ?? 0,
         completionTokens: lastResp.usage?.completion_tokens ?? 0,
         totalTokens: lastResp.usage?.total_tokens ?? 0,
-        meta: { summary: parsed.summary, sentenceCount: parsed.sentences.length },
+        meta: { summary: parsed.summary, chars: parsed.modern.length },
       })
       const analysisInput = buildParagraphAnalysisInput({
         paragraphId,
@@ -303,7 +300,7 @@ function generateModernImpl(
         cacheId,
         source: 'ai',
         meta: {
-          sentenceCount: parsed.sentences.length,
+          chars: parsed.modern.length,
           totalTokens: lastResp.usage?.total_tokens ?? 0,
         },
       })
@@ -336,11 +333,6 @@ function toModernDTO(
     fromCache,
     analysisMeta,
     interpretation,
-    sentences: parsed.sentences.map((s) => ({
-      original: s.original,
-      modern: s.modern,
-      commentary: s.commentary,
-    })),
     analysis: parsed.analysis || parsed.summary,
     summary: parsed.summary,
     model,
@@ -353,8 +345,8 @@ export function modernJsonToInterpretation(
   analysisMeta: ParagraphAnalysisMeta | null,
 ): ParagraphInterpretationView {
   return {
-    modern: parsed.sentences.map((s) => s.modern).join('\n'),
-    explanation: parsed.sentences.map((s, i) => `${i + 1}. ${s.commentary}`).join('\n'),
+    modern: parsed.modern,
+    explanation: parsed.explanation,
     analysis: parsed.analysis || parsed.summary,
     meta: analysisMeta,
   }

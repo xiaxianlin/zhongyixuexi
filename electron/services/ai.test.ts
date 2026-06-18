@@ -24,28 +24,18 @@ describe('modernJsonToInterpretation', () => {
     expect(
       modernJsonToInterpretation(
         {
-          version: 1,
-          sentences: [
-            {
-              original: '曰：',
-              modern: '问：',
-              commentary: '提示问答结构。',
-            },
-            {
-              original: '然：',
-              modern: '答：',
-              commentary: '提示回答开始。',
-            },
-          ],
-          analysis: '这一段用问答推进学习。',
+          version: 2,
+          modern: '黄帝问道：我听说上古时代的人，年龄都超过一百岁。',
+          explanation: '黄帝与岐伯的问答，是中医经典阐述医理的常用范式。',
+          analysis: '本段以黄帝发问开篇，引出上古之人长寿的话题。',
           summary: '问答结构',
         },
         meta,
       ),
     ).toEqual({
-      modern: '问：\n答：',
-      explanation: '1. 提示问答结构。\n2. 提示回答开始。',
-      analysis: '这一段用问答推进学习。',
+      modern: '黄帝问道：我听说上古时代的人，年龄都超过一百岁。',
+      explanation: '黄帝与岐伯的问答，是中医经典阐述医理的常用范式。',
+      analysis: '本段以黄帝发问开篇，引出上古之人长寿的话题。',
       meta,
     })
   })
@@ -53,14 +43,9 @@ describe('modernJsonToInterpretation', () => {
   it('falls back to summary when analysis is empty', () => {
     const view = modernJsonToInterpretation(
       {
-        version: 1,
-        sentences: [
-          {
-            original: '原文',
-            modern: '白话',
-            commentary: '医理',
-          },
-        ],
+        version: 2,
+        modern: '白话',
+        explanation: '医理',
         analysis: '',
         summary: '一句话概括',
       },

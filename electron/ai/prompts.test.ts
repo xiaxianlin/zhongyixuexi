@@ -38,7 +38,7 @@ describe('buildModernPrompt', () => {
     const { messages } = buildModernPrompt({ text: '人参，味甘微寒。' })
     const user = messages.find((m) => m.role === 'user')!.content
     expect(user).toContain('人参，味甘微寒。')
-    expect(user).toContain('"version": 1')
+    expect(user).toContain('"version": 2')
   })
   it('uses temperature 0.3 and JSON mode', () => {
     const p = buildModernPrompt({ text: 'x' })

@@ -4,18 +4,11 @@
  */
 import type { ParagraphAnalysisMeta, InterpretationViewDTO } from '@/models/library/types'
 
-export interface ModernSentence {
-  original: string
-  modern: string
-  commentary: string
-}
-
 export interface ModernResultDTO {
   paragraphId: string
   fromCache: boolean
   analysisMeta: ParagraphAnalysisMeta | null
   interpretation: InterpretationViewDTO
-  sentences: ModernSentence[]
   analysis: string
   summary: string
   model: string

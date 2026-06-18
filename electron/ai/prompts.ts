@@ -39,54 +39,55 @@ export interface ModernInput {
   text: string
 }
 
-export interface ModernSentence {
-  original: string
-  modern: string
-  commentary: string
-}
+/**
+ * Model output contract (version 2): whole-paragraph analysis, NOT
+ * sentence-by-sentence. Three independent prose fields — modern (白话),
+ * explanation (医理), analysis (解读) — each a single coherent paragraph.
+ */
 export interface ModernJson {
   version: number
-  sentences: ModernSentence[]
+  /** 整段白话译文：现代汉语，连贯成段，不逐句、不列表、不加「白话：」前缀。 */
+  modern: string
+  /** 整段医理点拨：讲解本段涉及的中医理论/经脉脏腑/术语，连贯成段，不逐条、不编号、不加「医理：」前缀。 */
+  explanation: string
+  /** 整段综合解读：讲清主旨、论述层次、关键术语、记忆线索，连贯成段，不加「解读：」前缀。 */
   analysis: string
+  /** 整段一句话概括（≤40字）。 */
   summary: string
 }
 
-/** Build the chat messages for AI-01 modern-language interpretation. */
+/** Build the chat messages for AI-01 whole-paragraph interpretation. */
 export function buildModernPrompt(input: ModernInput): {
   messages: ChatMessage[]
   temperature: number
   response_format: { type: 'json_object' }
 } {
   const task = `你是一位严谨、善讲解的中医经典导读老师，熟悉《难经》《黄帝内经》等经典文本，擅长把古文讲给初学者听。
-你的任务：把给定的中医古籍原文逐句翻译为简洁明了的白话，给出精确无误的医理点拨，并补充易读易懂、帮助学习的整段内容解读。
+你的任务：把给定的中医古籍原文作为一整段来理解，直接产出整段的现代白话译文、整段的医理点拨、整段的综合解读。
+注意是整段一体分析，不要逐句拆分、不要分条列点、不要输出「白话：」「医理：」「解读：」「此句」之类的前缀或提示词。
 仅基于原文含义翻译与解释，不得添加原文没有的诊断或用药主张。`
   const user = `原文：
 """
 ${input.text}
 """
 
-请严格输出如下 JSON（不要输出 JSON 以外的任何文字）：
+请严格输出如下 JSON（不要输出 JSON 以外的任何文字，字段值必须是纯净的正文内容，不要任何前缀标签）：
 {
-  "version": 1,
-  "sentences": [
-    {
-      "original": "原文单句（按句号/逗号切分，保持顺序）",
-      "modern": "白话：简洁明了，用现代汉语直接说清该句意思，不扩写",
-      "commentary": "医理：精确无误地解释该句涉及的中医理论、经脉脏腑关系或关键术语（1-2句，不得给出剂量/处方）"
-    }
-  ],
-  "analysis": "解读：用易读易懂的语言帮助学习者理解本段问答，讲清核心主旨、论述层次、关键术语抓手、容易混淆处和记忆线索（5-8句，不引用原文，不给诊疗建议）",
-  "summary": "整段一句话概括（≤40字）"
+  "version": 2,
+  "modern": "整段白话译文。用现代汉语把整段原文一次性连贯译出，行文自然通顺，像一段正常的白话文，不要逐句换行、不要分条、不要写「白话：」之类前缀",
+  "explanation": "整段医理点拨。连贯讲解本段涉及的中医理论、经脉脏腑关系、关键术语，像一段正常的说明文，不要分条编号、不要写「医理：」「此句」之类前缀",
+  "analysis": "整段综合解读。用易读易懂的语言讲清本段的核心主旨、论述层次、关键术语抓手、易混淆处和记忆线索，像一段正常的解读文，不要重复白话译文、不要分条、不要写「解读：」前缀",
+  "summary": "整段一句话概括（≤40字，不加前缀）"
 }
 
 规则：
-- sentences 数量与原文句数对应，顺序一致；
-- modern 为现代汉语白话，必须简洁明了，不照搬古文，不展开讲医理；
-- commentary 必须精确无误，仅解释医理与术语，禁止诊疗/剂量，不作模糊发挥；
-- commentary 只写说明正文，不要以"1."、"一、"、"（1）"等编号开头；
-- analysis 必须易读易懂，从整段层面帮助学习，讲清内容脉络、主旨、关键术语、辨析点和记忆方法，不要重复白话译文，内容要比 summary 充分；
-- modern、commentary、analysis 内部不要输出空行；
-- 若原文为残篇/存疑，commentary 标注"原文存疑"。`
+- 三个字段都是整段连贯的文字，不要逐句、不要分条、不要列表、不要编号；
+- 字段值只写正文内容本身，绝对不要出现「白话：」「医理：」「解读：」「此句」「原文」等任何前缀、标签或提示性字眼；
+- modern 为现代汉语白话，必须通顺自然，不照搬古文，不展开讲医理；
+- explanation 必须精确无误，仅解释医理与术语，禁止诊疗/剂量，不作模糊发挥；
+- analysis 必须易读易懂，从整段层面帮助学习，不要重复 modern 的白话译文，内容要比 summary 充分；
+- 三个字段内部不要输出空行；
+- 若原文为残篇/存疑，在 explanation 中自然提及即可。`
   return {
     messages: [system(task), { role: 'user', content: user }],
     temperature: 0.3,

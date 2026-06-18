@@ -19,8 +19,9 @@ import { DegradedNotice } from '@/components/global/DegradedNotice'
 
 // Search is not in the main nav — it's entered via the header ⌕ button /
 // quicksearch overlay (Cmd/Ctrl+K), matching the original interaction.
-// Learning is the default landing route (/, no tab); Library lives at /library.
+// Learning is the default landing route (/, labeled 首页); Library lives at /library.
 const NAV_LINKS = [
+  { to: '/', label: '首页', end: true },
   { to: '/library', label: '书库', end: false },
   { to: '/settings', label: '设置', end: false },
 ] as const
@@ -140,7 +141,14 @@ function Shell() {
         </Routes>
       </main>
 
-      <ProviderEditorModal mode="force" open={showForceSetup} provider={null} onSaved={onForceSaved} />
+      <ProviderEditorModal
+        mode="force"
+        open={showForceSetup}
+        provider={null}
+        fixedProviderId="conversation-ai"
+        fixedLabel="会话配置"
+        onSaved={onForceSaved}
+      />
 
       {quickSearchOpen && (
         <div className="quicksearch" role="dialog" aria-modal="true" aria-label="快速检索">

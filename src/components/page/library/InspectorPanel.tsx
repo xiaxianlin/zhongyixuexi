@@ -6,7 +6,7 @@
  * requestAnalysis.
  */
 import { useLibraryStore } from '@/models/library/store'
-import { compactAnalysisText, formatMedicalExplanation } from '@/models/library/helpers'
+import { compactAnalysisText } from '@/models/library/helpers'
 
 export function InspectorPanel() {
   const paragraphs = useLibraryStore((s) => s.paragraphs)
@@ -29,6 +29,12 @@ export function InspectorPanel() {
 
   return (
     <aside className="bookdetail__inspector" aria-label="段落操作">
+      {aiGenerating && (
+        <div className="bookdetail__analysisOverlay" aria-live="polite">
+          <span className="bookdetail__analysisSpinner" aria-hidden />
+          <span>分析中</span>
+        </div>
+      )}
       <div className="bookdetail__inspectHead">
         <div>
           <div className="bookdetail__railTitleRow">
@@ -47,35 +53,7 @@ export function InspectorPanel() {
         </button>
       </div>
 
-      <div className="bookdetail__inspectScroll">
-        {aiGenerating && (
-          <div className="bookdetail__analysisOverlay" aria-live="polite">
-            <span className="bookdetail__analysisSpinner" aria-hidden />
-            <span>分析中</span>
-          </div>
-        )}
-        <section className="bookdetail__panelBlock">
-          <div className="bookdetail__panelTitle">白话</div>
-          {selectedInterpretation?.modern ? (
-            <p className="bookdetail__modernText">
-              {compactAnalysisText(selectedInterpretation.modern)}
-            </p>
-          ) : (
-            <p className="bookdetail__muted">尚未生成</p>
-          )}
-        </section>
-
-        <section className="bookdetail__panelBlock">
-          <div className="bookdetail__panelTitle">医理</div>
-          {selectedInterpretation?.explanation ? (
-            <pre className="bookdetail__explainText">
-              {formatMedicalExplanation(compactAnalysisText(selectedInterpretation.explanation))}
-            </pre>
-          ) : (
-            <p className="bookdetail__muted">暂无点拨</p>
-          )}
-        </section>
-
+      <div className="bookdetail__inspectScroll" style={aiGenerating ? { overflow: 'hidden' } : undefined}>
         <section className="bookdetail__panelBlock">
           <div className="bookdetail__panelTitle">解读</div>
           {selectedInterpretation?.analysis ? (
@@ -84,6 +62,28 @@ export function InspectorPanel() {
             </p>
           ) : (
             <p className="bookdetail__muted">暂无解读</p>
+          )}
+        </section>
+
+        <section className="bookdetail__panelBlock">
+          <div className="bookdetail__panelTitle">医理</div>
+          {selectedInterpretation?.explanation ? (
+            <p className="bookdetail__modernText">
+              {compactAnalysisText(selectedInterpretation.explanation)}
+            </p>
+          ) : (
+            <p className="bookdetail__muted">暂无点拨</p>
+          )}
+        </section>
+
+        <section className="bookdetail__panelBlock">
+          <div className="bookdetail__panelTitle">白话</div>
+          {selectedInterpretation?.modern ? (
+            <p className="bookdetail__modernText">
+              {compactAnalysisText(selectedInterpretation.modern)}
+            </p>
+          ) : (
+            <p className="bookdetail__muted">尚未生成</p>
           )}
         </section>
       </div>
