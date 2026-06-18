@@ -36,7 +36,7 @@ export interface ProviderEditorModalProps {
 const DEEPSEEK_DEFAULTS = {
   provider: 'deepseek',
   baseUrl: 'https://api.deepseek.com/v1',
-  model: 'deepseek-chat',
+  model: 'deepseek-v4-flash',
 }
 
 export function ProviderEditorModal({
@@ -178,7 +178,7 @@ export function ProviderEditorModal({
         </label>
         <label className="field">
           <span>默认模型</span>
-          <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="deepseek-chat" />
+          <input value={model} onChange={(e) => setModel(e.target.value)} placeholder="deepseek-v4-flash" />
         </label>
         <label className="field">
           <span>

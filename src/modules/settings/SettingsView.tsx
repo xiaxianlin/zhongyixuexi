@@ -20,7 +20,7 @@ const AI_CONFIG_SLOTS: AiConfigSlot[] = [
     description: '用于 AI 解读、白话、医理等文本会话能力。',
     provider: 'deepseek',
     baseUrl: 'https://api.deepseek.com/v1',
-    model: 'deepseek-chat',
+    model: 'deepseek-v4-flash',
   },
   {
     id: 'image-generation-ai',

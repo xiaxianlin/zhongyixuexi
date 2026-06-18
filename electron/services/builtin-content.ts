@@ -6,7 +6,7 @@ import { getDb } from '../db'
 import { rebuildFts } from '../db/fts'
 import { normalize } from './content-normalize'
 
-const BUILTIN_FILES = ['nanjing-original.json', 'huangdi-neijing-original.json'] as const
+const BUILTIN_FILES = ['nanjing-original.json', 'suwen-original.json', 'lingshu-original.json'] as const
 
 interface BuiltinDataFile {
   book: {

@@ -79,14 +79,18 @@ export async function runIntegrationCheck(): Promise<void> {
   }
 
   const builtinBooks = listBooks()
-  assert(builtinBooks.length >= 2, `builtin books missing: ${builtinBooks.length}`)
+  assert(builtinBooks.length >= 3, `builtin books missing: ${builtinBooks.length}`)
   assert(
-    builtinBooks.some((book) => book.title === '黄帝八十一难经' && book.chapter_count === 81),
+    builtinBooks.some((book) => book.title === '难经' && book.chapter_count === 81),
     'builtin 难经 missing or invalid',
   )
   assert(
-    builtinBooks.some((book) => book.title === '黄帝内经' && book.chapter_count >= 160),
-    'builtin 黄帝内经 missing or invalid',
+    builtinBooks.some((book) => book.title === '素问' && book.chapter_count === 79),
+    'builtin 素问 missing or invalid',
+  )
+  assert(
+    builtinBooks.some((book) => book.title === '灵枢' && book.chapter_count === 81),
+    'builtin 灵枢 missing or invalid',
   )
   console.log('[integration] builtin ok:', builtinBooks.map((book) => book.title).join(', '))
 
@@ -134,8 +138,8 @@ export async function runIntegrationCheck(): Promise<void> {
 
     const dashboard = getDashboard()
     assert(dashboard.totalBooks >= 3, `dashboard totalBooks=${dashboard.totalBooks}`)
-    assert(dashboard.totalChapters >= 165, `dashboard totalChapters=${dashboard.totalChapters}`)
-    assert(dashboard.totalParagraphs >= 1203, `dashboard totalParagraphs=${dashboard.totalParagraphs}`)
+    assert(dashboard.totalChapters >= 240, `dashboard totalChapters=${dashboard.totalChapters}`)
+    assert(dashboard.totalParagraphs >= 1000, `dashboard totalParagraphs=${dashboard.totalParagraphs}`)
     console.log('[integration] dashboard ok:', {
       books: dashboard.totalBooks,
       chapters: dashboard.totalChapters,
