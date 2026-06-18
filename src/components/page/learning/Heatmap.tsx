@@ -23,7 +23,18 @@ export function Heatmap({ data }: HeatmapProps) {
 
   return (
     <div className="dashboard__section">
-      <h4>{year} 学习热力图</h4>
+      <div className="heatmap__head">
+        <h4>{year} 学习热力图</h4>
+        <div className="heatmap__legend">
+          <span>少</span>
+          <div className="heatmap__cell heatmap__cell--l0" />
+          <div className="heatmap__cell heatmap__cell--l1" />
+          <div className="heatmap__cell heatmap__cell--l2" />
+          <div className="heatmap__cell heatmap__cell--l3" />
+          <div className="heatmap__cell heatmap__cell--l4" />
+          <span>多</span>
+        </div>
+      </div>
       <div className="heatmap">
         {days.map((d) => (
           <div
@@ -32,15 +43,6 @@ export function Heatmap({ data }: HeatmapProps) {
             title={`${d.day}: ${d.count} 次学习`}
           />
         ))}
-      </div>
-      <div className="heatmap__legend">
-        <span>少</span>
-        <div className="heatmap__cell heatmap__cell--l0" />
-        <div className="heatmap__cell heatmap__cell--l1" />
-        <div className="heatmap__cell heatmap__cell--l2" />
-        <div className="heatmap__cell heatmap__cell--l3" />
-        <div className="heatmap__cell heatmap__cell--l4" />
-        <span>多</span>
       </div>
     </div>
   )

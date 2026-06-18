@@ -9,6 +9,7 @@ const CURRENT_SCHEMA = `
     author        TEXT,
     cover         TEXT,
     category      TEXT,
+    order_index   INTEGER NOT NULL DEFAULT 0,
     updated_at    INTEGER NOT NULL,
     deleted_at    INTEGER
   );
@@ -187,6 +188,16 @@ export function prepareDatabase(): number {
 
   db.transaction(() => {
     db.exec(CURRENT_SCHEMA)
+    // Forward-only migration: add books.order_index to existing DBs that predate
+    // the column (CREATE TABLE IF NOT EXISTS won't add it). Idempotent — no-op
+    // once the column exists. Existing rows are backfilled by rowid order.
+    const cols = db.prepare("PRAGMA table_info(books)").all() as { name: string }[]
+    if (!cols.some((c) => c.name === 'order_index')) {
+      db.exec('ALTER TABLE books ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0')
+      const rows = db.prepare('SELECT id FROM books ORDER BY rowid').all() as { id: string }[]
+      const stmt = db.prepare('UPDATE books SET order_index = ? WHERE id = ?')
+      rows.forEach((row, i) => stmt.run(i, row.id))
+    }
     db.pragma(`user_version = ${CURRENT_SCHEMA_VERSION}`)
   })()
 

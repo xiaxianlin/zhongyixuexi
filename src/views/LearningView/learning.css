@@ -54,18 +54,40 @@
 
 .dashboard__top {
   display: flex;
-  gap: 24px;
+  flex-direction: row;
+  gap: 32px;
   align-items: center;
-  padding: 22px;
+  padding: 36px 32px;
   border: 2px solid var(--border);
   border-radius: var(--card-radius);
-  background: var(--surface);
+  background:
+    radial-gradient(240px 90px at 50% 0%, rgba(189, 134, 88, 0.12), transparent 72%),
+    var(--surface);
   box-shadow: var(--shadow-soft);
 }
 
 .dashboard__ring-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  align-self: stretch;
+}
+
+.dashboard__ring-box {
   position: relative;
-  flex-shrink: 0;
+  flex: 1 1 auto;
+  width: 180px;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+}
+
+.dashboard__ring-wrap .dashboard__ring {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 10px rgba(140, 45, 37, 0.12));
 }
 
 .dashboard__ring-text {
@@ -80,8 +102,9 @@
 .dashboard__ring-pct {
   color: var(--accent);
   font-family: var(--font-title);
-  font-size: 26px;
+  font-size: 42px;
   font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .dashboard__ring-sub {
@@ -89,33 +112,68 @@
   font-size: 11px;
 }
 
+.dashboard__ring-cap {
+  flex: 0 0 auto;
+  margin: 0;
+  color: var(--muted-fg);
+  font-family: var(--font-title);
+  font-size: var(--fs-small);
+  letter-spacing: 0.22em;
+}
+
 .dashboard__stats {
   display: grid;
   flex: 1;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
 }
 
 .dashboard__stat-card {
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  gap: 8px;
   min-width: 0;
-  padding: 16px 18px;
+  padding: 24px 26px;
   border: 1px solid var(--border);
-  border-radius: var(--control-radius);
-  background: var(--surface-2);
+  border-radius: var(--card-radius);
+  background:
+    linear-gradient(180deg, rgba(189, 134, 88, 0.06), transparent 60%),
+    var(--surface-2);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.dashboard__stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 28px rgba(119, 82, 45, 0.1);
 }
 
 .dashboard__stat-value {
   color: var(--accent);
   font-family: var(--font-title);
-  font-size: 24px;
-  font-weight: 600;
+  font-size: 38px;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
 }
 
 .dashboard__stat-label {
-  color: var(--muted-fg);
-  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--zheshi);
+  font-family: var(--font-title);
+  font-size: var(--fs-small);
+  letter-spacing: 0.18em;
+}
+
+.dashboard__stat-label::before {
+  content: "";
+  width: 14px;
+  height: 1px;
+  background: var(--border-strong);
 }
 
 .dashboard__recent {
@@ -168,15 +226,46 @@
   font-size: 18px;
 }
 
+/* 统计区(进度环+卡片)与热力图左右并排 */
+.dashboard__row {
+  display: flex;
+  gap: 22px;
+  align-items: stretch;
+}
+
+.dashboard__row .dashboard__top {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.dashboard__row .dashboard__section {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard__row .dashboard__section h4 {
+  flex: 0 0 auto;
+}
+
+.dashboard__row .dashboard__section .heatmap {
+  flex: 1 1 auto;
+}
+
 .heatmap {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(12px, 1fr));
-  gap: 2px;
+  /* GitHub 风格：7 行 × 自适应列，方块随卡片宽度放大填满 */
+  grid-template-rows: repeat(7, minmax(0, 1fr));
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  gap: 3px;
 }
 
 .heatmap__cell {
-  width: 12px;
-  height: 12px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-height: 10px;
   border-radius: 2px;
 }
 
@@ -186,13 +275,33 @@
 .heatmap__cell--l3 { background: var(--dash-heat-3); }
 .heatmap__cell--l4 { background: var(--dash-heat-4); }
 
+.heatmap__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex: 0 0 auto;
+  margin-bottom: 14px;
+}
+
+.heatmap__head h4 {
+  margin: 0;
+}
+
 .heatmap__legend {
   display: flex;
   align-items: center;
   gap: 4px;
-  margin-top: 4px;
   color: var(--muted-fg);
   font-size: 11px;
+}
+
+/* 图例里的小方块用固定尺寸，不跟随网格的 100% 宽度 */
+.heatmap__legend .heatmap__cell {
+  width: 12px;
+  height: 12px;
+  min-height: 0;
+  aspect-ratio: auto;
 }
 
 .dashboard__error {
@@ -200,6 +309,10 @@
 }
 
 @media (max-width: 1100px) {
+  .dashboard__row {
+    flex-direction: column;
+  }
+
   .dashboard__top {
     align-items: stretch;
     flex-direction: column;

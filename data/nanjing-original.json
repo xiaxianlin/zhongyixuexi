@@ -1,10 +1,11 @@
 {
   "book": {
-    "id": "516737e1-25f1-5439-96d5-bc79f63a59ee",
+    "id": "nanjing",
     "title": "难经",
     "author": null,
     "category": "难经",
-    "language": "zh-Hans"
+    "language": "zh-Hans",
+    "cover": "nanjing.jpg"
   },
   "quality": {
     "chapterCount": 81,

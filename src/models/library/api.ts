@@ -25,10 +25,13 @@ import type {
   TitleResult,
 } from './types'
 
-/** library:* — book list (with progress aggregation) + chapter tree. */
+/** library:* — book list (with progress aggregation) + chapter tree + reorder + cover. */
 export const libraryApi = {
   list: () => invokeRaw<BookListItem[]>('library:list'),
   tree: (bookId: string) => invokeRaw<ChapterNode[]>('library:tree', bookId),
+  reorder: (bookIds: string[]) =>
+    invokeRaw<BookListItem[]>('library:reorder', { bookIds }),
+  uploadCover: (bookId: string) => invokeRaw<BookListItem[]>('books:uploadCover', { bookId }),
 }
 
 /** reading:* — chapter content for the library detail page. */

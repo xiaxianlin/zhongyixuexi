@@ -3,7 +3,8 @@
     "id": "huangdi-lingshu",
     "title": "灵枢",
     "author": null,
-    "category": "内经"
+    "category": "内经",
+    "cover": "huangdi-lingshu.jpg"
   },
   "quality": {
     "chapterCount": 81,

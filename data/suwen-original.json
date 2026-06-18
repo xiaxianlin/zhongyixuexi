@@ -3,7 +3,8 @@
     "id": "huangdi-suwen",
     "title": "素问",
     "author": null,
-    "category": "内经"
+    "category": "内经",
+    "cover": "huangdi-suwen.jpg"
   },
   "quality": {
     "chapterCount": 79,

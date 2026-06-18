@@ -1,4 +1,6 @@
 import { getDb } from '../db/connection'
+import { AppError } from '../lib/error'
+import { readCoverAsDataUrl } from './covers'
 
 /**
  * Library service (LIB module).
@@ -82,10 +84,28 @@ export function listBooks(): BookListItem[] {
        ) s ON s.book_id = b.id
        LEFT JOIN reading_progress rp ON rp.book_id = b.id
        WHERE b.deleted_at IS NULL
-       ORDER BY b.updated_at DESC, b.title ASC`,
+       ORDER BY b.order_index ASC, b.title ASC`,
     )
     .all() as BookListItem[]
-  return rows
+  // resolve cover stored filename → data URL (memoized in covers service)
+  return rows.map((row) => ({
+    ...row,
+    cover: readCoverAsDataUrl(row.cover),
+  }))
+}
+
+/** Reorder books: given an ordered list of book ids, write order_index = 0..n-1.
+ *  Idempotent + atomic. Returns the refreshed list. */
+export function reorderBooks(bookIds: string[]): BookListItem[] {
+  if (!Array.isArray(bookIds) || bookIds.length === 0) {
+    throw new AppError('VALIDATION', '书籍顺序不能为空')
+  }
+  const db = getDb()
+  db.transaction(() => {
+    const stmt = db.prepare('UPDATE books SET order_index = ? WHERE id = ?')
+    bookIds.forEach((id, index) => stmt.run(index, id))
+  })()
+  return listBooks()
 }
 
 // ---------- chapter tree ----------

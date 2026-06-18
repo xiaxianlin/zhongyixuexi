@@ -46,14 +46,18 @@ export function LearningView() {
         <p className="dashboard__heroMeta">阅读、分析、笔记的学习进度</p>
       </header>
 
-      <div className="dashboard__top">
-        <ProgressRing percent={analysisPct} />
-        <div className="dashboard__stats">
-          <StatCard label="书籍" value={String(data.totalBooks)} />
-          <StatCard label="章节" value={String(data.totalChapters)} />
-          <StatCard label="笔记" value={String(data.noteCount)} />
-          <StatCard label="阅读时长" value={formatDuration(data.totalReadSeconds)} />
+      <div className="dashboard__row">
+        <div className="dashboard__top">
+          <ProgressRing percent={analysisPct} caption="已解读段落" />
+          <div className="dashboard__stats">
+            <StatCard label="书籍" value={String(data.totalBooks)} />
+            <StatCard label="章节" value={String(data.totalChapters)} />
+            <StatCard label="笔记" value={String(data.noteCount)} />
+            <StatCard label="阅读时长" value={formatDuration(data.totalReadSeconds)} />
+          </div>
         </div>
+
+        <Heatmap data={data.heatmap} />
       </div>
 
       {data.recentBooks.length > 0 && (
@@ -70,7 +74,6 @@ export function LearningView() {
         </section>
       )}
 
-      <Heatmap data={data.heatmap} />
     </div>
   )
 }

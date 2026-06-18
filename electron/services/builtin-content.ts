@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { getDb } from '../db'
@@ -6,7 +6,13 @@ import { rebuildFts } from '../db/fts'
 import { normalize } from './content-normalize'
 import { sha256Hex16 } from './parse-hash'
 
-const BUILTIN_FILES = ['nanjing-original.json', 'suwen-original.json', 'lingshu-original.json'] as const
+const BUILTIN_FILES = [
+  'nanjing-original.json',
+  'suwen-original.json',
+  'lingshu-original.json',
+  'shanghanlun-original.json',
+  'jinkuiyaolue-original.json',
+] as const
 
 interface BuiltinDataFile {
   book: {
@@ -14,6 +20,9 @@ interface BuiltinDataFile {
     title: string
     author: string | null
     category: string | null
+    /** Stored cover filename, e.g. "nanjing.jpg". Copied from data/covers into
+     *  userData/covers on seed so covers.ts can read it back as a data URL. */
+    cover?: string | null
   }
   quality?: {
     chapterCount?: number
@@ -59,6 +68,24 @@ function dataPath(fileName: string): string {
   const filePath = candidates.find((candidate) => existsSync(candidate))
   if (!filePath) throw new Error(`未找到内置书籍数据：${candidates.join(', ')}`)
   return filePath
+}
+
+/**
+ * Copy a bundled cover (data/covers/<cover>) into userData/covers/ so the
+ * covers service can read it back as a data URL. Idempotent (overwrites).
+ * Silently skips if the source isn't bundled (e.g. user-uploaded only).
+ */
+function copyBuiltinCover(cover: string): void {
+  const srcCandidates = [
+    join(app.getAppPath(), 'data', 'covers', cover),
+    join(__dirname, '../../data/covers', cover),
+    join(process.cwd(), 'data', 'covers', cover),
+  ]
+  const src = srcCandidates.find((c) => existsSync(c))
+  if (!src) return // no bundled cover for this book; skip silently
+  const destDir = join(app.getPath('userData'), 'covers')
+  mkdirSync(destDir, { recursive: true })
+  copyFileSync(src, join(destDir, cover))
 }
 
 function loadBuiltinFile(fileName: string): BuiltinDataFile {
@@ -110,7 +137,7 @@ export function seedBuiltinContent(): SeedBuiltinResult {
   const insertBook = db.prepare(
     `INSERT INTO books
        (id, title, author, cover, category, updated_at, deleted_at)
-     VALUES (@id, @title, @author, NULL, @category, @updatedAt, NULL)`,
+     VALUES (@id, @title, @author, @cover, @category, @updatedAt, NULL)`,
   )
 
   const insertChapter = db.prepare(
@@ -144,11 +171,15 @@ export function seedBuiltinContent(): SeedBuiltinResult {
         id: bookId,
         title: data.book.title,
         author: data.book.author,
+        cover: data.book.cover ?? null,
         category: data.book.category,
         updatedAt: now,
       }
 
       insertBook.run(bookParams)
+      // copy the bundled cover (data/covers/<cover>) into userData/covers so
+      // covers.ts can read it back as a data URL. Idempotent (overwrite).
+      if (data.book.cover) copyBuiltinCover(data.book.cover)
 
       for (const chapter of data.chapters) {
         const chapterText = chapter.paragraphs.map((p) => normalize(p.text)).join('\n')
