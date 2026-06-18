@@ -273,6 +273,43 @@ body.is-library-detail .lib {
   line-height: var(--lh-tight);
 }
 
+.bookdetail__titleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* ✎ button next to the book title — visible on hover of the title row */
+.bookdetail__editBtn--title {
+  flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.bookdetail__titleRow:hover .bookdetail__editBtn--title,
+.bookdetail__editBtn--title:focus-visible {
+  opacity: 1;
+}
+
+.bookdetail__titleInput {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--reader-accent);
+  border-radius: 8px;
+  background: var(--reader-page-raised);
+  color: var(--reader-title);
+  font-family: var(--font-title);
+  font-size: var(--fs-title);
+  letter-spacing: 0.08em;
+  padding: 4px 10px;
+}
+
+.bookdetail__titleInput:focus {
+  outline: none;
+  border-color: var(--reader-accent-deep);
+}
+
 .bookdetail__headerActions {
   display: flex;
   align-items: center;
@@ -499,21 +536,19 @@ body.is-library-detail .lib {
 }
 
 .bookdetail__chapter {
+  position: relative;
   width: 100%;
   min-height: 42px;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
   align-items: center;
+  gap: 4px;
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
-  color: var(--fg);
-  cursor: pointer;
-  text-align: left;
   font-family: var(--font-sans);
   font-size: 15px;
   line-height: var(--lh-tight);
-  padding: 8px;
+  padding: 4px 6px;
 }
 
 .bookdetail__chapter:hover {
@@ -525,6 +560,79 @@ body.is-library-detail .lib {
   border-color: var(--reader-active-border);
   background: var(--reader-active);
   color: var(--reader-accent-deep);
+}
+
+/* clickable area (title + analyzed dot) */
+.bookdetail__chapterMain {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  padding: 4px 2px;
+}
+
+/* inline rename input */
+.bookdetail__chapterInput {
+  flex: 1 1 0;
+  min-width: 0;
+  border: 1px solid var(--reader-accent);
+  border-radius: 6px;
+  background: var(--reader-page-raised);
+  color: var(--fg);
+  font: inherit;
+  padding: 4px 8px;
+  margin: 2px;
+}
+
+.bookdetail__chapterInput:focus {
+  outline: none;
+  border-color: var(--reader-accent-deep);
+}
+
+/* ✎ edit button (revealed on hover) */
+.bookdetail__editBtn {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--reader-soft-ink);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.bookdetail__chapter:hover .bookdetail__editBtn,
+.bookdetail__editBtn:focus-visible {
+  opacity: 1;
+}
+
+.bookdetail__editBtn:hover {
+  background: rgba(189, 134, 88, 0.18);
+  color: var(--reader-accent-deep);
+}
+
+/* "已分析" indicator dot */
+.bookdetail__chapterDot {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--reader-accent-deep);
+  box-shadow: 0 0 0 2px rgba(189, 134, 88, 0.18);
 }
 
 .bookdetail__name {
@@ -562,6 +670,7 @@ body.is-library-detail .lib {
 }
 
 .bookdetail__paragraph {
+  position: relative;
   border: 1px solid var(--reader-line-soft);
   border-radius: 12px;
   background: var(--reader-page-raised);
@@ -587,6 +696,118 @@ body.is-library-detail .lib {
   font-family: var(--font-serif);
   font-size: 15px;
   line-height: 1.7;
+}
+
+/* paragraph ✎ edit button — pinned top-right, revealed on paragraph hover */
+.bookdetail__editBtn--para {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.bookdetail__paragraph:hover .bookdetail__editBtn--para,
+.bookdetail__editBtn--para:focus-visible {
+  opacity: 1;
+}
+
+/* paragraph inline editor (textarea + action row) */
+.bookdetail__paraEditor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.bookdetail__paraTextarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--reader-line);
+  border-radius: 10px;
+  background: var(--reader-page-raised);
+  color: var(--fg);
+  padding: 10px;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.7;
+  resize: vertical;
+  min-height: 120px;
+}
+
+.bookdetail__paraTextarea:focus {
+  outline: none;
+  border-color: var(--reader-accent);
+}
+
+.bookdetail__paraActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ensure the paragraph head lays out title vs actions row properly */
+.bookdetail__paraHead {
+  justify-content: space-between;
+}
+
+.bookdetail__paraHead .bookdetail__paraActions {
+  flex-wrap: nowrap;
+}
+
+/* textarea variant inside the edit modal */
+.bookdetail__paraTextarea--modal {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 240px;
+}
+
+/* merge preview block */
+.bookdetail__mergePreview {
+  margin: 8px 0 0;
+  padding: 12px;
+  max-height: 320px;
+  overflow: auto;
+  border: 1px solid var(--reader-line-soft);
+  border-radius: 10px;
+  background: var(--reader-page-raised);
+  color: var(--fg);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* manage-mode checkbox (pure CSS; the click is on the paragraph row) */
+/* manage-mode checkbox — pinned top-right (same spot as the ✎ button) */
+.bookdetail__checkbox {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--reader-line-strong);
+  border-radius: 4px;
+  background: var(--reader-page-raised);
+  cursor: pointer;
+}
+
+.bookdetail__checkbox.is-checked {
+  background: var(--reader-accent-deep);
+  border-color: var(--reader-accent-deep);
+}
+
+.bookdetail__checkbox.is-checked::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
 }
 
 .bookdetail__empty {

@@ -49,6 +49,7 @@ export function LibraryView() {
           book={selectedBook}
           targetChapterId={chapterId ?? null}
           onBack={() => navigate('/library')}
+          onBookUpdated={() => void refresh()}
         />
       ) : (
         <div className="lib__grid">

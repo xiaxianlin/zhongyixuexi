@@ -15,6 +15,14 @@ import type {
   ChapterContent,
   CreateNoteInput,
   ParagraphNoteCard,
+  ParagraphDTO,
+  EditBookTitleInput,
+  EditChapterTitleInput,
+  EditTextInput,
+  MergeParagraphsInput,
+  DeleteParagraphsInput,
+  SplitParagraphInput,
+  TitleResult,
 } from './types'
 
 /** library:* — book list (with progress aggregation) + chapter tree. */
@@ -35,4 +43,20 @@ export const notesApi = {
   delete: (id: string) => invokeRaw<{ ok: true }>('notes:delete', { id }),
   getByParagraph: (paragraphId: string) =>
     invokeRaw<ParagraphNoteCard[]>('notes:getByParagraph', { paragraph_id: paragraphId }),
+}
+
+/** editing:* — book/chapter/paragraph text edits + paragraph merge/split. */
+export const editingApi = {
+  editBookTitle: (input: EditBookTitleInput) =>
+    invokeRaw<TitleResult>('books:updateTitle', input),
+  editChapterTitle: (input: EditChapterTitleInput) =>
+    invokeRaw<TitleResult>('chapters:updateTitle', input),
+  editParagraphText: (input: EditTextInput) =>
+    invokeRaw<ParagraphDTO>('paragraphs:editText', input),
+  mergeParagraphs: (input: MergeParagraphsInput) =>
+    invokeRaw<ChapterContent>('paragraphs:merge', input),
+  deleteParagraphs: (input: DeleteParagraphsInput) =>
+    invokeRaw<ChapterContent>('paragraphs:delete', input),
+  splitParagraph: (input: SplitParagraphInput) =>
+    invokeRaw<ChapterContent>('paragraphs:split', input),
 }

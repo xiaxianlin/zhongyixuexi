@@ -6,7 +6,7 @@
  * Pure View: state and business logic live in useLibraryStore (Model);
  * sub-views are in components/page/library/.
  */
-import { useEffect } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSessionStore } from '@/models/shared/session'
 import { useLibraryStore } from '@/models/library/store'
 import type { BookListItem } from '@/models/shared/types'
@@ -15,17 +15,59 @@ import { ParagraphList } from '@/components/page/library/ParagraphList'
 import { InspectorPanel } from '@/components/page/library/InspectorPanel'
 import { NoteDrawer } from '@/components/page/library/NoteDrawer'
 import { NoteEditorModal } from '@/components/page/library/NoteEditorModal'
+import { ParagraphEditModal } from '@/components/page/library/ParagraphEditModal'
+import { MergePreviewModal } from '@/components/page/library/MergePreviewModal'
 import { ConfirmModal } from '@/components/interaction/ConfirmModal'
 
 interface BookDetailViewProps {
   book: BookListItem
   targetChapterId: string | null
   onBack: () => void
+  /** Called after a book title edit so the parent (LibraryView) can refresh its list. */
+  onBookUpdated?: () => void
 }
 
-export function BookDetailView({ book, targetChapterId, onBack }: BookDetailViewProps) {
+export function BookDetailView({ book, targetChapterId, onBack, onBookUpdated }: BookDetailViewProps) {
   const activeParagraphId = useSessionStore((s) => s.activeParagraphId)
   const targetParagraphId = activeParagraphId
+
+  const saveBookTitle = useLibraryStore((s) => s.saveBookTitle)
+  const [editingTitle, setEditingTitle] = useState(false)
+  const [titleDraft, setTitleDraft] = useState(book.title)
+  const titleInputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (editingTitle) {
+      titleInputRef.current?.focus()
+      titleInputRef.current?.select()
+    }
+  }, [editingTitle])
+
+  // keep the draft in sync if the book prop changes (e.g. after a parent refresh)
+  useEffect(() => {
+    if (!editingTitle) setTitleDraft(book.title)
+  }, [book.title, editingTitle])
+
+  const commitTitle = async () => {
+    const t = titleDraft.trim()
+    if (!t) {
+      setEditingTitle(false)
+      setTitleDraft(book.title)
+      return
+    }
+    if (t === book.title) {
+      setEditingTitle(false)
+      return
+    }
+    try {
+      await saveBookTitle(book.id, t)
+      onBookUpdated?.()
+    } catch {
+      setTitleDraft(book.title)
+    } finally {
+      setEditingTitle(false)
+    }
+  }
 
   const fetchTree = useLibraryStore((s) => s.fetchTree)
   const selectedChapterId = useLibraryStore((s) => s.selectedChapterId)
@@ -48,6 +90,12 @@ export function BookDetailView({ book, targetChapterId, onBack }: BookDetailView
   const setReanalyzeConfirmOpen = useLibraryStore((s) => s.setReanalyzeConfirmOpen)
   const aiGenerating = useLibraryStore((s) => s.aiGenerating)
   const runAnalysis = useLibraryStore((s) => s.runAnalysis)
+
+  // paragraph batch-delete confirm
+  const deleteConfirmOpen = useLibraryStore((s) => s.deleteConfirmOpen)
+  const setDeleteConfirmOpen = useLibraryStore((s) => s.setDeleteConfirmOpen)
+  const selectedParagraphIdsForDelete = useLibraryStore((s) => s.selectedParagraphIds)
+  const confirmDeleteSelected = useLibraryStore((s) => s.confirmDeleteSelected)
 
   const toastMessage = useLibraryStore((s) => s.toastMessage)
 
@@ -82,7 +130,38 @@ export function BookDetailView({ book, targetChapterId, onBack }: BookDetailView
           aria-label="返回书库"
         />
         <div className="bookdetail__titleBlock">
-          <h2 className="bookdetail__title">{book.title}</h2>
+          {editingTitle ? (
+            <input
+              ref={titleInputRef}
+              className="bookdetail__titleInput"
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  void commitTitle()
+                } else if (e.key === 'Escape') {
+                  e.preventDefault()
+                  setTitleDraft(book.title)
+                  setEditingTitle(false)
+                }
+              }}
+              onBlur={() => void commitTitle()}
+            />
+          ) : (
+            <div className="bookdetail__titleRow">
+              <h2 className="bookdetail__title">{book.title}</h2>
+              <button
+                type="button"
+                className="bookdetail__editBtn bookdetail__editBtn--title"
+                aria-label="编辑书名"
+                title="编辑书名"
+                onClick={() => setEditingTitle(true)}
+              >
+                ✎
+              </button>
+            </div>
+          )}
         </div>
         <div className="bookdetail__headerActions">
           <button
@@ -137,6 +216,19 @@ export function BookDetailView({ book, targetChapterId, onBack }: BookDetailView
           })
         }}
         onCancel={() => setReanalyzeConfirmOpen(false)}
+      />
+
+      <ParagraphEditModal />
+      <MergePreviewModal />
+
+      <ConfirmModal
+        open={deleteConfirmOpen}
+        title="确认删除段落"
+        message={`将删除 ${selectedParagraphIdsForDelete.length} 个段落，绑定笔记转为自由笔记。此操作不可撤销。`}
+        confirmLabel="删除"
+        busyLabel="删除中"
+        onConfirm={() => void confirmDeleteSelected()}
+        onCancel={() => setDeleteConfirmOpen(false)}
       />
 
       {toastMessage && (

@@ -1,10 +1,10 @@
-import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { app } from 'electron'
 import { getDb } from '../db'
 import { rebuildFts } from '../db/fts'
 import { normalize } from './content-normalize'
+import { sha256Hex16 } from './parse-hash'
 
 const BUILTIN_FILES = ['nanjing-original.json', 'suwen-original.json', 'lingshu-original.json'] as const
 
@@ -48,10 +48,6 @@ interface BuiltinParagraph {
 export interface SeedBuiltinResult {
   inserted: boolean
   bookIds: string[]
-}
-
-function sha256Hex16(text: string): string {
-  return createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 16)
 }
 
 function dataPath(fileName: string): string {

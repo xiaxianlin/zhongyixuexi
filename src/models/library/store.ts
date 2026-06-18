@@ -11,7 +11,7 @@
  * mirroring the original BookDetail effect dependency chain.
  */
 import { create } from 'zustand'
-import { libraryApi, readingApi, notesApi } from './api'
+import { libraryApi, readingApi, notesApi, editingApi } from './api'
 import { aiApi } from '@/models/ai/api'
 import { aiSubCodeFrom } from '@/models/ai/api'
 import type { ChapterNode } from '@/models/shared/types'
@@ -53,6 +53,20 @@ interface LibraryState {
   // toast
   toastMessage: string
 
+  // chapter title editing
+  editingChapterId: string | null
+  chapterDraft: string
+
+  // paragraph text editing (single-paragraph modal)
+  editingParagraphId: string | null
+  paragraphDraft: string
+
+  // paragraph batch-manage mode
+  manageMode: boolean
+  selectedParagraphIds: string[]
+  mergePreviewOpen: boolean
+  deleteConfirmOpen: boolean
+
   // ----- actions -----
   fetchTree: (bookId: string, targetChapterId: string | null) => Promise<void>
   selectChapter: (chapterId: string) => void
@@ -74,6 +88,28 @@ interface LibraryState {
   setReanalyzeConfirmOpen: (open: boolean) => void
   showToast: (message: string) => void
   clearToast: () => void
+  // chapter editing
+  startEditChapter: (chapterId: string, currentTitle: string) => void
+  cancelEditChapter: () => void
+  setChapterDraft: (title: string) => void
+  saveChapterTitle: () => Promise<void>
+  // paragraph single edit (modal)
+  startEditParagraph: (paragraphId: string, currentText: string) => void
+  cancelEditParagraph: () => void
+  setParagraphDraft: (text: string) => void
+  saveParagraphText: () => Promise<void>
+  splitParagraphAtOffset: (offset: number) => Promise<void>
+  // paragraph batch manage
+  enterManageMode: () => void
+  exitManageMode: () => void
+  toggleParagraphSelected: (paragraphId: string) => void
+  selectAllParagraphs: () => void
+  setMergePreviewOpen: (open: boolean) => void
+  setDeleteConfirmOpen: (open: boolean) => void
+  confirmMergeSelected: () => Promise<void>
+  confirmDeleteSelected: () => Promise<void>
+  // book title editing (returns result; LibraryView refreshes its local book list)
+  saveBookTitle: (bookId: string, title: string) => Promise<{ id: string; title: string }>
 }
 
 let toastTimer: number | null = null
@@ -110,6 +146,17 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   reanalyzeConfirmOpen: false,
 
   toastMessage: '',
+
+  editingChapterId: null,
+  chapterDraft: '',
+
+  editingParagraphId: null,
+  paragraphDraft: '',
+
+  manageMode: false,
+  selectedParagraphIds: [],
+  mergePreviewOpen: false,
+  deleteConfirmOpen: false,
 
   fetchTree: async (bookId, targetChapterId) => {
     set({ treeLoading: true, tree: [], toastMessage: '' })
@@ -291,4 +338,164 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
     set({ toastMessage: '' })
   },
+
+  // ----- chapter title editing -----
+  startEditChapter: (chapterId, currentTitle) =>
+    set({ editingChapterId: chapterId, chapterDraft: currentTitle }),
+
+  cancelEditChapter: () => set({ editingChapterId: null, chapterDraft: '' }),
+
+  setChapterDraft: (title) => set({ chapterDraft: title }),
+
+  saveChapterTitle: async () => {
+    const { editingChapterId, chapterDraft } = get()
+    if (!editingChapterId) return
+    const title = chapterDraft.trim()
+    if (!title) {
+      get().showToast('章节名不能为空')
+      return
+    }
+    try {
+      await editingApi.editChapterTitle({ id: editingChapterId, title })
+      set((state) => ({
+        tree: patchChapterTitle(state.tree, editingChapterId, title),
+        editingChapterId: null,
+        chapterDraft: '',
+      }))
+    } catch (e) {
+      get().showToast(`章节重命名失败：${(e as Error).message}`)
+    }
+  },
+
+  // ----- paragraph text editing -----
+  startEditParagraph: (paragraphId, currentText) =>
+    set({ editingParagraphId: paragraphId, paragraphDraft: currentText }),
+
+  cancelEditParagraph: () => set({ editingParagraphId: null, paragraphDraft: '' }),
+
+  setParagraphDraft: (text) => set({ paragraphDraft: text }),
+
+  saveParagraphText: async () => {
+    const { editingParagraphId, paragraphDraft } = get()
+    if (!editingParagraphId) return
+    const text = paragraphDraft.trim()
+    if (!text) {
+      get().showToast('段落内容不能为空')
+      return
+    }
+    try {
+      const updated = await editingApi.editParagraphText({ id: editingParagraphId, text })
+      set((state) => ({
+        paragraphs: state.paragraphs.map((p) =>
+          p.id === editingParagraphId ? updated : p,
+        ),
+        editingParagraphId: null,
+        paragraphDraft: '',
+      }))
+    } catch (e) {
+      get().showToast(`段落保存失败：${(e as Error).message}`)
+    }
+  },
+
+  splitParagraphAtOffset: async (offset) => {
+    const { editingParagraphId } = get()
+    if (!editingParagraphId) return
+    set({ editingParagraphId: null, paragraphDraft: '' })
+    try {
+      const content = await editingApi.splitParagraph({
+        paragraphId: editingParagraphId,
+        splitOffset: offset,
+      })
+      set({ paragraphs: content.paragraphs })
+    } catch (e) {
+      get().showToast(`拆分失败：${(e as Error).message}`)
+    }
+  },
+
+  // ----- paragraph batch manage mode -----
+  enterManageMode: () =>
+    set({ manageMode: true, selectedParagraphIds: [], mergePreviewOpen: false, deleteConfirmOpen: false }),
+
+  exitManageMode: () =>
+    set({ manageMode: false, selectedParagraphIds: [], mergePreviewOpen: false, deleteConfirmOpen: false }),
+
+  toggleParagraphSelected: (paragraphId) =>
+    set((state) => ({
+      selectedParagraphIds: state.selectedParagraphIds.includes(paragraphId)
+        ? state.selectedParagraphIds.filter((id) => id !== paragraphId)
+        : [...state.selectedParagraphIds, paragraphId],
+    })),
+
+  selectAllParagraphs: () =>
+    set((state) => ({ selectedParagraphIds: state.paragraphs.map((p) => p.id) })),
+
+  setMergePreviewOpen: (mergePreviewOpen) => set({ mergePreviewOpen }),
+
+  setDeleteConfirmOpen: (deleteConfirmOpen) => set({ deleteConfirmOpen }),
+
+  confirmMergeSelected: async () => {
+    const { selectedParagraphIds } = get()
+    if (selectedParagraphIds.length < 2) {
+      get().showToast('至少选择 2 个段落')
+      return
+    }
+    try {
+      const content = await editingApi.mergeParagraphs({ paragraphIds: [...selectedParagraphIds] })
+      set({
+        paragraphs: content.paragraphs,
+        manageMode: false,
+        selectedParagraphIds: [],
+        mergePreviewOpen: false,
+      })
+    } catch (e) {
+      get().showToast(`合并失败：${(e as Error).message}`)
+    }
+  },
+
+  confirmDeleteSelected: async () => {
+    const { selectedParagraphIds } = get()
+    if (selectedParagraphIds.length === 0) {
+      get().showToast('请选择要删除的段落')
+      return
+    }
+    try {
+      const content = await editingApi.deleteParagraphs({ paragraphIds: [...selectedParagraphIds] })
+      set({
+        paragraphs: content.paragraphs,
+        manageMode: false,
+        selectedParagraphIds: [],
+        deleteConfirmOpen: false,
+      })
+    } catch (e) {
+      get().showToast(`删除失败：${(e as Error).message}`)
+    }
+  },
+
+  // ----- book title editing -----
+  saveBookTitle: async (bookId, title) => {
+    const t = title.trim()
+    if (!t) {
+      get().showToast('书名不能为空')
+      throw new Error('书名不能为空')
+    }
+    try {
+      return await editingApi.editBookTitle({ id: bookId, title: t })
+    } catch (e) {
+      get().showToast(`书名保存失败：${(e as Error).message}`)
+      throw e
+    }
+  },
 }))
+
+/** Recursively patch a chapter's title in the tree (immutably). */
+function patchChapterTitle(
+  nodes: ChapterNode[],
+  chapterId: string,
+  title: string,
+): ChapterNode[] {
+  return nodes.map((n) =>
+    n.id === chapterId
+      ? { ...n, title }
+      : { ...n, children: patchChapterTitle(n.children, chapterId, title) },
+  )
+}

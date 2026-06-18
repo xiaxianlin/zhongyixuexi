@@ -23,5 +23,7 @@ export interface ChapterNode {
   title: string
   order_index: number
   level?: string | null
+  /** 1 if the chapter has ≥1 analyzed paragraph, else 0 (mirrors backend). */
+  analyzed?: number
   children: ChapterNode[]
 }

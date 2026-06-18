@@ -66,3 +66,38 @@ export interface ParagraphNoteCard {
   created_at: number
   updated_at: number
 }
+
+// ---------- editing (book/chapter/paragraph text + merge/split) ----------
+
+export interface EditBookTitleInput {
+  id: string
+  title: string
+}
+
+export interface EditChapterTitleInput {
+  id: string
+  title: string
+}
+
+export interface EditTextInput {
+  id: string
+  text: string
+}
+
+export interface MergeParagraphsInput {
+  paragraphIds: string[]
+}
+
+export interface DeleteParagraphsInput {
+  paragraphIds: string[]
+}
+
+export interface SplitParagraphInput {
+  paragraphId: string
+  splitOffset: number
+}
+
+export interface TitleResult {
+  id: string
+  title: string
+}

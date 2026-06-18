@@ -34,6 +34,8 @@ export interface ChapterNode {
   title: string
   order_index: number
   level?: string | null
+  /** 1 if the chapter has ≥1 analyzed (active paragraph_analyses) live paragraph, else 0. */
+  analyzed?: number
   children: ChapterNode[]
 }
 
@@ -44,6 +46,8 @@ export interface ChapterRow {
   order_index: number
   title: string
   level?: string | null
+  /** 0/1 from the EXISTS subquery in getChapterTree. */
+  analyzed?: number
 }
 
 // ---------- list / detail ----------
@@ -94,10 +98,19 @@ export function getChapterTree(bookId: string): ChapterNode[] {
   const db = getDb()
   const rows = db
     .prepare(
-      `SELECT id, parent_id, order_index, level, title
-       FROM chapters
-       WHERE book_id = ? AND deleted_at IS NULL
-       ORDER BY order_index`,
+      `SELECT c.id, c.parent_id, c.order_index, c.level, c.title,
+              EXISTS (
+                SELECT 1
+                FROM paragraph_analyses pa
+                JOIN paragraphs p ON p.id = pa.paragraph_id
+                WHERE p.chapter_id = c.id
+                  AND p.deleted_at IS NULL
+                  AND p.is_noise = 0
+                  AND pa.is_active = 1
+              ) AS analyzed
+       FROM chapters c
+       WHERE c.book_id = ? AND c.deleted_at IS NULL
+       ORDER BY c.order_index`,
     )
     .all(bookId) as ChapterRow[]
   return buildChapterTree(rows)
@@ -129,6 +142,7 @@ export function buildChapterTree(flatRows: ChapterRow[]): ChapterNode[] {
       title: r.title,
       order_index: r.order_index,
       level: r.level ?? null,
+      analyzed: r.analyzed ?? 0,
       children: [],
     })
   }
