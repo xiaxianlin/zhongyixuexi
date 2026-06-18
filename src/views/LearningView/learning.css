@@ -255,17 +255,18 @@
 
 .heatmap {
   display: grid;
-  /* GitHub 风格：7 行 × 自适应列，方块随卡片宽度放大填满 */
-  grid-template-rows: repeat(7, minmax(0, 1fr));
-  grid-auto-columns: minmax(0, 1fr);
+  /* GitHub 风格：7 行 × 按周列，方块固定放大尺寸，居中铺满卡片 */
+  grid-template-rows: repeat(7, 16px);
+  grid-auto-columns: 16px;
   grid-auto-flow: column;
+  justify-content: center;
+  align-content: center;
   gap: 3px;
 }
 
 .heatmap__cell {
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  min-height: 10px;
+  width: 16px;
+  height: 16px;
   border-radius: 2px;
 }
 
