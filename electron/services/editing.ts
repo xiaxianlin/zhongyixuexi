@@ -179,9 +179,10 @@ export function mergeParagraphs(paragraphIds: string[]): ChapterContent {
 
     // 1. soft-delete all originals
     db.prepare(`UPDATE paragraphs SET deleted_at = ? WHERE id IN (${placeholders})`).run(now, ...unique)
-    // 2. detach notes bound to the originals (soft-delete doesn't fire FK SET NULL)
+    // 2. detach live notes bound to the originals (soft-delete doesn't fire FK SET NULL)
     db.prepare(
-      `UPDATE notes SET paragraph_id = NULL, updated_at = ? WHERE paragraph_id IN (${placeholders})`,
+      `UPDATE notes SET paragraph_id = NULL, updated_at = ?
+       WHERE paragraph_id IN (${placeholders}) AND deleted_at IS NULL`,
     ).run(now, ...unique)
     // 3. insert the merged paragraph at the first original's order_index
     db.prepare(
@@ -222,9 +223,10 @@ export function deleteParagraphs(paragraphIds: string[]): ChapterContent {
       now,
       ...liveIds,
     )
-    // detach notes (soft-delete doesn't fire FK SET NULL)
+    // detach live notes (soft-delete doesn't fire FK SET NULL)
     db.prepare(
-      `UPDATE notes SET paragraph_id = NULL, updated_at = ? WHERE paragraph_id IN (${livePlaceholders})`,
+      `UPDATE notes SET paragraph_id = NULL, updated_at = ?
+       WHERE paragraph_id IN (${livePlaceholders}) AND deleted_at IS NULL`,
     ).run(now, ...liveIds)
     // paragraph_analyses left attached to soft-deleted paragraphs (preserved, per spec)
 
@@ -264,11 +266,10 @@ export function splitParagraph(paragraphId: string, splitOffset: number): Chapte
 
     // 1. soft-delete the original
     db.prepare('UPDATE paragraphs SET deleted_at = ? WHERE id = ?').run(now, para.id)
-    // 2. detach notes bound to the original (soft-delete doesn't fire FK SET NULL)
-    db.prepare('UPDATE notes SET paragraph_id = NULL, updated_at = ? WHERE paragraph_id = ?').run(
-      now,
-      para.id,
-    )
+    // 2. detach live notes bound to the original (soft-delete doesn't fire FK SET NULL)
+    db.prepare(
+      'UPDATE notes SET paragraph_id = NULL, updated_at = ? WHERE paragraph_id = ? AND deleted_at IS NULL',
+    ).run(now, para.id)
     // 3. insert the two halves (first keeps original order_index, second follows)
     db.prepare(
       `INSERT INTO paragraphs (id, chapter_id, order_index, text, edited, parse_hash, is_noise, quality_flag, created_at)
@@ -312,4 +313,163 @@ function refreshChapterContent(chapterId: string): ChapterContent {
   const chapter = getChapter(row.book_id, chapterId)
   if (!chapter) throw new AppError('NOT_FOUND', `章节 ${chapterId} 不存在`)
   return chapter
+}
+
+// ============================================================================
+// Create / delete — books, chapters, paragraphs
+// (mirrors the merge/split conventions: randomUUID ids, single transaction,
+//  soft-delete for deletion, notes detached on paragraph soft-delete so they
+//  survive as free notes, FTS auto-synced by the paragraphs_ai/ad triggers.)
+// ============================================================================
+
+/** Create a new (empty) book at the end of the library. Returns { id, title }. */
+export function createBook(title: string, author?: string): { id: string; title: string } {
+  const t = title.trim()
+  if (!t) throw new AppError('VALIDATION', '书名不能为空')
+  const db = getDb()
+  const now = Date.now()
+  const id = randomUUID()
+  db.transaction(() => {
+    const maxOrder = db
+      .prepare('SELECT COALESCE(MAX(order_index), -1) AS m FROM books WHERE deleted_at IS NULL')
+      .get() as { m: number }
+    db.prepare(
+      `INSERT INTO books (id, title, author, order_index, updated_at)
+       VALUES (?, ?, ?, ?, ?)`,
+    ).run(id, t, author?.trim() || null, maxOrder.m + 1, now)
+  })()
+  return { id, title: t }
+}
+
+/** Soft-delete a book and cascade the soft-delete to its chapters + paragraphs.
+ *  Notes bound to those paragraphs are detached (paragraph_id=NULL) so they
+ *  survive as free notes. reading_progress for this book is hard-deleted: its
+ *  FKs are ON DELETE CASCADE, but they only fire on a real DELETE, and we
+ *  soft-delete (UPDATE), so we must remove progress rows explicitly — otherwise
+ *  the dashboard's SUM(read_seconds) / recent-books / heatmap would count a
+ *  deleted book forever. */
+export function deleteBook(bookId: string): { ok: true } {
+  const db = getDb()
+  return db.transaction(() => {
+    const exists = db
+      .prepare('SELECT 1 FROM books WHERE id = ? AND deleted_at IS NULL')
+      .get(bookId)
+    if (!exists) throw new AppError('NOT_FOUND', `书籍 ${bookId} 不存在`)
+    const now = Date.now()
+    // chapter ids of this book (live ones)
+    const chapterRows = db
+      .prepare('SELECT id FROM chapters WHERE book_id = ? AND deleted_at IS NULL')
+      .all(bookId) as { id: string }[]
+    const chapterIds = chapterRows.map((r) => r.id)
+    const chPh = chapterIds.length ? chapterIds.map(() => '?').join(', ') : null
+
+    // detach live notes on this book's paragraphs (soft-delete won't fire FK SET NULL)
+    if (chPh) {
+      db.prepare(
+        `UPDATE notes SET paragraph_id = NULL, updated_at = ?
+         WHERE paragraph_id IN (SELECT id FROM paragraphs WHERE chapter_id IN (${chPh}))
+           AND deleted_at IS NULL`,
+      ).run(now, ...chapterIds)
+      // soft-delete the paragraphs
+      db.prepare(
+        `UPDATE paragraphs SET deleted_at = ? WHERE chapter_id IN (${chPh}) AND deleted_at IS NULL`,
+      ).run(now, ...chapterIds)
+      // soft-delete the chapters
+      db.prepare(`UPDATE chapters SET deleted_at = ? WHERE id IN (${chPh})`).run(
+        now,
+        ...chapterIds,
+      )
+    }
+    // hard-delete this book's reading_progress (FK CASCADE won't fire on soft-delete)
+    db.prepare('DELETE FROM reading_progress WHERE book_id = ?').run(bookId)
+    // soft-delete the book
+    db.prepare('UPDATE books SET deleted_at = ? WHERE id = ?').run(now, bookId)
+    return { ok: true as const }
+  })()
+}
+
+/** Create a new (empty) chapter at the end of the book. Returns its content
+ *  (chapter meta + empty paragraphs[]). */
+export function createChapter(bookId: string, title: string): ChapterContent {
+  const t = title.trim()
+  if (!t) throw new AppError('VALIDATION', '章节名不能为空')
+  const db = getDb()
+  const now = Date.now()
+  const id = randomUUID()
+  return db.transaction(() => {
+    const book = db
+      .prepare('SELECT 1 FROM books WHERE id = ? AND deleted_at IS NULL')
+      .get(bookId)
+    if (!book) throw new AppError('NOT_FOUND', `书籍 ${bookId} 不存在`)
+    const maxOrder = db
+      .prepare(
+        'SELECT COALESCE(MAX(order_index), -1) AS m FROM chapters WHERE book_id = ? AND deleted_at IS NULL',
+      )
+      .get(bookId) as { m: number }
+    db.prepare(
+      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, created_at)
+       VALUES (?, ?, NULL, ?, NULL, ?, ?)`,
+    ).run(id, bookId, maxOrder.m + 1, t, now)
+    const content = refreshChapterContent(id)
+    return content
+  })()
+}
+
+/** Soft-delete a chapter and its paragraphs; detach bound notes. Any
+ *  reading_progress whose chapter_id/paragraph_id pointed here is removed
+ *  (progress is one row per book; once this chapter is gone that "last read
+ *  position" is meaningless, so drop it rather than leave an orphan). */
+export function deleteChapter(chapterId: string): { ok: true } {
+  const db = getDb()
+  return db.transaction(() => {
+    const row = db
+      .prepare('SELECT book_id FROM chapters WHERE id = ? AND deleted_at IS NULL')
+      .get(chapterId) as { book_id: string } | undefined
+    if (!row) throw new AppError('NOT_FOUND', `章节 ${chapterId} 不存在`)
+    const now = Date.now()
+    // detach live notes on this chapter's paragraphs
+    db.prepare(
+      `UPDATE notes SET paragraph_id = NULL, updated_at = ?
+       WHERE paragraph_id IN (SELECT id FROM paragraphs WHERE chapter_id = ?)
+         AND deleted_at IS NULL`,
+    ).run(now, chapterId)
+    // soft-delete the paragraphs
+    db.prepare('UPDATE paragraphs SET deleted_at = ? WHERE chapter_id = ? AND deleted_at IS NULL').run(
+      now,
+      chapterId,
+    )
+    // remove progress rows referencing this chapter (FK CASCADE won't fire on soft-delete)
+    db.prepare('DELETE FROM reading_progress WHERE chapter_id = ?').run(chapterId)
+    // soft-delete the chapter
+    db.prepare('UPDATE chapters SET deleted_at = ? WHERE id = ?').run(now, chapterId)
+    return { ok: true as const }
+  })()
+}
+
+/** Create a new paragraph at the end of the chapter. Returns the refreshed
+ *  chapter content (so the caller can replace its paragraph list). */
+export function createParagraph(chapterId: string, text: string): ChapterContent {
+  const body = text.trim()
+  if (!body) throw new AppError('VALIDATION', '段落内容不能为空')
+  const db = getDb()
+  const now = Date.now()
+  const id = randomUUID()
+  const parseHash = sha256Hex16(normalize(body))
+  return db.transaction(() => {
+    const chapter = db
+      .prepare('SELECT 1 FROM chapters WHERE id = ? AND deleted_at IS NULL')
+      .get(chapterId)
+    if (!chapter) throw new AppError('NOT_FOUND', `章节 ${chapterId} 不存在`)
+    const maxOrder = db
+      .prepare(
+        'SELECT COALESCE(MAX(order_index), -1) AS m FROM paragraphs WHERE chapter_id = ? AND deleted_at IS NULL',
+      )
+      .get(chapterId) as { m: number }
+    db.prepare(
+      `INSERT INTO paragraphs (id, chapter_id, order_index, text, edited, parse_hash, is_noise, quality_flag, created_at)
+       VALUES (?, ?, ?, ?, 1, ?, 0, NULL, ?)`,
+    ).run(id, chapterId, maxOrder.m + 1, body, parseHash, now)
+    renumberChapter(chapterId)
+    return refreshChapterContent(chapterId)
+  })()
 }

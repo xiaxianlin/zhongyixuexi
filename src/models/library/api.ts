@@ -24,6 +24,10 @@ import type {
   SplitParagraphInput,
   TitleResult,
   SaveProgressInput,
+  CreateBookInput,
+  CreateChapterInput,
+  CreateParagraphInput,
+  DeleteInput,
 } from './types'
 
 /** library:* — book list (with progress aggregation) + chapter tree + reorder + cover. */
@@ -67,4 +71,12 @@ export const editingApi = {
     invokeRaw<ChapterContent>('paragraphs:delete', input),
   splitParagraph: (input: SplitParagraphInput) =>
     invokeRaw<ChapterContent>('paragraphs:split', input),
+  // create / delete — books, chapters, paragraphs
+  createBook: (input: CreateBookInput) => invokeRaw<TitleResult>('books:create', input),
+  deleteBook: (input: DeleteInput) => invokeRaw<{ ok: true }>('books:delete', input),
+  createChapter: (input: CreateChapterInput) =>
+    invokeRaw<ChapterContent>('chapters:create', input),
+  deleteChapter: (input: DeleteInput) => invokeRaw<{ ok: true }>('chapters:delete', input),
+  createParagraph: (input: CreateParagraphInput) =>
+    invokeRaw<ChapterContent>('paragraphs:create', input),
 }

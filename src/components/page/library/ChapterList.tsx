@@ -2,12 +2,13 @@
  * ChapterList — left column of BookDetailView (business component, page-level).
  * The flat chapter list (TOC). Reads tree state from the library store and
  * dispatches selectChapter. Each item shows an "已分析" dot when the chapter
- * has any analyzed paragraph, and a ✎ button to rename the chapter inline.
+ * has any analyzed paragraph, a ✎ button to rename, and a ✕ to delete. The
+ * header has a 「＋ 章」 button to create a new chapter at the end of the book.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLibraryStore } from '@/models/library/store'
 
-export function ChapterList() {
+export function ChapterList({ bookId }: { bookId: string }) {
   const tree = useLibraryStore((s) => s.tree)
   const treeLoading = useLibraryStore((s) => s.treeLoading)
   const selectedChapterId = useLibraryStore((s) => s.selectedChapterId)
@@ -20,12 +21,39 @@ export function ChapterList() {
   const setChapterDraft = useLibraryStore((s) => s.setChapterDraft)
   const saveChapterTitle = useLibraryStore((s) => s.saveChapterTitle)
 
+  const addChapter = useLibraryStore((s) => s.addChapter)
+  const deleteChapter = useLibraryStore((s) => s.deleteChapter)
+
+  // inline "new chapter" input
+  const [adding, setAdding] = useState(false)
+  const [newTitle, setNewTitle] = useState('')
+
+  const commitAdd = () => {
+    const t = newTitle.trim()
+    setAdding(false)
+    setNewTitle('')
+    if (t) void addChapter(bookId, t)
+  }
+
   return (
     <aside className="bookdetail__toc" aria-label="章">
-      <div className="bookdetail__railHead">章</div>
+      <div className="bookdetail__railHead">
+        <span>章</span>
+        {!treeLoading && (
+          <button
+            type="button"
+            className="bookdetail__addBtn"
+            title="新增章节"
+            aria-label="新增章节"
+            onClick={() => setAdding(true)}
+          >
+            ＋
+          </button>
+        )}
+      </div>
       {treeLoading ? (
         <p className="bookdetail__empty">加载目录…</p>
-      ) : tree.length === 0 ? (
+      ) : tree.length === 0 && !adding ? (
         <p className="bookdetail__empty">无章节</p>
       ) : (
         <div className="bookdetail__list">
@@ -75,11 +103,37 @@ export function ChapterList() {
                     >
                       ✎
                     </button>
+                    <button
+                      type="button"
+                      className="bookdetail__delBtn"
+                      aria-label="删除章节"
+                      title="删除章节"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        if (window.confirm(`确定删除章节《${chapter.title}》？其段落将一并删除（笔记会保留为自由笔记）。`)) {
+                          void deleteChapter(bookId, chapter.id)
+                        }
+                      }}
+                    >
+                      ✕
+                    </button>
                   </>
                 )}
               </div>
             )
           })}
+          {adding && (
+            <ChapterTitleInput
+              value={newTitle}
+              onChange={setNewTitle}
+              onCommit={commitAdd}
+              onCancel={() => {
+                setAdding(false)
+                setNewTitle('')
+              }}
+              placeholder="新章节名"
+            />
+          )}
         </div>
       )}
     </aside>
@@ -92,11 +146,13 @@ function ChapterTitleInput({
   onChange,
   onCommit,
   onCancel,
+  placeholder,
 }: {
   value: string
   onChange: (v: string) => void
   onCommit: () => void
   onCancel: () => void
+  placeholder?: string
 }) {
   const ref = useRef<HTMLInputElement | null>(null)
   useEffect(() => {
@@ -108,6 +164,7 @@ function ChapterTitleInput({
       ref={ref}
       className="bookdetail__chapterInput"
       value={value}
+      placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
       onKeyDown={(e) => {
         if (e.key === 'Enter') {

@@ -110,6 +110,14 @@ interface LibraryState {
   confirmDeleteSelected: () => Promise<void>
   // book title editing (returns result; LibraryView refreshes its local book list)
   saveBookTitle: (bookId: string, title: string) => Promise<{ id: string; title: string }>
+  // create / delete — books (LibraryView refreshes its own book list)
+  addBook: (title: string, author?: string) => Promise<{ id: string; title: string } | null>
+  deleteBook: (bookId: string) => Promise<boolean>
+  // create / delete — chapters (refreshes tree + reselects)
+  addChapter: (bookId: string, title: string) => Promise<void>
+  deleteChapter: (bookId: string, chapterId: string) => Promise<void>
+  // create — paragraphs (updates current paragraph list + selects the new one)
+  addParagraph: (chapterId: string, text: string) => Promise<void>
 }
 
 let toastTimer: number | null = null
@@ -483,6 +491,83 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     } catch (e) {
       get().showToast(`书名保存失败：${(e as Error).message}`)
       throw e
+    }
+  },
+
+  // ----- create / delete — books -----
+  addBook: async (title, author) => {
+    const t = title.trim()
+    if (!t) {
+      get().showToast('书名不能为空')
+      return null
+    }
+    try {
+      const created = await editingApi.createBook({ title: t, author })
+      get().showToast(`已创建《${created.title}》`)
+      return created
+    } catch (e) {
+      get().showToast(`创建书籍失败：${(e as Error).message}`)
+      return null
+    }
+  },
+
+  deleteBook: async (bookId) => {
+    try {
+      await editingApi.deleteBook({ id: bookId })
+      get().showToast('已删除')
+      return true
+    } catch (e) {
+      get().showToast(`删除书籍失败：${(e as Error).message}`)
+      return false
+    }
+  },
+
+  // ----- create / delete — chapters -----
+  addChapter: async (bookId, title) => {
+    const t = title.trim()
+    if (!t) {
+      get().showToast('章节名不能为空')
+      return
+    }
+    try {
+      await editingApi.createChapter({ bookId, title: t })
+      // refresh the tree so the new chapter appears, then select it
+      const nextTree = await libraryApi.tree(bookId)
+      const flat = flattenChapters(nextTree)
+      const last = flat[flat.length - 1] ?? null
+      set({ tree: nextTree, selectedChapterId: last?.id ?? null })
+      get().showToast('已新增章节')
+    } catch (e) {
+      get().showToast(`新增章节失败：${(e as Error).message}`)
+    }
+  },
+
+  deleteChapter: async (bookId, chapterId) => {
+    try {
+      await editingApi.deleteChapter({ id: chapterId })
+      const nextTree = await libraryApi.tree(bookId)
+      const first = nextTree[0] ?? null
+      set({ tree: nextTree, selectedChapterId: first?.id ?? null, paragraphs: [] })
+      get().showToast('已删除章节')
+    } catch (e) {
+      get().showToast(`删除章节失败：${(e as Error).message}`)
+    }
+  },
+
+  // ----- create — paragraphs -----
+  addParagraph: async (chapterId, text) => {
+    const body = text.trim()
+    if (!body) {
+      get().showToast('段落内容不能为空')
+      return
+    }
+    try {
+      const content = await editingApi.createParagraph({ chapterId, text: body })
+      const last = content.paragraphs[content.paragraphs.length - 1] ?? null
+      set({ paragraphs: content.paragraphs, selectedParagraphId: last?.id ?? null })
+      get().showToast('已新增段落')
+    } catch (e) {
+      get().showToast(`新增段落失败：${(e as Error).message}`)
     }
   },
 }))

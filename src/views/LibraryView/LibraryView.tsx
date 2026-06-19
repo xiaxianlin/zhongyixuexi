@@ -25,6 +25,7 @@ import {
 } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { libraryApi } from '@/models/library/api'
+import { useLibraryStore } from '@/models/library/store'
 import type { BookListItem } from '@/models/shared/types'
 import { BookDetailView } from './BookDetailView'
 import './library.css'
@@ -81,6 +82,25 @@ export function LibraryView() {
     [],
   )
 
+  const addBook = useLibraryStore((s) => s.addBook)
+  const deleteBook = useLibraryStore((s) => s.deleteBook)
+
+  const handleAddBook = useCallback(async () => {
+    const title = window.prompt('新书书名')
+    if (!title) return
+    const created = await addBook(title.trim())
+    if (created) await refresh()
+  }, [addBook, refresh])
+
+  const handleDeleteBook = useCallback(
+    async (bookId: string, title: string) => {
+      if (!window.confirm(`确定删除《${title}》？其章节、段落将一并删除（笔记会保留为自由笔记）。`)) return
+      const ok = await deleteBook(bookId)
+      if (ok) await refresh()
+    },
+    [deleteBook, refresh],
+  )
+
   return (
     <div className="lib">
       {books.length === 0 ? (
@@ -107,8 +127,20 @@ export function LibraryView() {
                   book={b}
                   onOpen={() => navigate(`/book/${b.id}`)}
                   onUploadCover={() => void uploadCover(b.id)}
+                  onDelete={() => void handleDeleteBook(b.id, b.title)}
                 />
               ))}
+              <button
+                type="button"
+                className="bookcard bookcard--new"
+                onClick={() => void handleAddBook()}
+                title="新建书籍"
+              >
+                <span className="bookcard__plus" aria-hidden>
+                  ＋
+                </span>
+                <span className="bookcard__newLabel">新建书籍</span>
+              </button>
             </div>
           </SortableContext>
         </DndContext>
@@ -124,10 +156,12 @@ function BookCard({
   book,
   onOpen,
   onUploadCover,
+  onDelete,
 }: {
   book: BookListItem
   onOpen: () => void
   onUploadCover: () => void
+  onDelete: () => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: book.id,
@@ -157,6 +191,18 @@ function BookCard({
         }}
       >
         {book.cover ? '换' : '＋'}
+      </button>
+      <button
+        type="button"
+        className="bookcard__delBtn"
+        title="删除书籍"
+        aria-label="删除书籍"
+        onClick={(e) => {
+          e.stopPropagation()
+          onDelete()
+        }}
+      >
+        ✕
       </button>
       {book.cover && <div className="bookcard__titleOverlay">{book.title}</div>}
     </div>

@@ -6,16 +6,19 @@
  *
  * Two interaction modes:
  *  - Normal: each paragraph has a ✎ button (opens ParagraphEditModal) + is
- *    clickable to select. The header has a 「管理」 button to enter manage mode.
+ *    clickable to select. The header has a 「＋ 段」 button to add a paragraph
+ *    and a 「管理」 button to enter manage mode.
  *  - Manage: each paragraph shows a checkbox; the header actions become
  *    合并 / 删除 / 取消. Merge opens a preview modal; delete opens a confirm modal.
  */
+import { useState } from 'react'
 import { useLibraryStore } from '@/models/library/store'
 
-export function ParagraphList() {
+export function ParagraphList({ bookId: _bookId }: { bookId: string }) {
   const paragraphs = useLibraryStore((s) => s.paragraphs)
   const contentLoading = useLibraryStore((s) => s.contentLoading)
   const selectedParagraphId = useLibraryStore((s) => s.selectedParagraphId)
+  const selectedChapterId = useLibraryStore((s) => s.selectedChapterId)
   const selectParagraph = useLibraryStore((s) => s.selectParagraph)
 
   const manageMode = useLibraryStore((s) => s.manageMode)
@@ -28,6 +31,18 @@ export function ParagraphList() {
   const setDeleteConfirmOpen = useLibraryStore((s) => s.setDeleteConfirmOpen)
 
   const startEditParagraph = useLibraryStore((s) => s.startEditParagraph)
+  const addParagraph = useLibraryStore((s) => s.addParagraph)
+
+  // inline "new paragraph" textarea
+  const [adding, setAdding] = useState(false)
+  const [newText, setNewText] = useState('')
+
+  const commitAdd = () => {
+    const body = newText.trim()
+    setAdding(false)
+    setNewText('')
+    if (body && selectedChapterId) void addParagraph(selectedChapterId, body)
+  }
 
   const hasSelection = selectedParagraphIds.length > 0
   const canMerge = selectedParagraphIds.length >= 2
@@ -72,17 +87,65 @@ export function ParagraphList() {
               </button>
             </>
           ) : (
-            <button
-              type="button"
-              className="bookdetail__btn"
-              onClick={enterManageMode}
-              disabled={paragraphs.length === 0}
-            >
-              管理
-            </button>
+            <>
+              <button
+                type="button"
+                className="bookdetail__btn"
+                onClick={() => setAdding(true)}
+                disabled={!selectedChapterId}
+                title={selectedChapterId ? '在本章末尾新增段落' : '请先选择章节'}
+              >
+                ＋ 段
+              </button>
+              <button
+                type="button"
+                className="bookdetail__btn"
+                onClick={enterManageMode}
+                disabled={paragraphs.length === 0}
+              >
+                管理
+              </button>
+            </>
           )}
         </div>
       </div>
+
+      {adding && selectedChapterId && (
+        <div className="bookdetail__paraAdd">
+          <textarea
+            className="bookdetail__paraAddText"
+            placeholder="输入段落内容…"
+            value={newText}
+            autoFocus
+            onChange={(e) => setNewText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                commitAdd()
+              } else if (e.key === 'Escape') {
+                e.preventDefault()
+                setAdding(false)
+                setNewText('')
+              }
+            }}
+          />
+          <div className="bookdetail__paraAddActions">
+            <button type="button" className="bookdetail__btn" onClick={commitAdd}>
+              保存
+            </button>
+            <button
+              type="button"
+              className="bookdetail__btn"
+              onClick={() => {
+                setAdding(false)
+                setNewText('')
+              }}
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
 
       {contentLoading ? (
         <p className="bookdetail__empty">加载段落…</p>

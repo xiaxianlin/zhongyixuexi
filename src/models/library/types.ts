@@ -102,6 +102,27 @@ export interface TitleResult {
   title: string
 }
 
+// ---------- create / delete ----------
+
+export interface CreateBookInput {
+  title: string
+  author?: string
+}
+
+export interface CreateChapterInput {
+  bookId: string
+  title: string
+}
+
+export interface CreateParagraphInput {
+  chapterId: string
+  text: string
+}
+
+export interface DeleteInput {
+  id: string
+}
+
 // ---------- reading progress ----------
 
 /**

@@ -200,8 +200,8 @@ export function BookDetailView({ book, targetChapterId, onBack, onBookUpdated }:
       </header>
 
       <div className="bookdetail__workspace">
-        <ChapterList />
-        <ParagraphList />
+        <ChapterList bookId={book.id} />
+        <ParagraphList bookId={book.id} />
         <InspectorPanel />
       </div>
 
