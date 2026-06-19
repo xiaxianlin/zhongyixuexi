@@ -177,12 +177,12 @@ Exit:段绑定笔记可增删查。
 
 ---
 
-## Phase 8 · 打包发布(todo)
+## Phase 8 · 打包发布(doing)
 
 | # | 状态 | 摘要 | 决策/阻塞 |
 |---|---|---|---|
-| S8.1 | todo | electron-builder(Win nsis / macOS dmg) | 打包前需把开发期"删库重建"schema 策略换成版本化迁移,否则用户升级丢数据 |
-| S8.2 | todo | 更新策略(前端热更 + electron-updater) | |
+| S8.1 | doing | electron-builder(Win nsis / macOS dmg) + forward-only 迁移 | 迁移已重写为 forward-only(`migrate.ts`):v3 库升级保留数据,v0/v2 旧开发库 reset 重建(首版无真实用户)。electron-builder 配置已补全(macOS dmg arm64/x64 + Win nsis x64),`npm run dist:mac` 出 dmg。图标待补(build/icon.icns/.ico) |
+| S8.2 | todo | 更新策略(前端热更 + electron-updater) | 首版延后,手动下载;macOS 自动更新需代码签名 |
 | S8.3 | todo | 内置经典数据回归夹具 | 原为 EPUB 夹具,现改为校验 `data/*.json` seed 一致性 |
 
 - [ ] Phase 8 exit 达成
@@ -191,7 +191,7 @@ Exit:段绑定笔记可增删查。
 
 ## 关键决策与约束(当前)
 
-1. **schema 单源**:`electron/db/schema.ts` 是唯一 DDL 来源,`CURRENT_SCHEMA_VERSION=2` + 版本不符删库重建。生产前必须改为 forward-only 迁移。
+1. **schema 单源**:`electron/db/schema.ts` 是唯一 DDL 来源,`CURRENT_SCHEMA_VERSION=3`。`prepareDatabase()` + `migrate.ts` `runMigrations()` 走 forward-only:v3 库升级保留数据,v0/v2 旧开发库 reset 重建。新 schema 改动在 `migrate.ts` 的 `MIGRATIONS[]` 加一条 + bump version。
 2. **内置内容**:启动 `seedBuiltinContent()` 幂等 seed 三本经典(难经/素问/灵枢),已存在则跳过。
 3. **IPC 收紧**:preload 只暴露 `{invoke, on}`;模块 API 在 `src/lib/*-api.ts` 用 `invokeRaw('module:action')` 包装。
 4. **foreign_keys=ON**:每连接强制(`connection.ts`),否则 CASCADE 静默失效。

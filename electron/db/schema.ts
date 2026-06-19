@@ -1,6 +1,7 @@
 import { getDb, resetDbFiles } from './connection'
+import { runMigrations, hasLegacySchemaMeta } from './migrate'
 
-const CURRENT_SCHEMA_VERSION = 2
+const CURRENT_SCHEMA_VERSION = 3
 
 const CURRENT_SCHEMA = `
   CREATE TABLE IF NOT EXISTS books (
@@ -181,23 +182,40 @@ export function prepareDatabase(): number {
   let db = getDb()
 
   const currentVersion = db.pragma('user_version', { simple: true }) as number
-  if (currentVersion !== CURRENT_SCHEMA_VERSION) {
+
+  // First-release reset policy: any DB below the shipped version is a dev-era
+  // leftover (the old schema_meta-based runner, or a v2 build) with an
+  // incompatible column layout and no real user data. Reset so CURRENT_SCHEMA
+  // rebuilds it cleanly + seedBuiltinContent repopulates the classics.
+  //
+  //   user_version < 3 (and > 0)         → reset (v2 dev build)
+  //   user_version = 0 + schema_meta table → reset (pre-reset-era dev build)
+  //   user_version = 0, no tables        → fresh DB, just apply CURRENT_SCHEMA
+  //   user_version = 3                   → already current, NO reset (data kept)
+  //
+  // From v3 onward, upgrades are forward-only via runMigrations — user data
+  // survives every future version bump.
+  const needsReset =
+    (currentVersion > 0 && currentVersion < CURRENT_SCHEMA_VERSION) ||
+    (currentVersion === 0 && hasLegacySchemaMeta(db))
+  if (needsReset) {
     resetDbFiles()
     db = getDb()
   }
 
   db.transaction(() => {
     db.exec(CURRENT_SCHEMA)
-    // Forward-only migration: add books.order_index to existing DBs that predate
-    // the column (CREATE TABLE IF NOT EXISTS won't add it). Idempotent — no-op
-    // once the column exists. Existing rows are backfilled by rowid order.
-    const cols = db.prepare("PRAGMA table_info(books)").all() as { name: string }[]
+    // Idempotent backfill: add books.order_index to a v3 DB that predates the
+    // column (CREATE TABLE IF NOT EXISTS won't add it to an existing table).
+    // No-op once the column exists; existing rows keep rowid order.
+    const cols = db.prepare('PRAGMA table_info(books)').all() as { name: string }[]
     if (!cols.some((c) => c.name === 'order_index')) {
       db.exec('ALTER TABLE books ADD COLUMN order_index INTEGER NOT NULL DEFAULT 0')
       const rows = db.prepare('SELECT id FROM books ORDER BY rowid').all() as { id: string }[]
       const stmt = db.prepare('UPDATE books SET order_index = ? WHERE id = ?')
       rows.forEach((row, i) => stmt.run(i, row.id))
     }
+    runMigrations(db)
     db.pragma(`user_version = ${CURRENT_SCHEMA_VERSION}`)
   })()
 

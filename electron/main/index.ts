@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, dialog, shell } from 'electron'
 import { join } from 'node:path'
 import { prepareDatabase, getDb, closeDb } from '../db'
 import { registerAllIpc } from '../ipc'
@@ -39,8 +39,22 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
-  const schemaVersion = prepareDatabase()
-  const seeded = seedBuiltinContent()
+  // DB init (migration + seed) is wrapped so a failure shows a clear error
+  // dialog and exits cleanly, instead of crashing as an unhandled rejection.
+  let schemaVersion: number
+  let seeded: ReturnType<typeof seedBuiltinContent>
+  try {
+    schemaVersion = prepareDatabase()
+    seeded = seedBuiltinContent()
+  } catch (e) {
+    console.error('[db] init failed:', e)
+    void dialog.showErrorBox(
+      '数据库初始化失败',
+      `应用无法准备数据库：\n\n${(e as Error).message ?? e}\n\n请重试；如持续失败可备份数据后联系开发者。`,
+    )
+    app.quit()
+    return
+  }
 
   if (process.env.ZYXX_INTEGRATION === '1') {
     runIntegrationCheck()

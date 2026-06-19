@@ -5,16 +5,43 @@
   "author": "loop",
   "main": "./out/main/index.js",
   "build": {
+    "appId": "com.loop.zhongyixuexi",
+    "productName": "中医经典学习",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
     "files": [
       "out/**/*",
       "data/**/*",
       "package.json"
-    ]
+    ],
+    "asar": true,
+    "mac": {
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] }
+      ],
+      "category": "public.app-category.education",
+      "icon": "build/icon.icns"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "scripts": {
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
+    "dist": "electron-vite build && electron-builder",
+    "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:win": "electron-vite build && electron-builder --win",
     "typecheck:node": "tsc -p tsconfig.node.json --noEmit",
     "typecheck:web": "tsc -p tsconfig.web.json --noEmit",
     "typecheck": "npm run typecheck:node && npm run typecheck:web",

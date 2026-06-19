@@ -26,9 +26,9 @@ A local-first **PC desktop app for studying 中医 (Chinese-medicine) classics**
 - `tsconfig.web.json` → `src/**` (renderer), with `@/*` → `src/*` path alias
 
 **`electron/` (main process, Node):**
-- `main/` — app/window lifecycle; wires `runMigrations()` + `registerAllIpc()` on ready, `closeDb()` on quit
+- `main/` — app/window lifecycle; wires `prepareDatabase()` + `registerAllIpc()` on ready, `closeDb()` on quit. DB init (migrate + seed) is try/caught and shows an error dialog on failure.
 - `preload/` — the *only* surface exposed to the renderer via `contextBridge` (`contextIsolation: true`, `nodeIntegration: false`). Exposes `window.api.{invoke, on}` only.
-- `db/` — better-sqlite3 singleton in `userData/app.db` + forward-only migration runner
+- `db/` — better-sqlite3 singleton in `userData/app.db` + **forward-only migration runner** (`schema.ts` `prepareDatabase()` + `migrate.ts` `runMigrations()`). Schema v3 is the first shipped version; older dev DBs are reset, v3+ upgrades in place without data loss.
 - `ipc/` — channel registry; `services/` — business logic (one file per module); `lib/error.ts` — `AppError`; `ai/` — DeepSeek client (planned)
 
 **`src/` (renderer, React):** `modules/<feature>/`, `stores/` (Zustand), `lib/ipc.ts` (typed wrappers). Module stores hold session/UI cache only — **persisted data always lives in SQLite, never in store persistence**.
