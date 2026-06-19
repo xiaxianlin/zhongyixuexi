@@ -1,10 +1,12 @@
 /**
- * ConfirmModal — generic interaction component (pure props, domain-agnostic).
+ * ConfirmModal — generic confirm prompt built on the shared Modal shell.
  *
  * Used by the library view for delete-note and re-analyze flows. Stateless:
  * all behavior is passed via props so the parent (store) owns the open/busy
- * state. Promoted to the shared interaction layer so any view can reuse it.
+ * state. The shell (backdrop/head/actions/esc) is shared via Modal.
  */
+import { Modal } from './Modal'
+
 interface ConfirmModalProps {
   open: boolean
   title: string
@@ -28,16 +30,12 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   if (!open) return null
   return (
-    <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
-      <div className="bookdetail__modal bookdetail__modal--confirm">
-        <div className="bookdetail__modalHead">
-          <h3>{title}</h3>
-          <button type="button" onClick={onCancel}>
-            ×
-          </button>
-        </div>
-        <p className="bookdetail__confirmText">{message}</p>
-        <div className="bookdetail__modalActions">
+    <Modal
+      title={title}
+      onClose={onCancel}
+      size="confirm"
+      actions={
+        <>
           <button type="button" className="bookdetail__btn" onClick={onCancel}>
             取消
           </button>
@@ -49,8 +47,10 @@ export function ConfirmModal({
           >
             {busy && busyLabel ? busyLabel : confirmLabel}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <p className="bookdetail__confirmText">{message}</p>
+    </Modal>
   )
 }

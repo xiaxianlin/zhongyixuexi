@@ -7,6 +7,7 @@
  * Business component, page-level (bound to library store).
  */
 import { useLibraryStore } from '@/models/library/store'
+import { Modal } from '@/components/interaction/Modal'
 
 export function MergePreviewModal() {
   const mergePreviewOpen = useLibraryStore((s) => s.mergePreviewOpen)
@@ -22,19 +23,11 @@ export function MergePreviewModal() {
   const preview = selected.map((p) => p.text).join('\n\n———\n\n')
 
   return (
-    <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
-      <div className="bookdetail__modal">
-        <div className="bookdetail__modalHead">
-          <h3>合并预览（{selected.length} 段）</h3>
-          <button type="button" onClick={() => setMergePreviewOpen(false)}>
-            ×
-          </button>
-        </div>
-        <p className="bookdetail__confirmText">
-          合并后将按章节顺序拼接为一个新的段落，原段落会被移除（绑定笔记转为自由笔记）。
-        </p>
-        <pre className="bookdetail__mergePreview">{preview}</pre>
-        <div className="bookdetail__modalActions">
+    <Modal
+      title={`合并预览（${selected.length} 段）`}
+      onClose={() => setMergePreviewOpen(false)}
+      actions={
+        <>
           <button type="button" className="bookdetail__btn" onClick={() => setMergePreviewOpen(false)}>
             取消
           </button>
@@ -45,8 +38,13 @@ export function MergePreviewModal() {
           >
             确认合并
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <p className="bookdetail__confirmText">
+        合并后将按章节顺序拼接为一个新的段落，原段落会被移除（绑定笔记转为自由笔记）。
+      </p>
+      <pre className="bookdetail__mergePreview">{preview}</pre>
+    </Modal>
   )
 }

@@ -7,10 +7,10 @@ import { seedBuiltinContent } from '../services/builtin-content'
 
 function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
-    width: 1280,
-    height: 720,
-    minWidth: 1024,
-    minHeight: 600,
+    width: 1400,
+    height: 900,
+    minWidth: 1400,
+    minHeight: 900,
     show: false,
     autoHideMenuBar: true,
     title: '中医经典学习',

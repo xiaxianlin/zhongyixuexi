@@ -8,6 +8,7 @@
  * params, not the store) and forwarded to createParagraphNote.
  */
 import { useLibraryStore } from '@/models/library/store'
+import { Modal } from '@/components/interaction/Modal'
 
 interface NoteEditorModalProps {
   bookId: string
@@ -26,22 +27,11 @@ export function NoteEditorModal({ bookId, chapterId }: NoteEditorModalProps) {
   if (!noteModalOpen || !selectedParagraphId || !chapterId) return null
 
   return (
-    <div className="bookdetail__modalBackdrop" role="dialog" aria-modal="true">
-      <div className="bookdetail__modal">
-        <div className="bookdetail__modalHead">
-          <h3>添加笔记</h3>
-          <button type="button" onClick={() => setNoteModalOpen(false)}>
-            ×
-          </button>
-        </div>
-        <textarea
-          className="bookdetail__noteDraft"
-          value={noteDraftContent}
-          onChange={(event) => setNoteDraftContent(event.target.value)}
-          placeholder="记下这一段的疑问、心得或临证联想"
-          rows={8}
-        />
-        <div className="bookdetail__modalActions">
+    <Modal
+      title="添加笔记"
+      onClose={() => setNoteModalOpen(false)}
+      actions={
+        <>
           <button type="button" className="bookdetail__btn" onClick={() => setNoteModalOpen(false)}>
             取消
           </button>
@@ -53,8 +43,16 @@ export function NoteEditorModal({ bookId, chapterId }: NoteEditorModalProps) {
           >
             {noteSaving ? '保存中' : '保存'}
           </button>
-        </div>
-      </div>
-    </div>
+        </>
+      }
+    >
+      <textarea
+        className="bookdetail__noteDraft"
+        value={noteDraftContent}
+        onChange={(event) => setNoteDraftContent(event.target.value)}
+        placeholder="记下这一段的疑问、心得或临证联想"
+        rows={8}
+      />
+    </Modal>
   )
 }

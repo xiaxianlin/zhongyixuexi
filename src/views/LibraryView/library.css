@@ -123,7 +123,7 @@ body.is-library-detail .lib {
 
 .lib__grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 16px;
 }
 
@@ -402,9 +402,9 @@ body.is-library-detail .lib {
 }
 
 .bookdetail__btn {
-  border: 1px solid var(--reader-line);
+  border: 1px solid var(--border);
   background: rgba(255, 249, 238, 0.72);
-  color: var(--reader-title);
+  color: var(--accent);
   padding: 0 14px;
 }
 
@@ -412,7 +412,7 @@ body.is-library-detail .lib {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  color: var(--reader-accent-deep);
+  color: var(--accent);
 }
 
 .bookdetail__loadingSeal {
@@ -426,8 +426,8 @@ body.is-library-detail .lib {
 }
 
 .bookdetail__btn:hover:not(:disabled) {
-  border-color: var(--reader-active-border);
-  color: var(--reader-accent-deep);
+  border-color: var(--border-strong);
+  color: var(--accent);
 }
 
 .bookdetail__btn:disabled {
@@ -436,16 +436,16 @@ body.is-library-detail .lib {
 }
 
 .bookdetail__primary {
-  border: 1px solid var(--reader-accent);
-  background: var(--reader-accent);
+  border: 1px solid var(--accent-soft);
+  background: var(--accent-soft);
   color: var(--accent-contrast);
   padding: 0 18px;
   letter-spacing: 0.08em;
 }
 
 .bookdetail__primary:hover {
-  background: var(--reader-accent-deep);
-  border-color: var(--reader-accent-deep);
+  background: var(--accent);
+  border-color: var(--accent);
 }
 
 .bookdetail__primary:disabled {
@@ -454,8 +454,8 @@ body.is-library-detail .lib {
 }
 
 .bookdetail__primary:hover:disabled {
-  background: var(--reader-accent);
-  border-color: var(--reader-accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-soft);
 }
 
 .bookdetail__workspace {
@@ -773,9 +773,9 @@ body.is-library-detail .lib {
 .bookdetail__paraTextarea {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--reader-line);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--reader-page-raised);
+  background: var(--surface-2);
   color: var(--fg);
   padding: 10px;
   font-family: var(--font-serif);
@@ -787,7 +787,7 @@ body.is-library-detail .lib {
 
 .bookdetail__paraTextarea:focus {
   outline: none;
-  border-color: var(--reader-accent);
+  border-color: var(--accent-soft);
 }
 
 .bookdetail__paraActions {
@@ -818,9 +818,9 @@ body.is-library-detail .lib {
   padding: 12px;
   max-height: 320px;
   overflow: auto;
-  border: 1px solid var(--reader-line-soft);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--reader-page-raised);
+  background: var(--surface-2);
   color: var(--fg);
   font-family: var(--font-serif);
   font-size: 15px;
@@ -1212,9 +1212,9 @@ body.is-library-detail .lib {
 .bookdetail__noteDraft {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--reader-line-soft);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--reader-page-raised);
+  background: var(--surface-2);
   color: var(--fg);
   padding: 10px;
   font-family: var(--font-serif);
@@ -1229,7 +1229,7 @@ body.is-library-detail .lib {
 
 .bookdetail__noteDraft:focus {
   outline: none;
-  border-color: var(--reader-active-border);
+  border-color: var(--border-strong);
 }
 
 .bookdetail__modalBackdrop {
@@ -1247,7 +1247,7 @@ body.is-library-detail .lib {
   width: min(620px, 100%);
   max-height: min(720px, calc(100vh - 48px));
   overflow: auto;
-  border: 2px solid var(--reader-line);
+  border: 2px solid var(--border);
   border-radius: 14px;
   background:
     radial-gradient(
@@ -1255,7 +1255,7 @@ body.is-library-detail .lib {
       rgba(189, 134, 88, 0.14),
       transparent 72%
     ),
-    var(--reader-page);
+    var(--surface);
   box-shadow: 0 18px 50px rgba(67, 43, 24, 0.24);
   padding: 18px;
 }
@@ -1276,7 +1276,7 @@ body.is-library-detail .lib {
   margin: 0;
   font-family: var(--font-title);
   font-size: var(--fs-h2);
-  color: var(--reader-title);
+  color: var(--accent);
   line-height: var(--lh-tight);
 }
 
@@ -1284,18 +1284,18 @@ body.is-library-detail .lib {
   flex: 0 0 auto;
   width: 30px;
   height: 30px;
-  border: 1px solid var(--reader-line);
+  border: 1px solid var(--border);
   border-radius: 999px;
   background: rgba(255, 249, 238, 0.72);
-  color: var(--reader-title);
+  color: var(--accent);
   cursor: pointer;
   font-size: 20px;
   line-height: 1;
 }
 
 .bookdetail__modalHead button:hover {
-  border-color: var(--reader-active-border);
-  color: var(--reader-accent-deep);
+  border-color: var(--border-strong);
+  color: var(--accent);
 }
 
 .bookdetail__modalActions {
@@ -1305,11 +1305,31 @@ body.is-library-detail .lib {
   margin-top: 14px;
 }
 
+/* 弹窗内的单行文本输入（书名/章名等）— 与多段编辑的 paraTextarea 同源视觉，
+   但作为单行 input：紧凑高度、不可拉伸。 */
+.bookdetail__modalInput {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-2);
+  color: var(--fg);
+  padding: 10px;
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.bookdetail__modalInput:focus {
+  outline: none;
+  border-color: var(--accent-soft);
+}
+
 .bookdetail__dangerBtn {
   height: 34px;
-  border: 1px solid var(--reader-accent-deep);
+  border: 1px solid var(--accent);
   border-radius: 10px;
-  background: var(--reader-accent-deep);
+  background: var(--accent);
   color: var(--accent-contrast);
   cursor: pointer;
   padding: 0 18px;

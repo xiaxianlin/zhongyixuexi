@@ -7,6 +7,8 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useLibraryStore } from '@/models/library/store'
+import { Modal } from '@/components/interaction/Modal'
+import { ConfirmModal } from '@/components/interaction/ConfirmModal'
 
 export function ChapterList({ bookId }: { bookId: string }) {
   const tree = useLibraryStore((s) => s.tree)
@@ -27,6 +29,8 @@ export function ChapterList({ bookId }: { bookId: string }) {
   // inline "new chapter" input
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
+  // pending chapter deletion (drives the shared ConfirmModal)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
 
   const commitAdd = () => {
     const t = newTitle.trim()
@@ -53,7 +57,7 @@ export function ChapterList({ bookId }: { bookId: string }) {
       </div>
       {treeLoading ? (
         <p className="bookdetail__empty">加载目录…</p>
-      ) : tree.length === 0 && !adding ? (
+      ) : tree.length === 0 ? (
         <p className="bookdetail__empty">无章节</p>
       ) : (
         <div className="bookdetail__list">
@@ -110,9 +114,7 @@ export function ChapterList({ bookId }: { bookId: string }) {
                       title="删除章节"
                       onClick={(e) => {
                         e.stopPropagation()
-                        if (window.confirm(`确定删除章节《${chapter.title}》？其段落将一并删除（笔记会保留为自由笔记）。`)) {
-                          void deleteChapter(bookId, chapter.id)
-                        }
+                        setDeleteTarget({ id: chapter.id, title: chapter.title })
                       }}
                     >
                       ✕
@@ -122,20 +124,70 @@ export function ChapterList({ bookId }: { bookId: string }) {
               </div>
             )
           })}
-          {adding && (
-            <ChapterTitleInput
-              value={newTitle}
-              onChange={setNewTitle}
-              onCommit={commitAdd}
-              onCancel={() => {
-                setAdding(false)
-                setNewTitle('')
-              }}
-              placeholder="新章节名"
-            />
-          )}
         </div>
       )}
+
+      {adding && (
+        <Modal
+          title="新增章节"
+          onClose={() => {
+            setAdding(false)
+            setNewTitle('')
+          }}
+          actions={
+            <>
+              <button
+                type="button"
+                className="bookdetail__btn"
+                onClick={() => {
+                  setAdding(false)
+                  setNewTitle('')
+                }}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className="bookdetail__primary"
+                disabled={newTitle.trim() === ''}
+                onClick={commitAdd}
+              >
+                新增
+              </button>
+            </>
+          }
+        >
+          <input
+            className="bookdetail__modalInput"
+            value={newTitle}
+            placeholder="输入章节名"
+            autoFocus
+            onChange={(e) => setNewTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                commitAdd()
+              }
+            }}
+          />
+        </Modal>
+      )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="删除章节"
+        message={
+          deleteTarget
+            ? `确定删除章节《${deleteTarget.title}》？其段落将一并删除（笔记会保留为自由笔记）。`
+            : ''
+        }
+        confirmLabel="删除"
+        onConfirm={() => {
+          if (deleteTarget) void deleteChapter(bookId, deleteTarget.id)
+          setDeleteTarget(null)
+        }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </aside>
   )
 }

@@ -7,7 +7,7 @@
  * Pure View: state/logic live in useLibraryStore + the page components under
  * components/page/library/. This file is the router shell + book grid.
  */
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   DndContext,
@@ -26,6 +26,8 @@ import {
 import { CSS } from '@dnd-kit/utilities'
 import { libraryApi } from '@/models/library/api'
 import { useLibraryStore } from '@/models/library/store'
+import { Modal } from '@/components/interaction/Modal'
+import { ConfirmModal } from '@/components/interaction/ConfirmModal'
 import type { BookListItem } from '@/models/shared/types'
 import { BookDetailView } from './BookDetailView'
 import './library.css'
@@ -85,21 +87,47 @@ export function LibraryView() {
   const addBook = useLibraryStore((s) => s.addBook)
   const deleteBook = useLibraryStore((s) => s.deleteBook)
 
-  const handleAddBook = useCallback(async () => {
-    const title = window.prompt('新书书名')
-    if (!title) return
-    const created = await addBook(title.trim())
-    if (created) await refresh()
-  }, [addBook, refresh])
+  // 「新建书籍」弹窗：用自定义 modal 替代 window.prompt（与应用风格一致）
+  const [newBookOpen, setNewBookOpen] = useState(false)
+  const [newBookTitle, setNewBookTitle] = useState('')
+  const [bookSaving, setBookSaving] = useState(false)
 
-  const handleDeleteBook = useCallback(
-    async (bookId: string, title: string) => {
-      if (!window.confirm(`确定删除《${title}》？其章节、段落将一并删除（笔记会保留为自由笔记）。`)) return
-      const ok = await deleteBook(bookId)
-      if (ok) await refresh()
-    },
-    [deleteBook, refresh],
-  )
+  const openNewBook = useCallback(() => {
+    setNewBookTitle('')
+    setNewBookOpen(true)
+  }, [])
+
+  const closeNewBook = useCallback(() => {
+    setNewBookOpen(false)
+    setNewBookTitle('')
+  }, [])
+
+  const submitNewBook = useCallback(async () => {
+    const title = newBookTitle.trim()
+    if (!title) return
+    setBookSaving(true)
+    try {
+      const created = await addBook(title)
+      if (created) {
+        setNewBookOpen(false)
+        setNewBookTitle('')
+        await refresh()
+      }
+    } finally {
+      setBookSaving(false)
+    }
+  }, [addBook, newBookTitle, refresh])
+
+  // 删书二次确认：本地 state 持待删书，复用全局 ConfirmModal（替代 window.confirm）
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null)
+
+  const confirmDeleteBook = useCallback(async () => {
+    const target = deleteTarget
+    setDeleteTarget(null)
+    if (!target) return
+    const ok = await deleteBook(target.id)
+    if (ok) await refresh()
+  }, [deleteBook, deleteTarget, refresh])
 
   return (
     <div className="lib">
@@ -127,13 +155,13 @@ export function LibraryView() {
                   book={b}
                   onOpen={() => navigate(`/book/${b.id}`)}
                   onUploadCover={() => void uploadCover(b.id)}
-                  onDelete={() => void handleDeleteBook(b.id, b.title)}
+                  onDelete={() => setDeleteTarget({ id: b.id, title: b.title })}
                 />
               ))}
               <button
                 type="button"
                 className="bookcard bookcard--new"
-                onClick={() => void handleAddBook()}
+                onClick={openNewBook}
                 title="新建书籍"
               >
                 <span className="bookcard__plus" aria-hidden>
@@ -145,6 +173,29 @@ export function LibraryView() {
           </SortableContext>
         </DndContext>
       )}
+
+      {newBookOpen && (
+        <NewBookModal
+          value={newBookTitle}
+          saving={bookSaving}
+          onChange={setNewBookTitle}
+          onSubmit={() => void submitNewBook()}
+          onClose={closeNewBook}
+        />
+      )}
+
+      <ConfirmModal
+        open={deleteTarget !== null}
+        title="删除书籍"
+        message={
+          deleteTarget
+            ? `确定删除《${deleteTarget.title}》？其章节、段落将一并删除（笔记会保留为自由笔记）。`
+            : ''
+        }
+        confirmLabel="删除"
+        onConfirm={() => void confirmDeleteBook()}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   )
 }
@@ -206,5 +257,62 @@ function BookCard({
       </button>
       {book.cover && <div className="bookcard__titleOverlay">{book.title}</div>}
     </div>
+  )
+}
+
+/** 「新建书籍」弹窗 — 复用通用 Modal 壳，书名输入 + 新建/取消。
+ *  Modal 统一处理 Esc / × / 背景点击关闭；这里只管输入与提交。 */
+function NewBookModal({
+  value,
+  saving,
+  onChange,
+  onSubmit,
+  onClose,
+}: {
+  value: string
+  saving: boolean
+  onChange: (v: string) => void
+  onSubmit: () => void
+  onClose: () => void
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  useEffect(() => {
+    inputRef.current?.focus()
+    inputRef.current?.select()
+  }, [])
+  return (
+    <Modal
+      title="新建书籍"
+      onClose={onClose}
+      actions={
+        <>
+          <button type="button" className="bookdetail__btn" onClick={onClose} disabled={saving}>
+            取消
+          </button>
+          <button
+            type="button"
+            className="bookdetail__primary"
+            disabled={saving || value.trim() === ''}
+            onClick={onSubmit}
+          >
+            {saving ? '保存中' : '新建'}
+          </button>
+        </>
+      }
+    >
+      <input
+        ref={inputRef}
+        className="bookdetail__modalInput"
+        value={value}
+        placeholder="输入书名"
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            onSubmit()
+          }
+        }}
+      />
+    </Modal>
   )
 }

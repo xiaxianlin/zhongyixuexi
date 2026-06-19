@@ -60,6 +60,9 @@ interface LibraryState {
   // paragraph text editing (single-paragraph modal)
   editingParagraphId: string | null
   paragraphDraft: string
+  // paragraph create mode (reuses the edit modal shell): when set, the modal
+  // shows "新建段落" and submits via saveNewParagraph instead of saveParagraphText.
+  paragraphCreateChapterId: string | null
 
   // paragraph batch-manage mode
   manageMode: boolean
@@ -99,6 +102,10 @@ interface LibraryState {
   setParagraphDraft: (text: string) => void
   saveParagraphText: () => Promise<void>
   splitParagraphAtOffset: (offset: number) => Promise<void>
+  // paragraph create (reuses the edit modal)
+  startCreateParagraph: (chapterId: string) => void
+  cancelCreateParagraph: () => void
+  saveNewParagraph: () => Promise<void>
   // paragraph batch manage
   enterManageMode: () => void
   exitManageMode: () => void
@@ -160,6 +167,7 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   editingParagraphId: null,
   paragraphDraft: '',
+  paragraphCreateChapterId: null,
 
   manageMode: false,
   selectedParagraphIds: [],
@@ -417,6 +425,37 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       set({ paragraphs: content.paragraphs })
     } catch (e) {
       get().showToast(`拆分失败：${(e as Error).message}`)
+    }
+  },
+
+  // ----- paragraph create (reuses the edit modal shell) -----
+  startCreateParagraph: (chapterId) =>
+    set({ paragraphCreateChapterId: chapterId, paragraphDraft: '', editingParagraphId: null }),
+
+  cancelCreateParagraph: () => set({ paragraphCreateChapterId: null, paragraphDraft: '' }),
+
+  saveNewParagraph: async () => {
+    const { paragraphCreateChapterId, paragraphDraft } = get()
+    if (!paragraphCreateChapterId) return
+    const text = paragraphDraft.trim()
+    if (!text) {
+      get().showToast('段落内容不能为空')
+      return
+    }
+    try {
+      const content = await editingApi.createParagraph({
+        chapterId: paragraphCreateChapterId,
+        text,
+      })
+      set({
+        paragraphs: content.paragraphs,
+        selectedParagraphId: content.paragraphs[content.paragraphs.length - 1]?.id ?? null,
+        paragraphCreateChapterId: null,
+        paragraphDraft: '',
+      })
+      get().showToast('已新增段落')
+    } catch (e) {
+      get().showToast(`新增段落失败：${(e as Error).message}`)
     }
   },
 
