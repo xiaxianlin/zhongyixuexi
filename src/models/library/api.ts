@@ -23,6 +23,7 @@ import type {
   DeleteParagraphsInput,
   SplitParagraphInput,
   TitleResult,
+  SaveProgressInput,
 } from './types'
 
 /** library:* — book list (with progress aggregation) + chapter tree + reorder + cover. */
@@ -34,10 +35,14 @@ export const libraryApi = {
   uploadCover: (bookId: string) => invokeRaw<BookListItem[]>('books:uploadCover', { bookId }),
 }
 
-/** reading:* — chapter content for the library detail page. */
+/** reading:* — chapter content + reading-progress persistence. */
 export const readingApi = {
   getChapter: (bookId: string, chapterId: string) =>
     invokeRaw<ChapterContent | null>('reading:getChapter', bookId, chapterId),
+
+  // RD-02: UPSERT per-book progress (read_seconds is a delta, accumulated main-side).
+  saveProgress: (input: SaveProgressInput) =>
+    invokeRaw<{ ok: true }>('reading:saveProgress', input),
 }
 
 /** notes:* — paragraph-bound note CRUD (NOTE module, converged surface). */

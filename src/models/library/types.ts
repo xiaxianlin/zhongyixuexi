@@ -101,3 +101,19 @@ export interface TitleResult {
   id: string
   title: string
 }
+
+// ---------- reading progress ----------
+
+/**
+ * Reading-progress write payload (mirror of electron/services/reading.ts
+ * SaveProgressInput). readSeconds is a DELTA (seconds spent since the previous
+ * flush); the main process accumulates it onto the stored total.
+ */
+export interface SaveProgressInput {
+  bookId: string
+  chapterId: string
+  paragraphId: string
+  scrollRatio: number
+  readSeconds: number
+  percent: number
+}

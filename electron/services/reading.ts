@@ -6,6 +6,7 @@
  */
 
 import { getDb } from '../db'
+import { AppError } from '../lib/error'
 import {
   activeAnalysisSql,
   mapParagraphAnalysisView,
@@ -36,6 +37,25 @@ export interface ChapterDTO {
 export interface ChapterContent {
   chapter: ChapterDTO
   paragraphs: ParagraphDTO[]
+}
+
+/**
+ * Reading-progress write payload (RD-02). One row per book (PRIMARY KEY book_id);
+ * repeated saves UPSERT and ACCUMULATE read_seconds. scroll_ratio / chapter_id /
+ * paragraph_id / percent are overwritten with the latest values.
+ *
+ * read_seconds is an increment (delta), not an absolute — the renderer debounces
+ * and flushes the seconds spent on a paragraph. The UPSERT adds it onto whatever
+ * was previously stored so the dashboard's SUM reflects total time across all
+ * books and the heatmap gains a reading footprint.
+ */
+export interface SaveProgressInput {
+  bookId: string
+  chapterId: string
+  paragraphId: string
+  scrollRatio: number
+  readSeconds: number
+  percent: number
 }
 
 type ParagraphRow = Omit<ParagraphDTO, 'interpretation'> & ParagraphAnalysisSqlRow
@@ -80,4 +100,47 @@ export function getChapter(bookId: string, chapterId: string): ChapterContent | 
       interpretation: toParagraphInterpretationView(mapParagraphAnalysisView(paragraph)),
     })),
   }
+}
+
+/**
+ * Persist reading progress for a book (RD-02). One row per book (PRIMARY KEY
+ * book_id); UPSERT overwrites the position fields and ACCUMULATES read_seconds
+ * (it is a delta, so SUM(read_seconds) across saves = total time on the book).
+ *
+ * read_seconds accumulation uses COALESCE((SELECT ...), 0) + ? rather than
+ * excluded.read_seconds + ? because the UPSERT's `excluded` row IS the new row
+ * (the delta), not the stored total — we want stored + delta.
+ */
+export function saveProgress(input: SaveProgressInput): { ok: true } {
+  if (!input.bookId || !input.chapterId || !input.paragraphId) {
+    throw new AppError('VALIDATION', 'saveProgress 缺少 bookId/chapterId/paragraphId')
+  }
+  const now = Date.now()
+  const db = getDb()
+  db.prepare(
+    `INSERT INTO reading_progress
+       (book_id, chapter_id, paragraph_id, scroll_ratio, read_seconds, percent, updated_at)
+     VALUES (@bookId, @chapterId, @paragraphId, @scrollRatio, @readSeconds, @percent, @now)
+     ON CONFLICT(book_id) DO UPDATE SET
+       chapter_id   = excluded.chapter_id,
+       paragraph_id = excluded.paragraph_id,
+       scroll_ratio = excluded.scroll_ratio,
+       read_seconds = COALESCE((SELECT read_seconds FROM reading_progress WHERE book_id = @bookId), 0) + @readSeconds,
+       percent      = excluded.percent,
+       updated_at   = @now`,
+  ).run({
+    bookId: input.bookId,
+    chapterId: input.chapterId,
+    paragraphId: input.paragraphId,
+    scrollRatio: clamp01(input.scrollRatio),
+    readSeconds: Math.max(0, Math.floor(input.readSeconds)),
+    percent: clamp01(input.percent),
+    now,
+  })
+  return { ok: true }
+}
+
+function clamp01(n: number): number {
+  if (!Number.isFinite(n)) return 0
+  return Math.min(1, Math.max(0, n))
 }
