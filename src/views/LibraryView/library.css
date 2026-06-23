@@ -123,67 +123,39 @@ body.is-library-detail .lib {
 
 .lib__grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 18px;
 }
 
-/* corner category badge on a book card */
-.bookcard__catBadge {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 2;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-family: var(--font-sans);
-  line-height: 1.4;
-  pointer-events: none;
-  opacity: 0.92;
-  transition: opacity 0.15s ease;
-}
-
-/* hide the badge when hovering so the delete button (same corner) is unobstructed */
-.bookcard:hover .bookcard__catBadge {
-  opacity: 0;
-}
-
-.bookcard__catBadge--classic {
-  color: #fff;
-  background: rgba(138, 90, 43, 0.85);
-}
-
-.bookcard__catBadge--modern {
-  color: #fff;
-  background: rgba(74, 90, 106, 0.85);
-}
-
+/* ===========================================================================
+   书籍卡片 —— 上图下文（参考图布局）
+   =========================================================================== */
 .bookcard {
   position: relative;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
-  padding: 20px 16px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 180px;
-  aspect-ratio: 3 / 4;
+  flex-direction: column;
   overflow: hidden;
   cursor: grab;
   box-shadow: var(--shadow-soft);
   transition:
     border-color 0.2s ease,
-    box-shadow 0.2s ease;
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
   user-select: none;
 }
 
 .bookcard:hover {
   border-color: var(--accent-soft);
+  box-shadow: 0 14px 30px rgba(119, 82, 45, 0.12);
+  transform: translateY(-2px);
 }
 
 .bookcard:active {
   cursor: grabbing;
+  transform: translateY(0);
 }
 
 .bookcard.is-dragging {
@@ -193,65 +165,94 @@ body.is-library-detail .lib {
   cursor: grabbing;
 }
 
-.bookcard__titleOnly {
-  font-family: var(--font-title);
-  font-weight: 700;
-  font-size: var(--fs-h2);
-  color: var(--accent);
-  letter-spacing: 0.1em;
-  text-align: center;
-  line-height: 1.4;
+/* 封面区：顶部满宽，3:4 书脊比例 */
+.bookcard__cover {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--qianjiang, #f1dfc6), var(--surface-2, #fffdf6));
 }
 
-/* cover image fills the card; title shown as an overlay at the bottom */
 .bookcard__coverImg {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: calc(var(--card-radius) - 1px);
-  position: absolute;
-  inset: 0;
+  display: block;
 }
 
-.bookcard__titleOverlay {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  padding: 12px 16px;
-  background: linear-gradient(transparent, rgba(67, 43, 24, 0.72));
-  color: #fff9ee;
+/* 无封面时的占位：大字首字 + 纸纹底 */
+.bookcard__coverPlaceholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-title);
+  font-size: 64px;
   font-weight: 700;
-  font-size: var(--fs-body);
-  letter-spacing: 0.08em;
-  border-bottom-left-radius: var(--card-radius);
-  border-bottom-right-radius: var(--card-radius);
-  pointer-events: none;
+  color: var(--accent);
+  opacity: 0.5;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(189, 134, 88, 0.12), transparent 70%),
+    var(--paper-grain);
 }
 
-/* hover 「换封面」 button — top-right of the card */
+/* 分类角标：左上角 */
+.bookcard__catBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.5;
+  pointer-events: none;
+  opacity: 0.92;
+  transition: opacity 0.15s ease;
+}
+
+.bookcard__catBadge--classic {
+  color: #fff9ee;
+  background: rgba(138, 90, 43, 0.88);
+}
+
+.bookcard__catBadge--modern {
+  color: #fff9ee;
+  background: rgba(74, 90, 106, 0.88);
+}
+
+/* hover 时角标淡出，让位给删除按钮（同在左上） */
+.bookcard:hover .bookcard__catBadge {
+  opacity: 0;
+}
+
+/* hover「换封面」按钮 — 封面区右上角 */
 .bookcard__coverBtn {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 30px;
-  height: 30px;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255, 249, 238, 0.92);
-  color: var(--accent);
-  font-family: var(--font-title);
-  font-size: 16px;
-  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  background: rgba(47, 33, 24, 0.72);
+  backdrop-filter: blur(4px);
+  color: #fff9ee;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease;
-  z-index: 2;
+  transition: opacity 0.15s ease, background 0.15s ease;
+  z-index: 3;
 }
 
 .bookcard:hover .bookcard__coverBtn,
@@ -260,8 +261,54 @@ body.is-library-detail .lib {
 }
 
 .bookcard__coverBtn:hover {
-  background: var(--surface);
-  border-color: var(--accent);
+  background: var(--accent);
+}
+
+/* 文字信息区：封面下方 */
+.bookcard__body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bookcard__title {
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--fg);
+  letter-spacing: 0.06em;
+  line-height: 1.3;
+  text-wrap: balance;
+  /* clamp to 2 lines */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.bookcard__author {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--muted-fg);
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bookcard__meta {
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bookcard__chapters {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  color: var(--faint-fg);
+  line-height: 1;
 }
 
 /* 书籍详情：章｜段｜操作三栏工作台 */
@@ -1689,14 +1736,17 @@ body.is-library-detail .lib {
 /* ---------- create / delete affordances ---------- */
 
 /* 新建书籍卡片（书库网格末尾的＋占位卡） */
+/* 「新建书籍」卡片：虚线占位，与书卡等高 */
 .bookcard--new {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 10px;
+  min-height: 240px;
   border: 2px dashed var(--border);
   background: transparent;
+  box-shadow: none;
   color: var(--muted-fg);
   cursor: pointer;
   transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
@@ -1706,6 +1756,8 @@ body.is-library-detail .lib {
   border-color: var(--accent);
   color: var(--accent);
   background: var(--surface);
+  transform: none;
+  box-shadow: none;
 }
 
 .bookcard__plus {
@@ -1716,31 +1768,33 @@ body.is-library-detail .lib {
 }
 
 .bookcard__newLabel {
-  font-size: var(--fs-sm);
+  font-size: var(--fs-small);
   letter-spacing: 0.05em;
 }
 
 /* 书卡删除按钮（右上，与封面按钮对称的左上） */
+/* hover「删除」按钮 — 封面区左上角（与角标同位，hover 时角标淡出让位） */
 .bookcard__delBtn {
   position: absolute;
-  top: 10px;
-  left: 10px;
-  width: 30px;
-  height: 30px;
+  top: 8px;
+  left: 8px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: rgba(255, 249, 238, 0.92);
-  color: var(--danger, #b3261e);
-  font-family: var(--font-title);
-  font-size: 16px;
-  font-weight: 700;
+  border: none;
+  border-radius: 6px;
+  background: rgba(179, 38, 30, 0.85);
+  backdrop-filter: blur(4px);
+  color: #fff9ee;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, background 0.15s ease;
   z-index: 3;
 }
 
@@ -1750,8 +1804,7 @@ body.is-library-detail .lib {
 }
 
 .bookcard__delBtn:hover {
-  background: var(--surface);
-  border-color: var(--danger, #b3261e);
+  background: var(--danger, #b3261e);
 }
 
 /* 章目录头：标题 + 新增按钮并排 */

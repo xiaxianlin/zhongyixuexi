@@ -200,9 +200,9 @@ export function LibraryView() {
   )
 }
 
-/** Sortable book card — shows the cover image if set, else the title. A hover
- *  「换封面」 button opens the OS file picker; the click is stopped so it doesn't
- *  also open the book. */
+/** Sortable book card — cover image on top, title + meta below (top-down layout
+ *  per the reference design). A hover「换封面」button opens the OS file picker;
+ *  the click is stopped so it doesn't also open the book. */
 function BookCard({
   book,
   onOpen,
@@ -226,45 +226,53 @@ function BookCard({
       {...listeners}
       onClick={onOpen}
     >
-      {book.cover ? (
-        <img className="bookcard__coverImg" src={book.cover} alt={book.title} draggable={false} />
-      ) : (
-        <div className="bookcard__titleOnly">{book.title}</div>
-      )}
-      <button
-        type="button"
-        className="bookcard__coverBtn"
-        title="换封面"
-        aria-label="换封面"
-        onClick={(e) => {
-          e.stopPropagation()
-          onUploadCover()
-        }}
-      >
-        {book.cover ? '换' : '＋'}
-      </button>
-      <button
-        type="button"
-        className="bookcard__delBtn"
-        title="删除书籍"
-        aria-label="删除书籍"
-        onClick={(e) => {
-          e.stopPropagation()
-          onDelete()
-        }}
-      >
-        ✕
-      </button>
-      <span
-        className={
-          book.category === 'classic'
-            ? 'bookcard__catBadge bookcard__catBadge--classic'
-            : 'bookcard__catBadge bookcard__catBadge--modern'
-        }
-      >
-        {book.category === 'classic' ? '古' : '现'}
-      </span>
-      {book.cover && <div className="bookcard__titleOverlay">{book.title}</div>}
+      <div className="bookcard__cover">
+        {book.cover ? (
+          <img className="bookcard__coverImg" src={book.cover} alt={book.title} draggable={false} />
+        ) : (
+          <div className="bookcard__coverPlaceholder">{book.title.charAt(0)}</div>
+        )}
+        <span
+          className={
+            book.category === 'classic'
+              ? 'bookcard__catBadge bookcard__catBadge--classic'
+              : 'bookcard__catBadge bookcard__catBadge--modern'
+          }
+        >
+          {book.category === 'classic' ? '古' : '现'}
+        </span>
+        <button
+          type="button"
+          className="bookcard__coverBtn"
+          title="换封面"
+          aria-label="换封面"
+          onClick={(e) => {
+            e.stopPropagation()
+            onUploadCover()
+          }}
+        >
+          {book.cover ? '换' : '＋'}
+        </button>
+        <button
+          type="button"
+          className="bookcard__delBtn"
+          title="删除书籍"
+          aria-label="删除书籍"
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete()
+          }}
+        >
+          ✕
+        </button>
+      </div>
+      <div className="bookcard__body">
+        <div className="bookcard__title">{book.title}</div>
+        {book.author ? <div className="bookcard__author">{book.author}</div> : null}
+        <div className="bookcard__meta">
+          <span className="bookcard__chapters">{book.chapter_count} 章</span>
+        </div>
+      </div>
     </div>
   )
 }
