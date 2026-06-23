@@ -26,11 +26,6 @@ export function ChatTab() {
   // subscribe to token deltas while mounted
   useEffect(() => subscribeTokens(), [subscribeTokens])
 
-  // when a quote is pending, render it as a pre-filled block above the input
-  useEffect(() => {
-    if (pendingQuote) setDraft((d) => d)
-  }, [pendingQuote])
-
   // auto-scroll to bottom on new content
   useEffect(() => {
     const el = scrollRef.current

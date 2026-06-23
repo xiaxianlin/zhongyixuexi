@@ -1840,6 +1840,27 @@ body.is-library-detail .lib {
   line-height: 1.2;
 }
 
+/* ANL-05: per-tab count badge (sits under the vertical label) */
+.bookdetail__railTabBadge {
+  margin-top: 6px;
+  min-width: 18px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(166, 124, 93, 0.22);
+  color: var(--reader-ink, #5c4033);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: center;
+  writing-mode: horizontal-tb;
+}
+
+.bookdetail__railTab.is-active .bookdetail__railTabBadge {
+  background: var(--accent-soft, #a67c5d);
+  color: #fff;
+}
+
 /* AI analyze button loading state (reading pane header) */
 .bookdetail__analyzeBtn--loading {
   opacity: 0.78;

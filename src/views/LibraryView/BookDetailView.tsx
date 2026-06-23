@@ -292,13 +292,15 @@ function useReadingProgress(args: UseReadingProgressArgs): void {
     scrollRatioRef.current = 0
   }, [selectedChapterId])
 
-  // tick: accumulate dwell + schedule a flush
+  // tick: accumulate dwell + schedule a flush. settleDwell / scheduleFlush only
+  // close over refs (stable), so they're intentionally omitted from deps.
   useEffect(() => {
     const interval = setInterval(() => {
       settleDwell()
       scheduleFlush()
     }, PROGRESS_TICK_MS)
     return () => clearInterval(interval)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // scroll listener on the reading pane container
@@ -312,9 +314,10 @@ function useReadingProgress(args: UseReadingProgressArgs): void {
     }
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedChapterId])
 
-  // tab-hide / unmount: flush the remainder
+  // tab-hide / unmount: flush the remainder. flushProgress closes over refs only.
   useEffect(() => {
     const onHide = () => {
       if (document.visibilityState === 'hidden') flushProgress()
@@ -328,6 +331,7 @@ function useReadingProgress(args: UseReadingProgressArgs): void {
       flushProgress()
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   function settleDwell() {

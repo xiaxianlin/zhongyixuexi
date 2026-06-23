@@ -42,10 +42,18 @@ export function AnalysisRail({ book }: { book: BookListItem | null }) {
   const chapterContent = useLibraryStore((s) => s.chapterContent)
   const excerpts = useLibraryStore((s) => s.excerpts)
   const notes = useLibraryStore((s) => s.notesByChapter)
+  const chatMessages = useLibraryStore((s) => s.chatMessages)
   const isClassic = (book?.category ?? 'modern') === 'classic'
 
   const visibleTabs = TABS.filter((t) => !t.classicOnly || isClassic)
   const analysis = chapterContent?.analysis ?? null
+
+  // ANL-05: per-tab count badges (0 hides the badge)
+  const counts: Partial<Record<TabKey, number>> = {
+    chat: chatMessages.length,
+    notes: notes.length,
+    excerpts: excerpts.length,
+  }
 
   return (
     <aside className="bookdetail__inspector bookdetail__rail" aria-label="析">
@@ -75,20 +83,25 @@ export function AnalysisRail({ book }: { book: BookListItem | null }) {
           )}
         </div>
         <nav className="bookdetail__railTabs" aria-label="析 标签">
-          {visibleTabs.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              className={
-                active === t.key
-                  ? 'bookdetail__railTab is-active'
-                  : 'bookdetail__railTab'
-              }
-              onClick={() => setActive(t.key)}
-            >
-              <span className="bookdetail__railTabText">{t.label}</span>
-            </button>
-          ))}
+          {visibleTabs.map((t) => {
+            const count = counts[t.key] ?? 0
+            return (
+              <button
+                key={t.key}
+                type="button"
+                className={
+                  active === t.key
+                    ? 'bookdetail__railTab is-active'
+                    : 'bookdetail__railTab'
+                }
+                aria-current={active === t.key ? 'page' : undefined}
+                onClick={() => setActive(t.key)}
+              >
+                <span className="bookdetail__railTabText">{t.label}</span>
+                {count > 0 && <span className="bookdetail__railTabBadge">{count}</span>}
+              </button>
+            )
+          })}
         </nav>
       </div>
     </aside>

@@ -487,6 +487,13 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     try {
       const result = await aiApi.analyzeChapter(chapterContent.chapter.id, { force })
       set({ chapterContent: { ...chapterContent, analysis: result.analysis } })
+      // refresh the tree so the chapter's analyzed dot reflects the new analysis
+      try {
+        const nextTree = await libraryApi.tree(chapterContent.chapter.book_id)
+        set({ tree: nextTree })
+      } catch {
+        // tree refresh is best-effort
+      }
       get().showToast(result.fromCache ? '已从缓存恢复' : '已生成解读')
     } catch (e) {
       const subCode = aiSubCodeFrom(e)
