@@ -12,7 +12,7 @@ import { useLibraryStore } from '@/models/library/store'
 import { readingApi } from '@/models/library/api'
 import { computeBookPercent, flattenChapters } from '@/models/library/helpers'
 import type { BookListItem, ChapterNode } from '@/models/shared/types'
-import { ChapterList } from '@/components/page/library/ChapterList'
+import { ChapterTree } from '@/components/page/library/ChapterTree'
 import { ParagraphList } from '@/components/page/library/ParagraphList'
 import { InspectorPanel } from '@/components/page/library/InspectorPanel'
 import { NoteDrawer } from '@/components/page/library/NoteDrawer'
@@ -167,6 +167,16 @@ export function BookDetailView({ book, targetChapterId, onBack, onBookUpdated }:
           ) : (
             <div className="bookdetail__titleRow">
               <h2 className="bookdetail__title">{book.title}</h2>
+              <span
+                className={
+                  book.category === 'classic'
+                    ? 'bookdetail__catBadge bookdetail__catBadge--classic'
+                    : 'bookdetail__catBadge bookdetail__catBadge--modern'
+                }
+                title={book.category === 'classic' ? '古籍' : '现代书'}
+              >
+                {book.category === 'classic' ? '古籍' : '现代书'}
+              </span>
               <button
                 type="button"
                 className="bookdetail__editBtn bookdetail__editBtn--title"
@@ -200,7 +210,7 @@ export function BookDetailView({ book, targetChapterId, onBack, onBookUpdated }:
       </header>
 
       <div className="bookdetail__workspace">
-        <ChapterList bookId={book.id} />
+        <ChapterTree bookId={book.id} />
         <ParagraphList bookId={book.id} />
         <InspectorPanel />
       </div>

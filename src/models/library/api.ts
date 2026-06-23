@@ -26,8 +26,11 @@ import type {
   SaveProgressInput,
   CreateBookInput,
   CreateChapterInput,
+  CreateChildChapterInput,
   CreateParagraphInput,
   DeleteInput,
+  SetBookCategoryInput,
+  SetBookCategoryResult,
 } from './types'
 
 /** library:* — book list (with progress aggregation) + chapter tree + reorder + cover. */
@@ -74,8 +77,12 @@ export const editingApi = {
   // create / delete — books, chapters, paragraphs
   createBook: (input: CreateBookInput) => invokeRaw<TitleResult>('books:create', input),
   deleteBook: (input: DeleteInput) => invokeRaw<{ ok: true }>('books:delete', input),
+  setBookCategory: (input: SetBookCategoryInput) =>
+    invokeRaw<SetBookCategoryResult>('books:setCategory', input),
   createChapter: (input: CreateChapterInput) =>
     invokeRaw<ChapterContent>('chapters:create', input),
+  createChildChapter: (input: CreateChildChapterInput) =>
+    invokeRaw<ChapterContent>('chapters:createChild', input),
   deleteChapter: (input: DeleteInput) => invokeRaw<{ ok: true }>('chapters:delete', input),
   createParagraph: (input: CreateParagraphInput) =>
     invokeRaw<ChapterContent>('paragraphs:create', input),

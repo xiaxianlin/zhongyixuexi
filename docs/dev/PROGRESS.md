@@ -3,7 +3,7 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`,末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-23（Phase 9 详情页改造 v3.1 启动 · D1 完成）
+最后更新：2026-06-23（Phase 9 详情页改造 v3.1 · D1 + D2 完成）
 
 ---
 
@@ -197,7 +197,7 @@ Exit:段绑定笔记可增删查。
 | # | 状态 | 摘要 | 决策/阻塞 |
 |---|---|---|---|
 | D1 | done | schema v4 迁移（chapters.content/updated_at · chapter_analyses · excerpts · notes 选区列 · ai_threads/messages · ai_cache 重建扩 scope/kind · fts_chapters trigram + 三触发器） | 迁移幂等（columnExists / IF NOT EXISTS / aiCacheIsNarrow 守卫）；chapters.content 回填用 `\n\n` 拼 live paragraphs；builtin-content seed 同步写 content + updated_at；`books.category` backfill：五本内置经典→classic，其余→modern；ai_cache 重建段落_id 改可空。`npm run check` 绿（105 测试） |
-| D2 | todo | 分类分组 + 多级章节树 UI（复用现有 buildChapterTree） |  |
+| D2 | done | 分类分组 + 多级章节树 UI（ChapterTree 递归 + 折叠 + 增小节/重命名/删除；书库按 古籍/现代书 分组；详情页头部分类徽标） | `getChapterTree.analyzed` 子查询扩为段级 OR 章级；新服务 `setBookCategory` + `createChildChapter`（层级≤3 软约束）；`editChapterTitle`/`createChapter` 现写 updated_at；删旧 `ChapterList.tsx`（被 `ChapterTree.tsx` 取代）；IPC `books:setCategory` + `chapters:createChild`；store 加 `addChildChapter`/`setBookCategory`。`npm run check` 绿（111 测试） |
 | D3 | todo | 章级阅读区 + 文本选区 + 摘录 + 正文编辑（重新锚定） |  |
 | D4 | todo | 章级 AI（解读/医理/白话）+ 析侧栏竖排 6 Tab |  |
 | D5 | todo | 对话 + 引用 + 流式 token |  |

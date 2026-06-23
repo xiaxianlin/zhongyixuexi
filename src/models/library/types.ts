@@ -114,6 +114,22 @@ export interface CreateChapterInput {
   title: string
 }
 
+export interface CreateChildChapterInput {
+  bookId: string
+  parentId: string | null
+  title: string
+}
+
+export interface SetBookCategoryInput {
+  id: string
+  category: 'classic' | 'modern'
+}
+
+export interface SetBookCategoryResult {
+  id: string
+  category: 'classic' | 'modern'
+}
+
 export interface CreateParagraphInput {
   chapterId: string
   text: string

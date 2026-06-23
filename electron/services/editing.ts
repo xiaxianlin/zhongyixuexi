@@ -77,16 +77,91 @@ export function editBookTitle(bookId: string, title: string): { id: string; titl
   return { id: bookId, title: t }
 }
 
-/** Rename a chapter. chapters has no updated_at column. Throws NOT_FOUND if gone. */
+/** Rename a chapter. Bumps chapters.updated_at (added in schema v4). Throws
+ *  NOT_FOUND if gone. */
 export function editChapterTitle(chapterId: string, title: string): { id: string; title: string } {
   const t = title.trim()
   if (!t) throw new AppError('VALIDATION', '章节名不能为空')
   const db = getDb()
+  const now = Date.now()
   const result = db
-    .prepare('UPDATE chapters SET title = ? WHERE id = ? AND deleted_at IS NULL')
-    .run(t, chapterId)
+    .prepare('UPDATE chapters SET title = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL')
+    .run(t, now, chapterId)
   if (result.changes === 0) throw new AppError('NOT_FOUND', `章节 ${chapterId} 不存在`)
   return { id: chapterId, title: t }
+}
+
+/** Set a book's category ('classic' | 'modern'). Affects whether the detail
+ *  page shows the 白话 tab and whether chapter analysis asks for a modern
+ *  translation. Throws NOT_FOUND if the book is gone. */
+export function setBookCategory(
+  bookId: string,
+  category: string,
+): { id: string; category: string } {
+  const c = category === 'classic' || category === 'modern' ? category : 'modern'
+  const db = getDb()
+  const now = Date.now()
+  const result = db
+    .prepare('UPDATE books SET category = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL')
+    .run(c, now, bookId)
+  if (result.changes === 0) throw new AppError('NOT_FOUND', `书籍 ${bookId} 不存在`)
+  return { id: bookId, category: c }
+}
+
+/** Maximum chapter nesting depth (PRD LIB-T-08). A root chapter is level 1. */
+const MAX_CHAPTER_DEPTH = 3
+
+/** Create a child chapter under `parentId` (or a root chapter when parentId is
+ *  null). The new chapter is appended after the last sibling (or last root);
+ *  its `level` is derived from the parent's level (or '1' for roots), capped
+ *  at MAX_CHAPTER_DEPTH. Returns the refreshed chapter content. */
+export function createChildChapter(
+  bookId: string,
+  parentId: string | null,
+  title: string,
+): ChapterContent {
+  const t = title.trim()
+  if (!t) throw new AppError('VALIDATION', '章节名不能为空')
+  const db = getDb()
+  const now = Date.now()
+  const id = randomUUID()
+  return db.transaction(() => {
+    const book = db
+      .prepare('SELECT 1 FROM books WHERE id = ? AND deleted_at IS NULL')
+      .get(bookId)
+    if (!book) throw new AppError('NOT_FOUND', `书籍 ${bookId} 不存在`)
+
+    let parentLevel: number
+    let siblingFilter: string
+    let siblingArgs: unknown[]
+    if (parentId) {
+      const parent = db
+        .prepare('SELECT level FROM chapters WHERE id = ? AND book_id = ? AND deleted_at IS NULL')
+        .get(parentId, bookId) as { level: string | null } | undefined
+      if (!parent) throw new AppError('NOT_FOUND', `父章节 ${parentId} 不存在`)
+      parentLevel = Number(parent.level ?? '1') || 1
+      if (parentLevel >= MAX_CHAPTER_DEPTH) {
+        throw new AppError('VALIDATION', `章节层级不能超过 ${MAX_CHAPTER_DEPTH} 级`)
+      }
+      siblingFilter = 'parent_id = ? AND book_id = ? AND deleted_at IS NULL'
+      siblingArgs = [parentId, bookId]
+    } else {
+      parentLevel = 0
+      siblingFilter = 'parent_id IS NULL AND book_id = ? AND deleted_at IS NULL'
+      siblingArgs = [bookId]
+    }
+
+    const maxOrder = db
+      .prepare(`SELECT COALESCE(MAX(order_index), -1) AS m FROM chapters WHERE ${siblingFilter}`)
+      .get(...siblingArgs) as { m: number }
+
+    db.prepare(
+      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)`,
+    ).run(id, bookId, parentId, maxOrder.m + 1, String(parentLevel + 1), t, now, now)
+
+    return refreshChapterContent(id)
+  })()
 }
 
 // ============================================================================
@@ -407,9 +482,9 @@ export function createChapter(bookId: string, title: string): ChapterContent {
       )
       .get(bookId) as { m: number }
     db.prepare(
-      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, created_at)
-       VALUES (?, ?, NULL, ?, NULL, ?, ?)`,
-    ).run(id, bookId, maxOrder.m + 1, t, now)
+      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content, created_at, updated_at)
+       VALUES (?, ?, NULL, ?, NULL, ?, NULL, ?, ?)`,
+    ).run(id, bookId, maxOrder.m + 1, t, now, now)
     const content = refreshChapterContent(id)
     return content
   })()

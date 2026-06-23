@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { buildChapterTree, type ChapterRow } from './library'
 
 const row = (
@@ -88,5 +91,30 @@ describe('buildChapterTree', () => {
     const rows = [row('a', '卷一', null, 1, '卷')]
     const [node] = buildChapterTree(rows)
     expect(node!.level).toBe('卷')
+  })
+})
+
+describe('getChapterTree analyzed subquery (D2)', () => {
+  // better-sqlite3 ABI is Electron's, not Node/Vitest's, so we cannot spin up a
+  // real DB here. Static-analyze the SQL source (same approach as fts.test.ts)
+  // to lock the v3.1 contract: `analyzed` counts BOTH paragraph-level and
+  // chapter-level active analyses.
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+  const source = readFileSync(join(__dirname, 'library.ts'), 'utf8')
+
+  it('queries paragraph_analyses (legacy) for the analyzed flag', () => {
+    expect(source).toContain('FROM paragraph_analyses pa')
+    expect(source).toContain('JOIN paragraphs p ON p.id = pa.paragraph_id')
+    expect(source).toContain('pa.is_active = 1')
+  })
+
+  it('also queries chapter_analyses (v3.1) so chapter-level analysis lights the dot', () => {
+    expect(source).toContain('FROM chapter_analyses ca')
+    expect(source).toContain('ca.chapter_id = c.id')
+    expect(source).toContain('ca.is_active = 1')
+  })
+
+  it('OR-combines the two EXISTS clauses', () => {
+    expect(source).toMatch(/is_active = 1\s*\)\s*OR EXISTS/)
   })
 })

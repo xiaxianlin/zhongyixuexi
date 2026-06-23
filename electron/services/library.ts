@@ -113,6 +113,10 @@ export function reorderBooks(bookIds: string[]): BookListItem[] {
 /**
  * Returns the chapter tree for a book as a nested structure, built in memory
  * from a single flat query (02-library §7.2: O(n) assembly, no recursive CTE).
+ *
+ * `analyzed` is 1 when the chapter has any active analysis — either a legacy
+ * paragraph-level analysis (paragraph_analyses) or a v3.1 chapter-level one
+ * (chapter_analyses). The detail page's tree badge lights up on either.
  */
 export function getChapterTree(bookId: string): ChapterNode[] {
   const db = getDb()
@@ -127,6 +131,12 @@ export function getChapterTree(bookId: string): ChapterNode[] {
                   AND p.deleted_at IS NULL
                   AND p.is_noise = 0
                   AND pa.is_active = 1
+              )
+              OR EXISTS (
+                SELECT 1
+                FROM chapter_analyses ca
+                WHERE ca.chapter_id = c.id
+                  AND ca.is_active = 1
               ) AS analyzed
        FROM chapters c
        WHERE c.book_id = ? AND c.deleted_at IS NULL

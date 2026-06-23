@@ -127,6 +127,57 @@ body.is-library-detail .lib {
   gap: 16px;
 }
 
+/* v3.1: category groups (古籍 / 现代书) in the library grid. */
+.lib__groups {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 8px 0 24px;
+}
+
+.lib__group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.lib__groupLabel {
+  margin: 0;
+  font-family: var(--font-serif, var(--font-sans));
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--reader-ink, #5c4033);
+  padding-left: 4px;
+  border-left: 3px solid var(--accent-soft, #a67c5d);
+  padding-left: 10px;
+  line-height: 1.2;
+}
+
+/* corner category badge on a book card */
+.bookcard__catBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-family: var(--font-sans);
+  line-height: 1.4;
+  pointer-events: none;
+  opacity: 0.92;
+}
+
+.bookcard__catBadge--classic {
+  color: #fff;
+  background: rgba(138, 90, 43, 0.85);
+}
+
+.bookcard__catBadge--modern {
+  color: #fff;
+  background: rgba(74, 90, 106, 0.85);
+}
+
 .bookcard {
   position: relative;
   background: var(--surface);
@@ -540,6 +591,119 @@ body.is-library-detail .lib {
   min-height: 0;
   overflow: auto;
   padding: 0 8px 12px;
+}
+
+/* v3.1 chapter tree (recursive, collapsible). */
+.bookdetail__tree {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 8px 12px;
+}
+
+.bookdetail__tree,
+.bookdetail__treeChildren {
+  scrollbar-color: rgba(181, 142, 98, 0.7) rgba(181, 142, 98, 0.12);
+  scrollbar-width: auto;
+}
+
+.bookdetail__tree::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.bookdetail__tree::-webkit-scrollbar-track {
+  background: rgba(181, 142, 98, 0.1);
+  border-radius: 999px;
+}
+
+.bookdetail__tree::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(181, 142, 98, 0.6);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.bookdetail__treeChildren {
+  /* indent each nesting level; the depth CSS var is set inline per node */
+  padding-left: calc(14px * (var(--chapter-depth, 0) + 1));
+  margin-left: 10px;
+  border-left: 1px dashed var(--reader-line-soft);
+}
+
+.bookdetail__treeNode {
+  width: 100%;
+}
+
+.bookdetail__caret {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--reader-ink-soft, #8a7560);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.bookdetail__caret--leaf {
+  cursor: default;
+}
+
+.bookdetail__addChildBtn {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--reader-ink-soft, #8a7560);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.bookdetail__chapter:hover .bookdetail__addChildBtn,
+.bookdetail__addChildBtn:focus-visible {
+  display: inline-flex;
+  background: rgba(181, 142, 98, 0.14);
+}
+
+.bookdetail__addChildBtn:hover {
+  background: rgba(181, 142, 98, 0.28);
+  color: var(--reader-ink, #5c4033);
+}
+
+/* category badge in the book-detail header */
+.bookdetail__catBadge {
+  flex: 0 0 auto;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  line-height: 1.4;
+  border: 1px solid var(--reader-line-soft);
+}
+
+.bookdetail__catBadge--classic {
+  color: #8a5a2b;
+  background: rgba(166, 124, 93, 0.14);
+  border-color: rgba(166, 124, 93, 0.4);
+}
+
+.bookdetail__catBadge--modern {
+  color: #4a5a6a;
+  background: rgba(74, 90, 106, 0.1);
+  border-color: rgba(74, 90, 106, 0.3);
 }
 
 .bookdetail__list,

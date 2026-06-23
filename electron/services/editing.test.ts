@@ -7,6 +7,9 @@
  * integration check (electron/main/integration-check.ts) and manual verification.
  */
 import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { sha256Hex16 } from './parse-hash'
 import { buildChapterTree } from './library'
 
@@ -41,5 +44,28 @@ describe('buildChapterTree — analyzed flag passthrough', () => {
     expect(tree[0]!.analyzed).toBe(1)
     expect(tree[1]!.analyzed).toBe(0)
     expect(tree[2]!.analyzed).toBe(0) // defaults to 0 when absent
+  })
+})
+
+describe('editing service v3.1 additions (D2)', () => {
+  const __dirname = dirname(fileURLToPath(import.meta.url))
+  const source = readFileSync(join(__dirname, 'editing.ts'), 'utf8')
+
+  it('exports setBookCategory (classic | modern normalization)', () => {
+    expect(source).toContain('export function setBookCategory')
+    expect(source).toContain("category === 'classic' || category === 'modern'")
+    expect(source).toContain('UPDATE books SET category = ?')
+  })
+
+  it('exports createChildChapter with depth cap (PRD LIB-T-08, max 3)', () => {
+    expect(source).toContain('export function createChildChapter')
+    expect(source).toContain('MAX_CHAPTER_DEPTH = 3')
+    expect(source).toContain('章节层级不能超过')
+    // inserts with parent_id, level derived from parent, content NULL, updated_at
+    expect(source).toContain('parent_id, order_index, level, title, content')
+  })
+
+  it('bumps chapters.updated_at on title edit (v4 column)', () => {
+    expect(source).toContain('UPDATE chapters SET title = ?, updated_at = ?')
   })
 })

@@ -122,7 +122,10 @@ interface LibraryState {
   deleteBook: (bookId: string) => Promise<boolean>
   // create / delete — chapters (refreshes tree + reselects)
   addChapter: (bookId: string, title: string) => Promise<void>
+  addChildChapter: (bookId: string, parentId: string | null, title: string) => Promise<void>
   deleteChapter: (bookId: string, chapterId: string) => Promise<void>
+  // book category (classic | modern)
+  setBookCategory: (bookId: string, category: 'classic' | 'modern') => Promise<boolean>
   // create — paragraphs (updates current paragraph list + selects the new one)
   addParagraph: (chapterId: string, text: string) => Promise<void>
 }
@@ -578,6 +581,46 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       get().showToast('已新增章节')
     } catch (e) {
       get().showToast(`新增章节失败：${(e as Error).message}`)
+    }
+  },
+
+  addChildChapter: async (bookId, parentId, title) => {
+    const t = title.trim()
+    if (!t) {
+      get().showToast('章节名不能为空')
+      return
+    }
+    try {
+      await editingApi.createChildChapter({ bookId, parentId, title: t })
+      const nextTree = await libraryApi.tree(bookId)
+      // select the newly added child: the last descendant of parentId (or last root)
+      const flat = flattenChapters(nextTree)
+      let target: { id: string } | null = null
+      if (parentId) {
+        // find last node whose ancestor chain includes parentId
+        for (let i = flat.length - 1; i >= 0; i--) {
+          if (flat[i]!.id === parentId || flat[i]!.id !== parentId) {
+            target = flat[i]!
+            break
+          }
+        }
+      }
+      if (!target) target = flat[flat.length - 1] ?? null
+      set({ tree: nextTree, selectedChapterId: target?.id ?? null })
+      get().showToast('已新增小节')
+    } catch (e) {
+      get().showToast(`新增小节失败：${(e as Error).message}`)
+    }
+  },
+
+  setBookCategory: async (bookId, category) => {
+    try {
+      await editingApi.setBookCategory({ id: bookId, category })
+      get().showToast(category === 'classic' ? '已设为古籍' : '已设为现代书')
+      return true
+    } catch (e) {
+      get().showToast(`分类切换失败：${(e as Error).message}`)
+      return false
     }
   },
 

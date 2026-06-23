@@ -11,6 +11,8 @@ import {
   createChapter,
   deleteChapter,
   createParagraph,
+  setBookCategory,
+  createChildChapter,
 } from '../services/editing'
 
 /**
@@ -35,6 +37,11 @@ export function registerEditingHandlers(): void {
     return deleteBook(p.id ?? '')
   })
 
+  handle('books:setCategory', (_event, input: unknown) => {
+    const p = (input ?? {}) as { id?: string; category?: string }
+    return setBookCategory(p.id ?? '', p.category ?? 'modern')
+  })
+
   handle('chapters:updateTitle', (_event, input: unknown) => {
     const p = (input ?? {}) as { id?: string; title?: string }
     return editChapterTitle(p.id ?? '', p.title ?? '')
@@ -43,6 +50,12 @@ export function registerEditingHandlers(): void {
   handle('chapters:create', (_event, input: unknown) => {
     const p = (input ?? {}) as { bookId?: string; title?: string }
     return createChapter(p.bookId ?? '', p.title ?? '')
+  })
+
+  // v3.1: create a child chapter (nested under parentId) or a root when null.
+  handle('chapters:createChild', (_event, input: unknown) => {
+    const p = (input ?? {}) as { bookId?: string; parentId?: string | null; title?: string }
+    return createChildChapter(p.bookId ?? '', p.parentId ?? null, p.title ?? '')
   })
 
   handle('chapters:delete', (_event, input: unknown) => {
