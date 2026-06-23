@@ -146,28 +146,32 @@ export function LibraryView() {
           onBookUpdated={() => void refresh()}
         />
       ) : (
-        <div className="lib__groups">
-          <BookGroup
-            label="古籍"
-            books={books.filter((b) => b.category === 'classic')}
-            sensors={sensors}
-            onDragEnd={onDragEnd}
-            onOpenBook={(id) => navigate(`/book/${id}`)}
-            onUploadCover={uploadCover}
-            onDelete={(b) => setDeleteTarget({ id: b.id, title: b.title })}
-          />
-          <BookGroup
-            label="现代书"
-            books={books.filter((b) => b.category !== 'classic')}
-            sensors={sensors}
-            onDragEnd={onDragEnd}
-            onOpenBook={(id) => navigate(`/book/${id}`)}
-            onUploadCover={uploadCover}
-            onDelete={(b) => setDeleteTarget({ id: b.id, title: b.title })}
-            showNewBookCard
-            onNewBook={openNewBook}
-          />
-        </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <SortableContext items={books.map((b) => b.id)} strategy={rectSortingStrategy}>
+            <div className="lib__grid">
+              {books.map((b) => (
+                <BookCard
+                  key={b.id}
+                  book={b}
+                  onOpen={() => navigate(`/book/${b.id}`)}
+                  onUploadCover={() => void uploadCover(b.id)}
+                  onDelete={() => setDeleteTarget({ id: b.id, title: b.title })}
+                />
+              ))}
+              <button
+                type="button"
+                className="bookcard bookcard--new"
+                onClick={openNewBook}
+                title="新建书籍"
+              >
+                <span className="bookcard__plus" aria-hidden>
+                  ＋
+                </span>
+                <span className="bookcard__newLabel">新建书籍</span>
+              </button>
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       {newBookOpen && (
@@ -262,66 +266,6 @@ function BookCard({
       </span>
       {book.cover && <div className="bookcard__titleOverlay">{book.title}</div>}
     </div>
-  )
-}
-
-/** A category group within the library grid (古籍 / 现代书). Each group is its
- *  own DndContext so reordering stays within a category. The 「新建书籍」 card
- *  appears only in the 现代书 group (user-created books default to modern). */
-function BookGroup({
-  label,
-  books,
-  sensors,
-  onDragEnd,
-  onOpenBook,
-  onUploadCover,
-  onDelete,
-  showNewBookCard,
-  onNewBook,
-}: {
-  label: string
-  books: BookListItem[]
-  sensors: ReturnType<typeof useSensors>
-  onDragEnd: (event: DragEndEvent) => void
-  onOpenBook: (id: string) => void
-  onUploadCover: (id: string) => void
-  onDelete: (book: BookListItem) => void
-  showNewBookCard?: boolean
-  onNewBook?: () => void
-}) {
-  if (books.length === 0 && !showNewBookCard) return null
-  return (
-    <section className="lib__group">
-      <h3 className="lib__groupLabel">{label}</h3>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <SortableContext items={books.map((b) => b.id)} strategy={rectSortingStrategy}>
-          <div className="lib__grid">
-            {books.map((b) => (
-              <BookCard
-                key={b.id}
-                book={b}
-                onOpen={() => onOpenBook(b.id)}
-                onUploadCover={() => onUploadCover(b.id)}
-                onDelete={() => onDelete(b)}
-              />
-            ))}
-            {showNewBookCard && (
-              <button
-                type="button"
-                className="bookcard bookcard--new"
-                onClick={onNewBook}
-                title="新建书籍"
-              >
-                <span className="bookcard__plus" aria-hidden>
-                  ＋
-                </span>
-                <span className="bookcard__newLabel">新建书籍</span>
-              </button>
-            )}
-          </div>
-        </SortableContext>
-      </DndContext>
-    </section>
   )
 }
 

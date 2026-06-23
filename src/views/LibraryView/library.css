@@ -127,32 +127,6 @@ body.is-library-detail .lib {
   gap: 16px;
 }
 
-/* v3.1: category groups (古籍 / 现代书) in the library grid. */
-.lib__groups {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-  padding: 8px 0 24px;
-}
-
-.lib__group {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.lib__groupLabel {
-  margin: 0;
-  font-family: var(--font-serif, var(--font-sans));
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--reader-ink, #5c4033);
-  padding-left: 4px;
-  border-left: 3px solid var(--accent-soft, #a67c5d);
-  padding-left: 10px;
-  line-height: 1.2;
-}
-
 /* corner category badge on a book card */
 .bookcard__catBadge {
   position: absolute;
