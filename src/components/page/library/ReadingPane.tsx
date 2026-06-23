@@ -13,6 +13,7 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useLibraryStore } from '@/models/library/store'
+import { useAiStore } from '@/models/ai/store'
 import { TextBlock, getOffsetsFromSelection, type HighlightRange } from './TextBlock'
 import { SelectionToolbar } from './SelectionToolbar'
 
@@ -33,6 +34,9 @@ export function ReadingPane({ bookId }: { bookId: string }) {
   const createExcerpt = useLibraryStore((s) => s.createExcerptFromSelection)
   const aiGenerating = useLibraryStore((s) => s.aiGenerating)
   const analyzeChapter = useLibraryStore((s) => s.analyzeChapter)
+  const setPendingQuote = useLibraryStore((s) => s.setPendingQuote)
+  const setActiveRailTab = useLibraryStore((s) => s.setActiveRailTab)
+  const aiConfigured = useAiStore((s) => s.status?.configured ?? false)
 
   const textRef = useRef<HTMLDivElement | null>(null)
   const [toolbarRect, setToolbarRect] = useState<DOMRect | null>(null)
@@ -152,7 +156,7 @@ export function ReadingPane({ bookId }: { bookId: string }) {
       <SelectionToolbar
         selection={selection}
         rect={toolbarRect}
-        quoteEnabled={false}
+        quoteEnabled={aiConfigured}
         onExcerpt={() => void createExcerpt()}
         onNote={() => {
           // wired in slice D6; placeholder for now
@@ -160,8 +164,9 @@ export function ReadingPane({ bookId }: { bookId: string }) {
           setSelection(null)
           setToolbarRect(null)
         }}
-        onQuote={() => {
-          useLibraryStore.getState().showToast('引用对话将在下一版本上线')
+        onQuote={(sel) => {
+          setPendingQuote(sel.text)
+          setActiveRailTab('chat')
           setSelection(null)
           setToolbarRect(null)
         }}

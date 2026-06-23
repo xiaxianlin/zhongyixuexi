@@ -11,10 +11,10 @@
  *  - 摘录: the current chapter's selection highlights (ExcerptsTab).
  *  - 对话 (D5) / 笔记 (D6): placeholders until those slices land.
  */
-import { useState } from 'react'
 import { useLibraryStore } from '@/models/library/store'
 import { compactAnalysisText } from '@/models/library/helpers'
 import { ExcerptsTab } from './rail/ExcerptsTab'
+import { ChatTab } from './rail/ChatTab'
 import type { BookListItem } from '@/models/shared/types'
 
 type TabKey = 'chat' | 'analysis' | 'explanation' | 'modern' | 'notes' | 'excerpts'
@@ -36,7 +36,8 @@ const TABS: TabDef[] = [
 ]
 
 export function AnalysisRail({ book }: { book: BookListItem | null }) {
-  const [active, setActive] = useState<TabKey>('chat')
+  const active = useLibraryStore((s) => s.activeRailTab)
+  const setActive = useLibraryStore((s) => s.setActiveRailTab)
   const chapterContent = useLibraryStore((s) => s.chapterContent)
   const excerpts = useLibraryStore((s) => s.excerpts)
   const isClassic = (book?.category ?? 'modern') === 'classic'
@@ -48,9 +49,7 @@ export function AnalysisRail({ book }: { book: BookListItem | null }) {
     <aside className="bookdetail__inspector bookdetail__rail" aria-label="析">
       <div className="bookdetail__railBody">
         <div className="bookdetail__railPane">
-          {active === 'chat' && (
-            <p className="railtab__empty">AI 对话将在下一版本上线。选中正文可先摘录或写笔记。</p>
-          )}
+          {active === 'chat' && <ChatTab />}
           {active === 'analysis' && (
             <InterpBlock title="解读" text={analysis?.analysis} />
           )}

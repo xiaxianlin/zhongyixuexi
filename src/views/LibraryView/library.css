@@ -1854,3 +1854,182 @@ body.is-library-detail .lib {
   line-height: var(--lh-relaxed, 1.7);
 }
 
+/* ===========================================================================
+   v3.1 ChatTab (析 → 对话)
+   =========================================================================== */
+.chattab {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  margin: -16px -14px -18px;
+}
+
+.chattab__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 14px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-color: rgba(181, 142, 98, 0.7) rgba(181, 142, 98, 0.12);
+  scrollbar-width: auto;
+}
+
+.chattab__bubble {
+  max-width: 92%;
+  padding: 8px 11px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: var(--lh-relaxed, 1.7);
+  word-break: break-word;
+}
+
+.chattab__bubble--user {
+  align-self: flex-end;
+  background: rgba(166, 124, 93, 0.16);
+  color: var(--reader-ink, #5c4033);
+}
+
+.chattab__bubble--assistant {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--reader-ink, #5c4033);
+  border: 1px solid var(--reader-line-soft, rgba(181, 142, 98, 0.25));
+}
+
+.chattab__quote {
+  margin: 0 0 6px;
+  padding: 4px 8px;
+  border-left: 3px solid var(--accent-soft, #a67c5d);
+  background: rgba(166, 124, 93, 0.08);
+  font-size: 13px;
+  color: var(--reader-ink-soft, #8a7560);
+  border-radius: 0 6px 6px 0;
+}
+
+.chattab__text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.chattab__composer {
+  flex: 0 0 auto;
+  border-top: 1px solid var(--reader-line-soft, rgba(181, 142, 98, 0.25));
+  padding: 8px 10px 10px;
+  background: rgba(189, 134, 88, 0.06);
+}
+
+.chattab__pending {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.chattab__pendingQuote {
+  flex: 1;
+  margin: 0;
+  padding: 4px 8px;
+  border-left: 3px solid var(--accent-soft, #a67c5d);
+  background: rgba(166, 124, 93, 0.1);
+  font-size: 12px;
+  color: var(--reader-ink-soft, #8a7560);
+  border-radius: 0 6px 6px 0;
+  max-height: 60px;
+  overflow: auto;
+}
+
+.chattab__pendingClear {
+  flex: 0 0 auto;
+  border: none;
+  background: transparent;
+  color: var(--reader-ink-soft, #8a7560);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+.chattab__pendingClear:hover {
+  background: rgba(181, 142, 98, 0.18);
+  color: var(--reader-ink, #5c4033);
+}
+
+.chattab__inputRow {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.chattab__input {
+  flex: 1;
+  resize: none;
+  border: 1px solid var(--reader-line-soft, rgba(181, 142, 98, 0.3));
+  border-radius: 8px;
+  padding: 7px 9px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--reader-ink, #5c4033);
+  outline: none;
+}
+
+.chattab__input:focus {
+  border-color: var(--accent-soft, #a67c5d);
+}
+
+.chattab__input:disabled {
+  opacity: 0.6;
+}
+
+.chattab__send {
+  flex: 0 0 auto;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 14px;
+  background: var(--accent-soft, #a67c5d);
+  color: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.chattab__send:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chattab__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.chattab__hint {
+  font-size: 11px;
+  color: var(--reader-ink-soft, #8a7560);
+  opacity: 0.7;
+}
+
+.chattab__reset {
+  border: none;
+  background: transparent;
+  color: var(--reader-ink-soft, #8a7560);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+
+.chattab__reset:hover:not(:disabled) {
+  color: var(--reader-ink, #5c4033);
+  text-decoration: underline;
+}
+
+.chattab__reset:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+

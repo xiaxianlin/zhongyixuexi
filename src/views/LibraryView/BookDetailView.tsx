@@ -90,6 +90,13 @@ export function BookDetailView({ book, targetChapterId, onBack, onBookUpdated }:
     void fetchChapterContent(book.id, selectedChapterId)
   }, [book.id, selectedChapterId, fetchChapterContent])
 
+  // D5: load the chapter's chat thread alongside its content.
+  const fetchChatThread = useLibraryStore((s) => s.fetchChatThread)
+  useEffect(() => {
+    if (!selectedChapterId) return
+    void fetchChatThread(book.id, selectedChapterId)
+  }, [book.id, selectedChapterId, fetchChatThread])
+
   // ---- Reading-progress persistence (chapter-level: scroll ratio + dwell) ----
   useReadingProgress({ bookId: book.id, tree, selectedChapterId })
 

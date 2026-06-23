@@ -94,9 +94,6 @@ ${input.text}
     response_format: { type: 'json_object' },
   }
 }
-
-// ============================================================================
-// D4 章级解读 (chapter) — temperature 0.3, JSON mode
 // ============================================================================
 
 export interface ChapterPromptInput {
@@ -174,5 +171,59 @@ ${jsonShape}
     temperature: 0.3,
     response_format: { type: 'json_object' },
   }
+}
+
+// ============================================================================
+// D5 章级对话 (chat) — temperature 0.5, streaming, no JSON mode
+// ============================================================================
+
+export interface ChatPromptInput {
+  /** Chapter title (for context). */
+  chapterTitle: string
+  /** Whole-chapter plain text (may be truncated to a token budget upstream). */
+  chapterContent: string
+  /** Recent message history (oldest first), user + assistant roles. */
+  history: ChatMessage[]
+  /** The user's new message text. */
+  user: string
+  /** Optional quoted excerpt from the chapter (selection-driven 引用). */
+  quote?: string | null
+}
+
+/**
+ * Build the chat messages for chapter-scoped Q&A. The system prompt embeds the
+ * red line + the chapter text as context; history + the new user turn follow.
+ * Temperature is 0.5 (more flexible than the 0.3 analysis). No JSON mode
+ * (streaming prose). The caller streams the response via deepseek.chatStream.
+ */
+export function buildChatPrompt(input: ChatPromptInput): {
+  messages: ChatMessage[]
+  temperature: number
+} {
+  const task = `你是一位严谨、善讲解的中医经典导读老师，熟悉《难经》《黄帝内经》等经典文本。
+用户正在阅读某一本经典的某个章节，会就这一章的内容向你提问。回答须紧扣本章原文与中医理论，帮助用户学习理解。
+仅解释原文含义、术语、医理，不得提供诊疗、用药、剂量建议。`
+
+  const context = `当前章节：${input.chapterTitle}
+
+本章原文：
+"""
+${input.chapterContent}
+"""`
+
+  const messages: ChatMessage[] = [
+    system(`${task}\n\n${context}`),
+    ...input.history,
+  ]
+
+  const userBody = input.quote
+    ? `引用原文：
+> ${input.quote.replace(/\n/g, '\n> ')}
+
+${input.user}`
+    : input.user
+
+  messages.push({ role: 'user', content: userBody })
+  return { messages, temperature: 0.5 }
 }
 

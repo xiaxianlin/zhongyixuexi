@@ -21,6 +21,37 @@ export interface ChapterAnalysisResultDTO {
   analysis: ChapterAnalysisView
 }
 
+// ---------- D5: chapter-scoped chat ----------
+
+export interface AiThreadDTO {
+  id: string
+  book_id: string
+  chapter_id: string
+  title: string | null
+  created_at: number
+  updated_at: number
+}
+
+export interface AiMessageDTO {
+  id: string
+  thread_id: string
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  quote_text: string | null
+  quote_start: number | null
+  quote_end: number | null
+  model: string | null
+  prompt_tokens: number
+  completion_tokens: number
+  total_tokens: number
+  created_at: number
+}
+
+export interface SendChatResult {
+  userMessage: AiMessageDTO
+  assistantMessage: AiMessageDTO
+}
+
 /** AI error sub-code, mirrored from electron/ai/errors.ts AiSubCode. */
 export type AiSubCode =
   | 'AI_KEY_NOT_CONFIGURED'

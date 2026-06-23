@@ -19,6 +19,7 @@ import { create } from 'zustand'
 import { libraryApi, readingApi, editingApi, excerptsApi } from './api'
 import { aiApi } from '@/models/ai/api'
 import { aiSubCodeFrom } from '@/models/ai/api'
+import type { AiThreadDTO, AiMessageDTO } from '@/models/ai/types'
 import type { ChapterNode } from '@/models/shared/types'
 import type { ChapterContentView, ExcerptDTO } from './types'
 import { flattenChapters } from './helpers'
@@ -51,6 +52,15 @@ interface LibraryState {
 
   // ai generation (chapter-level analysis)
   aiGenerating: boolean
+
+  // D5: chapter-scoped chat
+  chatThread: AiThreadDTO | null
+  chatMessages: AiMessageDTO[]
+  chatStreaming: boolean
+  /** Pending quote from a selection (set by the 引用 toolbar button). */
+  pendingQuote: string | null
+  /** Active analysis-rail tab (lifted so the 引用 button can switch to chat). */
+  activeRailTab: 'chat' | 'analysis' | 'explanation' | 'modern' | 'notes' | 'excerpts'
 
   // toast
   toastMessage: string
@@ -86,6 +96,14 @@ interface LibraryState {
   deleteBook: (bookId: string) => Promise<boolean>
   // D4: chapter-level AI analysis
   analyzeChapter: (force?: boolean) => Promise<void>
+  // D5: chapter-scoped chat
+  fetchChatThread: (bookId: string, chapterId: string) => Promise<void>
+  sendChatMessage: (content: string) => Promise<void>
+  resetChatThread: () => Promise<void>
+  setPendingQuote: (quote: string | null) => void
+  setActiveRailTab: (tab: 'chat' | 'analysis' | 'explanation' | 'modern' | 'notes' | 'excerpts') => void
+  /** Subscribe to streaming token deltas for a thread (called by ChatTab mount). */
+  subscribeChatTokens: () => () => void
   // toast
   showToast: (message: string) => void
   clearToast: () => void
@@ -120,6 +138,13 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   chapterDraft: '',
 
   aiGenerating: false,
+
+  // D5: chat
+  chatThread: null,
+  chatMessages: [],
+  chatStreaming: false,
+  pendingQuote: null,
+  activeRailTab: 'chat',
 
   toastMessage: '',
 
@@ -395,6 +420,128 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     } finally {
       set({ aiGenerating: false })
     }
+  },
+
+  // ----- D5: chapter-scoped chat -----
+  fetchChatThread: async (bookId, chapterId) => {
+    if (!chapterId) {
+      set({ chatThread: null, chatMessages: [], pendingQuote: null })
+      return
+    }
+    try {
+      const thread = await aiApi.threadForChapter(bookId, chapterId)
+      const messages = await aiApi.chatHistory(thread.id)
+      set({ chatThread: thread, chatMessages: messages })
+    } catch {
+      set({ chatThread: null, chatMessages: [] })
+    }
+  },
+
+  sendChatMessage: async (content) => {
+    const { chatThread, chatStreaming } = get()
+    if (!chatThread || chatStreaming) return
+    const text = content.trim()
+    if (!text) return
+
+    // optimistic: append a placeholder user bubble + an empty assistant bubble
+    const optimisticUser: AiMessageDTO = {
+      id: `pending-user-${Date.now()}`,
+      thread_id: chatThread.id,
+      role: 'user',
+      content: text,
+      quote_text: get().pendingQuote,
+      quote_start: null,
+      quote_end: null,
+      model: null,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0,
+      created_at: Date.now(),
+    }
+    const optimisticAssistant: AiMessageDTO = {
+      id: `pending-assistant-${Date.now()}`,
+      thread_id: chatThread.id,
+      role: 'assistant',
+      content: '',
+      quote_text: null,
+      quote_start: null,
+      quote_end: null,
+      model: null,
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0,
+      created_at: Date.now() + 1,
+    }
+    set({
+      chatMessages: [...get().chatMessages, optimisticUser, optimisticAssistant],
+      chatStreaming: true,
+      pendingQuote: null,
+    })
+
+    try {
+      const result = await aiApi.sendChat({
+        threadId: chatThread.id,
+        content: text,
+        quote: optimisticUser.quote_text,
+      })
+      // replace the two optimistic bubbles with the persisted ones
+      set({
+        chatMessages: [
+          ...get().chatMessages.filter(
+            (m) => m.id !== optimisticUser.id && m.id !== optimisticAssistant.id,
+          ),
+          result.userMessage,
+          result.assistantMessage,
+        ],
+      })
+    } catch (e) {
+      // replace the empty assistant bubble with an error note
+      const subCode = aiSubCodeFrom(e)
+      const errText =
+        subCode === 'AI_KEY_NOT_CONFIGURED'
+          ? '请先在设置中配置 AI API Key'
+          : `对话失败：${(e as Error).message}`
+      set({
+        chatMessages: get().chatMessages.map((m) =>
+          m.id === optimisticAssistant.id ? { ...m, content: errText } : m,
+        ),
+      })
+    } finally {
+      set({ chatStreaming: false })
+    }
+  },
+
+  resetChatThread: async () => {
+    const { chatThread } = get()
+    if (!chatThread) return
+    try {
+      await aiApi.resetThread(chatThread.id)
+      set({ chatMessages: [] })
+      get().showToast('已清空对话')
+    } catch (e) {
+      get().showToast(`清空对话失败：${(e as Error).message}`)
+    }
+  },
+
+  setPendingQuote: (quote) => set({ pendingQuote: quote }),
+
+  setActiveRailTab: (tab) => set({ activeRailTab: tab }),
+
+  subscribeChatTokens: () => {
+    // token deltas arrive as { threadId, delta }; append to the last assistant
+    // bubble of the matching thread while streaming.
+    const off = window.api.on('ai:chat:token', (payload: unknown) => {
+      const { threadId, delta } = payload as { threadId: string; delta: string }
+      const { chatThread, chatStreaming } = get()
+      if (!chatThread || chatThread.id !== threadId || !chatStreaming) return
+      set({
+        chatMessages: get().chatMessages.map((m, i, arr) => {
+          if (i !== arr.length - 1 || m.role !== 'assistant') return m
+          return { ...m, content: m.content + delta }
+        }),
+      })
+    })
+    return off
   },
 
   showToast: (message) => {

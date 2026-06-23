@@ -5,7 +5,14 @@
  * errors as IpcError. Mirrors channels registered in electron/ipc/ai.ts.
  */
 import { invokeRaw, type IpcError } from '@/models/shared/ipc'
-import type { AiStatusDTO, AiSubCode, ChapterAnalysisResultDTO } from './types'
+import type {
+  AiStatusDTO,
+  AiSubCode,
+  ChapterAnalysisResultDTO,
+  AiThreadDTO,
+  AiMessageDTO,
+  SendChatResult,
+} from './types'
 
 /** Extract the AI sub-code from an IpcError's details.aiCode. */
 export function aiSubCodeFrom(e: unknown): AiSubCode {
@@ -18,10 +25,27 @@ export function aiSubCodeFrom(e: unknown): AiSubCode {
 
 export type { IpcError }
 
-/** ai:* — status + chapter-level analysis generation. Chat arrives in D5. */
+/** ai:* — status + chapter analysis + chapter-scoped chat. */
 export const aiApi = {
   status: () => invokeRaw<AiStatusDTO>('ai:status'),
 
   analyzeChapter: (chapterId: string, opts: { force?: boolean } = {}) =>
     invokeRaw<ChapterAnalysisResultDTO>('chapters:analyze', { chapterId, ...opts }),
+
+  threadForChapter: (bookId: string, chapterId: string) =>
+    invokeRaw<AiThreadDTO>('ai:threadForChapter', { bookId, chapterId }),
+
+  chatHistory: (threadId: string) =>
+    invokeRaw<AiMessageDTO[]>('ai:chatHistory', { threadId }),
+
+  sendChat: (input: {
+    threadId: string
+    content: string
+    quote?: string | null
+    quoteStart?: number | null
+    quoteEnd?: number | null
+  }) => invokeRaw<SendChatResult>('ai:sendChat', input),
+
+  resetThread: (threadId: string) =>
+    invokeRaw<{ ok: true }>('ai:resetThread', { threadId }),
 }

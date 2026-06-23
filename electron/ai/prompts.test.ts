@@ -10,6 +10,7 @@ import {
   RED_LINE_PROMPT,
   buildModernPrompt,
   buildChapterPrompt,
+  buildChatPrompt,
 } from './prompts'
 
 function systemContent(msgs: { role: string; content: string }[]): string {
@@ -100,5 +101,82 @@ describe('buildChapterPrompt', () => {
     const a = buildChapterPrompt({ title: '一难', content: 'x', category: 'classic' })
     const b = buildChapterPrompt({ title: '一难', content: 'x', category: 'classic' })
     expect(a.messages).toEqual(b.messages)
+  })
+})
+
+describe('buildChatPrompt', () => {
+  it('injects chapter title + content into the system message', () => {
+    const { messages } = buildChatPrompt({
+      chapterTitle: '一难',
+      chapterContent: '十二经皆有动脉',
+      history: [],
+      user: '这是什么意思？',
+    })
+    const sys = systemContent(messages)
+    expect(sys).toContain('一难')
+    expect(sys).toContain('十二经皆有动脉')
+  })
+
+  it('appends history + the new user turn after the system message', () => {
+    const { messages } = buildChatPrompt({
+      chapterTitle: '一难',
+      chapterContent: 'x',
+      history: [
+        { role: 'user', content: '问1' },
+        { role: 'assistant', content: '答1' },
+      ],
+      user: '问2',
+    })
+    expect(messages[0]!.role).toBe('system')
+    expect(messages.slice(1)).toEqual([
+      { role: 'user', content: '问1' },
+      { role: 'assistant', content: '答1' },
+      { role: 'user', content: '问2' },
+    ])
+  })
+
+  it('wraps a quote as a blockquote above the user text', () => {
+    const { messages } = buildChatPrompt({
+      chapterTitle: 't',
+      chapterContent: 'x',
+      history: [],
+      user: '解释一下',
+      quote: '十二经皆有动脉',
+    })
+    const last = messages[messages.length - 1]!
+    expect(last.role).toBe('user')
+    expect(last.content).toContain('> 十二经皆有动脉')
+    expect(last.content).toContain('解释一下')
+  })
+
+  it('omits the quote block when no quote is given', () => {
+    const { messages } = buildChatPrompt({
+      chapterTitle: 't',
+      chapterContent: 'x',
+      history: [],
+      user: '解释一下',
+    })
+    expect(messages[messages.length - 1]!.content).not.toContain('> ')
+  })
+
+  it('uses temperature 0.5 (more flexible than analysis) and no JSON mode', () => {
+    const p = buildChatPrompt({
+      chapterTitle: 't',
+      chapterContent: 'x',
+      history: [],
+      user: 'q',
+    })
+    expect(p.temperature).toBe(0.5)
+    expect((p as { response_format?: unknown }).response_format).toBeUndefined()
+  })
+
+  it('embeds the red line in the system message', () => {
+    const { messages } = buildChatPrompt({
+      chapterTitle: 't',
+      chapterContent: 'x',
+      history: [],
+      user: 'q',
+    })
+    expect(systemContent(messages)).toContain('严格禁止')
   })
 })
