@@ -232,6 +232,15 @@ function BookCard({
         ) : (
           <div className="bookcard__coverPlaceholder">{book.title}</div>
         )}
+        <span
+          className={
+            book.category === 'classic'
+              ? 'bookcard__catBadge bookcard__catBadge--classic'
+              : 'bookcard__catBadge bookcard__catBadge--modern'
+          }
+        >
+          {book.category === 'classic' ? '古' : '现'}
+        </span>
       </div>
       <div className="bookcard__actions">
         <button

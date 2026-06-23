@@ -165,10 +165,12 @@ body.is-library-detail .lib {
   cursor: grabbing;
 }
 
-/* 封面区：整张卡片就是封面，3:4 书脊比例 */
+/* 封面区：填满操作栏以上的空间，保持 3:4 书脊比例 */
 .bookcard__cover {
   position: relative;
   width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
   aspect-ratio: 3 / 4;
   overflow: hidden;
   background: linear-gradient(135deg, var(--qianjiang, #f1dfc6), var(--surface-2, #fffdf6));
@@ -201,6 +203,31 @@ body.is-library-detail .lib {
   background:
     radial-gradient(circle at 50% 40%, rgba(189, 134, 88, 0.12), transparent 70%),
     var(--paper-grain);
+}
+
+/* 分类角标：封面左上角 */
+.bookcard__catBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+.bookcard__catBadge--classic {
+  color: #fff9ee;
+  background: rgba(138, 90, 43, 0.88);
+}
+
+.bookcard__catBadge--modern {
+  color: #fff9ee;
+  background: rgba(74, 90, 106, 0.88);
 }
 
 /* 封面下方的操作栏：换封面 + 删除，并排 */
