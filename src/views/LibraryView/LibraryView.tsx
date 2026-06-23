@@ -230,20 +230,13 @@ function BookCard({
         {book.cover ? (
           <img className="bookcard__coverImg" src={book.cover} alt={book.title} draggable={false} />
         ) : (
-          <div className="bookcard__coverPlaceholder">{book.title.charAt(0)}</div>
+          <div className="bookcard__coverPlaceholder">{book.title}</div>
         )}
-        <span
-          className={
-            book.category === 'classic'
-              ? 'bookcard__catBadge bookcard__catBadge--classic'
-              : 'bookcard__catBadge bookcard__catBadge--modern'
-          }
-        >
-          {book.category === 'classic' ? '古' : '现'}
-        </span>
+      </div>
+      <div className="bookcard__actions">
         <button
           type="button"
-          className="bookcard__coverBtn"
+          className="bookcard__actionBtn"
           title="换封面"
           aria-label="换封面"
           onClick={(e) => {
@@ -251,11 +244,11 @@ function BookCard({
             onUploadCover()
           }}
         >
-          {book.cover ? '换' : '＋'}
+          {book.cover ? '换封面' : '加封面'}
         </button>
         <button
           type="button"
-          className="bookcard__delBtn"
+          className="bookcard__actionBtn bookcard__actionBtn--danger"
           title="删除书籍"
           aria-label="删除书籍"
           onClick={(e) => {
@@ -263,15 +256,8 @@ function BookCard({
             onDelete()
           }}
         >
-          ✕
+          删除
         </button>
-      </div>
-      <div className="bookcard__body">
-        <div className="bookcard__title">{book.title}</div>
-        {book.author ? <div className="bookcard__author">{book.author}</div> : null}
-        <div className="bookcard__meta">
-          <span className="bookcard__chapters">{book.chapter_count} 章</span>
-        </div>
       </div>
     </div>
   )
