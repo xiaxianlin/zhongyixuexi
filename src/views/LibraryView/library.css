@@ -130,7 +130,7 @@ body.is-library-detail .lib {
 /* corner category badge on a book card */
 .bookcard__catBadge {
   position: absolute;
-  bottom: 8px;
+  top: 8px;
   left: 8px;
   z-index: 2;
   padding: 2px 7px;
@@ -140,6 +140,12 @@ body.is-library-detail .lib {
   line-height: 1.4;
   pointer-events: none;
   opacity: 0.92;
+  transition: opacity 0.15s ease;
+}
+
+/* hide the badge when hovering so the delete button (same corner) is unobstructed */
+.bookcard:hover .bookcard__catBadge {
+  opacity: 0;
 }
 
 .bookcard__catBadge--classic {
@@ -848,7 +854,98 @@ body.is-library-detail .lib {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  
+
+}
+
+/* ===========================================================================
+   v3.1 ReadingPane — 中列章级阅读区（替代段列表）
+   =========================================================================== */
+.bookdetail__reading {
+  /* inherits .bookdetail__paragraphs column + paper background */
+}
+
+.bookdetail__readingHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 16px 12px;
+}
+
+.bookdetail__readingTitle {
+  margin: 0;
+  color: var(--reader-title);
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+
+.bookdetail__readingActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+/* AI 分析按钮（阅读区右上主操作） */
+.bookdetail__analyzeBtn {
+  flex: 0 0 auto;
+  border: 1px solid var(--accent, #8c2d25);
+  border-radius: var(--control-radius, 10px);
+  background: var(--accent, #8c2d25);
+  color: var(--accent-contrast, #fff9ee);
+  font-family: var(--font-title);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease, transform 0.12s ease, opacity 0.18s ease;
+}
+
+.bookdetail__analyzeBtn:hover:not(:disabled) {
+  background: var(--accent-deep, #6b211c);
+  border-color: var(--accent-deep, #6b211c);
+}
+
+.bookdetail__analyzeBtn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.bookdetail__analyzeBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 正文编辑 textarea */
+.bookdetail__contentEdit {
+  flex: 1;
+  min-height: 0;
+  margin: 0 16px 16px;
+  resize: none;
+  border: 1px solid var(--reader-accent, #8c2d25);
+  border-radius: 10px;
+  padding: 16px 18px;
+  font-family: var(--font-title);
+  font-size: 18px;
+  line-height: var(--lh-relax, 1.9);
+  color: var(--fg, #2f2118);
+  background: var(--reader-page-raised, #fffdf6);
+  outline: none;
+}
+
+.bookdetail__contentEdit:focus {
+  border-color: var(--accent, #8c2d25);
+  box-shadow: 0 0 0 3px rgba(140, 45, 37, 0.12);
+}
+
+/* 阅读区滚动容器（覆盖 paragraphList 的裸 overflow，加内边距） */
+.bookdetail__readingScroll {
+  padding: 4px 24px 24px;
 }
 
 .bookdetail__paragraphScroll {
@@ -898,6 +995,13 @@ body.is-library-detail .lib {
 
 .bookdetail__paragraph:hover .bookdetail__editBtn--para,
 .bookdetail__editBtn--para:focus-visible {
+  opacity: 1;
+}
+
+/* In the v3.1 reading-pane header the edit button is inline (not absolute),
+   and always visible — override the paragraph-list positioning. */
+.bookdetail__readingActions .bookdetail__editBtn--para {
+  position: static;
   opacity: 1;
 }
 
