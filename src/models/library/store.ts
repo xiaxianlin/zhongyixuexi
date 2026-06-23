@@ -17,6 +17,8 @@
  */
 import { create } from 'zustand'
 import { libraryApi, readingApi, editingApi, excerptsApi } from './api'
+import { aiApi } from '@/models/ai/api'
+import { aiSubCodeFrom } from '@/models/ai/api'
 import type { ChapterNode } from '@/models/shared/types'
 import type { ChapterContentView, ExcerptDTO } from './types'
 import { flattenChapters } from './helpers'
@@ -46,6 +48,9 @@ interface LibraryState {
   // chapter title editing (inline)
   editingChapterId: string | null
   chapterDraft: string
+
+  // ai generation (chapter-level analysis)
+  aiGenerating: boolean
 
   // toast
   toastMessage: string
@@ -79,6 +84,8 @@ interface LibraryState {
   // create / delete — books (LibraryView refreshes its own book list)
   addBook: (title: string, author?: string) => Promise<{ id: string; title: string } | null>
   deleteBook: (bookId: string) => Promise<boolean>
+  // D4: chapter-level AI analysis
+  analyzeChapter: (force?: boolean) => Promise<void>
   // toast
   showToast: (message: string) => void
   clearToast: () => void
@@ -111,6 +118,8 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   editingChapterId: null,
   chapterDraft: '',
+
+  aiGenerating: false,
 
   toastMessage: '',
 
@@ -364,6 +373,27 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     } catch (e) {
       get().showToast(`删除书籍失败：${(e as Error).message}`)
       return false
+    }
+  },
+
+  // ----- D4: chapter-level AI analysis -----
+  analyzeChapter: async (force = false) => {
+    const { chapterContent } = get()
+    if (!chapterContent) return
+    set({ aiGenerating: true, toastMessage: '' })
+    try {
+      const result = await aiApi.analyzeChapter(chapterContent.chapter.id, { force })
+      set({ chapterContent: { ...chapterContent, analysis: result.analysis } })
+      get().showToast(result.fromCache ? '已从缓存恢复' : '已生成解读')
+    } catch (e) {
+      const subCode = aiSubCodeFrom(e)
+      get().showToast(
+        subCode === 'AI_KEY_NOT_CONFIGURED'
+          ? '请先在设置中配置 AI API Key'
+          : `AI 解读失败：${(e as Error).message}`,
+      )
+    } finally {
+      set({ aiGenerating: false })
     }
   },
 

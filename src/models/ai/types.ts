@@ -2,14 +2,23 @@
  * AI domain renderer DTOs + degraded-state mapping (mirror of
  * electron/services/ai.ts DTOs and electron/ai/errors.ts). Dependency-free.
  *
- * Chapter-level analysis + chat land in slices D4/D5; for now only the status
- * DTO (key configured?) is exposed.
+ * D4 exposes chapter-level analysis generation (chapters:analyze). Chat lands
+ * in D5; for now only status + chapter analysis are exposed.
  */
+
+import type { ChapterAnalysisView } from '@/models/library/types'
 
 export interface AiStatusDTO {
   configured: boolean
   provider: string | null
   model: string | null
+}
+
+/** Result of chapters:analyze — the refreshed active analysis view. */
+export interface ChapterAnalysisResultDTO {
+  chapterId: string
+  fromCache: boolean
+  analysis: ChapterAnalysisView
 }
 
 /** AI error sub-code, mirrored from electron/ai/errors.ts AiSubCode. */

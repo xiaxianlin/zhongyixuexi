@@ -9,6 +9,7 @@ import { describe, it, expect } from 'vitest'
 import {
   RED_LINE_PROMPT,
   buildModernPrompt,
+  buildChapterPrompt,
 } from './prompts'
 
 function systemContent(msgs: { role: string; content: string }[]): string {
@@ -25,6 +26,8 @@ describe('red-line presence (layer 1)', () => {
   it('is prepended to every template', () => {
     const cases = [
       buildModernPrompt({ text: '人参' }).messages,
+      buildChapterPrompt({ title: '一难', content: '人参', category: 'classic' }).messages,
+      buildChapterPrompt({ title: 'ch1', content: 'x', category: 'modern' }).messages,
     ]
     for (const msgs of cases) {
       expect(systemContent(msgs)).toContain('严格禁止')
@@ -48,6 +51,54 @@ describe('buildModernPrompt', () => {
   it('is stable across calls with the same input', () => {
     const a = buildModernPrompt({ text: '人参' })
     const b = buildModernPrompt({ text: '人参' })
+    expect(a.messages).toEqual(b.messages)
+  })
+})
+
+describe('buildChapterPrompt', () => {
+  it('injects chapter title + content into the user message', () => {
+    const { messages } = buildChapterPrompt({
+      title: '一难',
+      content: '十二经皆有动脉',
+      category: 'classic',
+    })
+    const user = messages.find((m) => m.role === 'user')!.content
+    expect(user).toContain('一难')
+    expect(user).toContain('十二经皆有动脉')
+    expect(user).toContain('"version": 1')
+  })
+
+  it('classic asks for the modern (白话) field', () => {
+    const { messages } = buildChapterPrompt({
+      title: '一难',
+      content: 'x',
+      category: 'classic',
+    })
+    const user = messages.find((m) => m.role === 'user')!.content
+    expect(user).toContain('"modern"')
+    expect(user).toContain('白话译文')
+  })
+
+  it('modern books omit the modern (白话) field', () => {
+    const { messages } = buildChapterPrompt({
+      title: 'ch1',
+      content: 'x',
+      category: 'modern',
+    })
+    const user = messages.find((m) => m.role === 'user')!.content
+    expect(user).not.toContain('"modern"')
+    expect(user).not.toContain('白话译文')
+  })
+
+  it('uses temperature 0.3 and JSON mode', () => {
+    const p = buildChapterPrompt({ title: 't', content: 'x', category: 'classic' })
+    expect(p.temperature).toBe(0.3)
+    expect(p.response_format).toEqual({ type: 'json_object' })
+  })
+
+  it('is stable across calls with the same input', () => {
+    const a = buildChapterPrompt({ title: '一难', content: 'x', category: 'classic' })
+    const b = buildChapterPrompt({ title: '一难', content: 'x', category: 'classic' })
     expect(a.messages).toEqual(b.messages)
   })
 })

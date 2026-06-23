@@ -165,7 +165,7 @@ export function BookDetailView({ book, targetChapterId, onBack, onBookUpdated }:
       <div className="bookdetail__workspace">
         <ChapterTree bookId={book.id} />
         <ReadingPane bookId={book.id} />
-        <AnalysisRail />
+        <AnalysisRail book={book} />
       </div>
 
       <ConfirmModal

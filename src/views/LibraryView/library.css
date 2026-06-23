@@ -1744,3 +1744,113 @@ body.is-library-detail .lib {
   justify-content: flex-end;
 }
 
+/* ===========================================================================
+   v3.1 AnalysisRail — vertical 6-tab rail (析)
+   =========================================================================== */
+
+/* The rail body is a row: scrollable content pane (left) + vertical tab head
+   (right edge). Overrides the legacy inspector's column layout. */
+.bookdetail__rail.bookdetail__inspector {
+  padding: 0;
+}
+
+.bookdetail__railBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+}
+
+.bookdetail__railPane {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 16px 14px 18px;
+  scrollbar-color: rgba(181, 142, 98, 0.7) rgba(181, 142, 98, 0.12);
+  scrollbar-width: auto;
+}
+
+.bookdetail__railPane::-webkit-scrollbar {
+  width: 10px;
+}
+.bookdetail__railPane::-webkit-scrollbar-track {
+  background: rgba(181, 142, 98, 0.1);
+  border-radius: 999px;
+}
+.bookdetail__railPane::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(181, 142, 98, 0.6);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Vertical tab head on the right edge. */
+.bookdetail__railTabs {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 6px;
+  border-left: 1px solid var(--reader-line-soft, rgba(181, 142, 98, 0.25));
+  background: rgba(189, 134, 88, 0.06);
+}
+
+.bookdetail__railTab {
+  appearance: none;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 10px 6px;
+  border-radius: 8px;
+  position: relative;
+  color: var(--reader-ink-soft, #8a7560);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.bookdetail__railTab:hover {
+  background: rgba(181, 142, 98, 0.14);
+  color: var(--reader-ink, #5c4033);
+}
+
+.bookdetail__railTab.is-active {
+  background: rgba(166, 124, 93, 0.18);
+  color: var(--reader-ink, #5c4033);
+}
+
+/* active left color bar (sits on the tab's left, facing the pane) */
+.bookdetail__railTab.is-active::before {
+  content: '';
+  position: absolute;
+  left: -6px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--accent-soft, #a67c5d);
+}
+
+.bookdetail__railTabText {
+  writing-mode: vertical-rl;
+  text-orientation: upright;
+  letter-spacing: 2px;
+  font-family: var(--font-serif, var(--font-sans));
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* AI analyze button loading state (reading pane header) */
+.bookdetail__analyzeBtn--loading {
+  opacity: 0.78;
+  cursor: progress;
+}
+
+/* rail tab empty-state copy */
+.railtab__empty {
+  margin: 8px 2px;
+  color: var(--reader-ink-soft, #8a7560);
+  font-size: 14px;
+  line-height: var(--lh-relaxed, 1.7);
+}
+

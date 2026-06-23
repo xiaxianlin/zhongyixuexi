@@ -95,3 +95,84 @@ ${input.text}
   }
 }
 
+// ============================================================================
+// D4 章级解读 (chapter) — temperature 0.3, JSON mode
+// ============================================================================
+
+export interface ChapterPromptInput {
+  /** Chapter title (for context). */
+  title: string
+  /** Whole-chapter plain text. */
+  content: string
+  /** 'classic' asks for 白话 (modern translation); 'modern' omits it. */
+  category: 'classic' | 'modern'
+}
+
+/**
+ * Model output contract for chapter-level analysis. classic books get a modern
+ * (白话) field; modern books omit it (the JSON shape differs by category so the
+ * model isn't asked to translate a modern text into "modern").
+ */
+export interface ChapterAnalysisJson {
+  version: number
+  /** 整章综合解读（classic + modern 都有）。 */
+  analysis: string
+  /** 整章医理点拨（classic + modern 都有）。 */
+  explanation: string
+  /** 整章白话译文，仅 category='classic' 时存在。 */
+  modern?: string
+  /** 整章一句话概括（≤60字）。 */
+  summary: string
+}
+
+/** Build the chat messages for chapter-level analysis. */
+export function buildChapterPrompt(input: ChapterPromptInput): {
+  messages: ChatMessage[]
+  temperature: number
+  response_format: { type: 'json_object' }
+} {
+  const isClassic = input.category === 'classic'
+  const task = `你是一位严谨、善讲解的中医经典导读老师，熟悉《难经》《黄帝内经》等经典文本，擅长把古文讲给初学者听。
+你的任务：把给定的整章原文作为一个整体来理解，直接产出整章的综合解读、医理点拨${
+    isClassic ? '、白话译文' : ''
+  }。
+注意是整章一体分析，不要逐句拆分、不要分条列点、不要输出「解读：」「医理：」之类前缀。
+仅基于原文含义解释，不得添加原文没有的诊断或用药主张。`
+  const jsonShape = isClassic
+    ? `{
+  "version": 1,
+  "analysis": "整章综合解读。讲清本章核心主旨、论述层次、关键术语抓手、易混淆处与记忆线索，连贯成段，不要逐句、不要分条、不要写「解读：」前缀",
+  "explanation": "整章医理点拨。连贯讲解本章涉及的中医理论、经脉脏腑关系、关键术语，不要分条编号、不要写「医理：」前缀",
+  "modern": "整章白话译文。用现代汉语把整章原文一次性连贯译出，行文自然通顺，不要逐句换行、不要分条、不要写「白话：」前缀",
+  "summary": "整章一句话概括（≤60字，不加前缀）"
+}`
+    : `{
+  "version": 1,
+  "analysis": "整章综合解读。讲清本章核心主旨、论述层次、关键术语抓手、易混淆处与记忆线索，连贯成段，不要逐句、不要分条、不要写「解读：」前缀",
+  "explanation": "整章医理点拨。连贯讲解本章涉及的中医理论、经脉脏腑关系、关键术语，不要分条编号、不要写「医理：」前缀",
+  "summary": "整章一句话概括（≤60字，不加前缀）"
+}`
+  const user = `章节：${input.title}
+原文：
+"""
+${input.content}
+"""
+
+请严格输出如下 JSON（不要输出 JSON 以外的任何文字，字段值必须是纯净的正文内容，不要任何前缀标签）：
+${jsonShape}
+
+规则：
+- 各字段都是整段连贯的文字，不要逐句、不要分条、不要列表、不要编号；
+- 字段值只写正文内容本身，绝对不要出现「解读：」「医理：」「白话：」「此句」「原文」等任何前缀、标签或提示性字眼；
+- explanation 必须精确无误，仅解释医理与术语，禁止诊疗/剂量，不作模糊发挥；
+- analysis 必须易读易懂，从整章层面帮助学习，内容要比 summary 充分${
+    isClassic ? '；modern 为现代汉语白话，必须通顺自然，不照搬古文，不展开讲医理，不要与 analysis 重复' : ''
+  }；
+- 各字段内部不要输出空行。`
+  return {
+    messages: [system(task), { role: 'user', content: user }],
+    temperature: 0.3,
+    response_format: { type: 'json_object' },
+  }
+}
+

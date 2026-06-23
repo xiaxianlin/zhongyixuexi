@@ -31,6 +31,8 @@ export function ReadingPane({ bookId }: { bookId: string }) {
   const setSelection = useLibraryStore((s) => s.setSelection)
   const excerpts = useLibraryStore((s) => s.excerpts)
   const createExcerpt = useLibraryStore((s) => s.createExcerptFromSelection)
+  const aiGenerating = useLibraryStore((s) => s.aiGenerating)
+  const analyzeChapter = useLibraryStore((s) => s.analyzeChapter)
 
   const textRef = useRef<HTMLDivElement | null>(null)
   const [toolbarRect, setToolbarRect] = useState<DOMRect | null>(null)
@@ -79,15 +81,16 @@ export function ReadingPane({ bookId }: { bookId: string }) {
         <div className="bookdetail__readingActions">
           <button
             type="button"
-            className="bookdetail__analyzeBtn"
-            disabled={!chapterContent || loading}
+            className={
+              aiGenerating
+                ? 'bookdetail__analyzeBtn bookdetail__analyzeBtn--loading'
+                : 'bookdetail__analyzeBtn'
+            }
+            disabled={!chapterContent || loading || aiGenerating}
             title={analyzed ? '重新生成本章解读' : '生成本章 AI 解读'}
-            onClick={() => {
-              // wired in slice D4; placeholder toast for now
-              useLibraryStore.getState().showToast('AI 分析将在下一版本上线')
-            }}
+            onClick={() => void analyzeChapter(true)}
           >
-            {analyzed ? '重新分析' : 'AI 分析'}
+            {aiGenerating ? '分析中…' : analyzed ? '重新分析' : 'AI 分析'}
           </button>
           {editing ? (
             <>

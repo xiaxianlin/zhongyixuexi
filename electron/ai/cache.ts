@@ -17,14 +17,13 @@ import { randomUUID } from 'node:crypto'
 import { getDb } from '../db/connection'
 import type { ChatMessage } from './types'
 
-export type AiCacheScope = 'paragraph'
-export type AiCacheKind = 'modern'
+export type AiCacheScope = 'chapter' | 'chat'
+export type AiCacheKind = 'chapter' | 'chat'
 
 export interface AiCacheWrite {
   scope: AiCacheScope
   scopeId: string
   kind: AiCacheKind
-  paragraphId: string | null
   promptHash: string
   response: string
   model: string
@@ -130,15 +129,14 @@ export function writeCache(entry: AiCacheWrite): string {
   const now = Date.now()
   db.prepare(
     `INSERT INTO ai_cache
-       (id, scope, scope_id, kind, paragraph_id, prompt_hash, response, model,
+       (id, scope, scope_id, kind, prompt_hash, response, model,
         prompt_tokens, completion_tokens, total_tokens, created_at, invalidated, meta)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)`,
   ).run(
     id,
     entry.scope,
     entry.scopeId,
     entry.kind,
-    entry.paragraphId,
     entry.promptHash,
     entry.response,
     entry.model,
