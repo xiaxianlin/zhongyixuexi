@@ -31,11 +31,13 @@ export function ReadingPane({ bookId }: { bookId: string }) {
   const selection = useLibraryStore((s) => s.selection)
   const setSelection = useLibraryStore((s) => s.setSelection)
   const excerpts = useLibraryStore((s) => s.excerpts)
+  const notes = useLibraryStore((s) => s.notesByChapter)
   const createExcerpt = useLibraryStore((s) => s.createExcerptFromSelection)
   const aiGenerating = useLibraryStore((s) => s.aiGenerating)
   const analyzeChapter = useLibraryStore((s) => s.analyzeChapter)
   const setPendingQuote = useLibraryStore((s) => s.setPendingQuote)
   const setActiveRailTab = useLibraryStore((s) => s.setActiveRailTab)
+  const openNoteEditor = useLibraryStore((s) => s.openNoteEditor)
   const aiConfigured = useAiStore((s) => s.status?.configured ?? false)
 
   const textRef = useRef<HTMLDivElement | null>(null)
@@ -70,9 +72,18 @@ export function ReadingPane({ bookId }: { bookId: string }) {
     }
   }
 
-  const ranges: HighlightRange[] = excerpts
-    .filter((e) => !e.stale)
-    .map((e) => ({ start: e.start_offset, end: e.end_offset, kind: 'excerpt' as const }))
+  const ranges: HighlightRange[] = [
+    ...excerpts
+      .filter((e) => !e.stale)
+      .map((e) => ({ start: e.start_offset, end: e.end_offset, kind: 'excerpt' as const })),
+    ...notes
+      .filter((n) => !n.stale && n.start_offset != null && n.end_offset != null)
+      .map((n) => ({
+        start: n.start_offset!,
+        end: n.end_offset!,
+        kind: 'note' as const,
+      })),
+  ]
 
   const analyzed = Boolean(chapterContent?.analysis.meta)
 
@@ -158,9 +169,8 @@ export function ReadingPane({ bookId }: { bookId: string }) {
         rect={toolbarRect}
         quoteEnabled={aiConfigured}
         onExcerpt={() => void createExcerpt()}
-        onNote={() => {
-          // wired in slice D6; placeholder for now
-          useLibraryStore.getState().showToast('选区笔记将在下一版本上线')
+        onNote={(sel) => {
+          openNoteEditor(sel.text)
           setSelection(null)
           setToolbarRect(null)
         }}

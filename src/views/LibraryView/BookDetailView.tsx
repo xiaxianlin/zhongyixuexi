@@ -17,6 +17,7 @@ import { ChapterTree } from '@/components/page/library/ChapterTree'
 import { ReadingPane } from '@/components/page/library/ReadingPane'
 import { AnalysisRail } from '@/components/page/library/AnalysisRail'
 import { ConfirmModal } from '@/components/interaction/ConfirmModal'
+import { Modal } from '@/components/interaction/Modal'
 
 interface BookDetailViewProps {
   book: BookListItem
@@ -76,6 +77,15 @@ export function BookDetailView({ book, targetChapterId, onBack, onBookUpdated }:
   const excerptDeleteTarget = useLibraryStore((s) => s.excerptDeleteTarget)
   const setExcerptDeleteTarget = useLibraryStore((s) => s.setExcerptDeleteTarget)
   const deleteExcerpt = useLibraryStore((s) => s.deleteExcerpt)
+
+  // D6: notes editor + delete confirm
+  const noteEditor = useLibraryStore((s) => s.noteEditor)
+  const setNoteDraft = useLibraryStore((s) => s.setNoteDraft)
+  const closeNoteEditor = useLibraryStore((s) => s.closeNoteEditor)
+  const createNoteFromEditor = useLibraryStore((s) => s.createNoteFromEditor)
+  const noteDeleteTarget = useLibraryStore((s) => s.noteDeleteTarget)
+  const setNoteDeleteTarget = useLibraryStore((s) => s.setNoteDeleteTarget)
+  const deleteNote = useLibraryStore((s) => s.deleteNote)
 
   const toastMessage = useLibraryStore((s) => s.toastMessage)
 
@@ -184,6 +194,51 @@ export function BookDetailView({ book, targetChapterId, onBack, onBookUpdated }:
           if (excerptDeleteTarget) void deleteExcerpt(excerptDeleteTarget.id)
         }}
         onCancel={() => setExcerptDeleteTarget(null)}
+      />
+
+      {noteEditor && (
+        <Modal
+          title="写笔记"
+          onClose={closeNoteEditor}
+          actions={
+            <>
+              <button type="button" className="bookdetail__btn" onClick={closeNoteEditor}>
+                取消
+              </button>
+              <button
+                type="button"
+                className="bookdetail__primary"
+                disabled={noteEditor.draft.trim() === ''}
+                onClick={() => void createNoteFromEditor()}
+              >
+                保存
+              </button>
+            </>
+          }
+        >
+          {noteEditor.quote && (
+            <blockquote className="noteeditor__quote">{noteEditor.quote}</blockquote>
+          )}
+          <textarea
+            className="noteeditor__textarea"
+            value={noteEditor.draft}
+            placeholder="写下你的理解、疑问或联想…"
+            autoFocus
+            rows={6}
+            onChange={(e) => setNoteDraft(e.target.value)}
+          />
+        </Modal>
+      )}
+
+      <ConfirmModal
+        open={noteDeleteTarget !== null}
+        title="删除笔记"
+        message="删除这条笔记？此操作不可撤销。"
+        confirmLabel="删除"
+        onConfirm={() => {
+          if (noteDeleteTarget) void deleteNote(noteDeleteTarget.id)
+        }}
+        onCancel={() => setNoteDeleteTarget(null)}
       />
 
       {toastMessage && (

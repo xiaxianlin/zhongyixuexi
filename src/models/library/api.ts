@@ -17,10 +17,12 @@ import type {
   CreateChapterInput,
   CreateBookInput,
   CreateExcerptInput,
+  CreateNoteInput,
   DeleteInput,
   EditBookTitleInput,
   EditChapterTitleInput,
   ExcerptDTO,
+  NoteDTO,
   SaveProgressInput,
   SetBookCategoryInput,
   SetBookCategoryResult,
@@ -55,6 +57,14 @@ export const excerptsApi = {
   listByBook: (bookId: string) =>
     invokeRaw<ExcerptDTO[]>('excerpts:listByBook', { bookId }),
   delete: (id: string) => invokeRaw<{ ok: true }>('excerpts:delete', { id }),
+}
+
+/** notes:* — chapter + selection-bound notes (NOTE module). */
+export const notesApi = {
+  create: (input: CreateNoteInput) => invokeRaw<NoteDTO>('notes:create', input),
+  listByChapter: (chapterId: string) =>
+    invokeRaw<NoteDTO[]>('notes:listByChapter', { chapterId }),
+  delete: (id: string) => invokeRaw<{ ok: true }>('notes:delete', { id }),
 }
 
 /** editing:* — book/chapter title + chapter content edits + category + CRUD. */

@@ -3,7 +3,7 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`,末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-23（Phase 9 详情页改造 v3.1 · 重设为章级模型，D1–D5 完成）
+最后更新：2026-06-23（Phase 9 详情页改造 v3.1 · 重设为章级模型，D1–D6 完成）
 
 ---
 
@@ -203,7 +203,7 @@ Exit:段绑定笔记可增删查。
 | D3 | done | **章级阅读区 + 文本选区 + 摘录 + 正文编辑（重新锚定）** | ReadingPane（整章衬线阅读 + 右上 AI分析/编辑）+ TextBlock（受控渲染+高亮+getOffsetsFromSelection）+ SelectionToolbar（摘录/写笔记/引用 三按钮，后两者 D5/D6 接入）+ ExcerptsTab；`saveChapterContent` 触发 excerpts/notes 重新锚定（excerpt-anchor.ts：精确→prefix/suffix bracket→stale）；search 改 fts_chapters（SearchHit.matchOffset）；learning 改章级计数；删除 ParagraphList/InspectorPanel/段模态/NoteDrawer/paragraph-analysis；store/types/api 全面重写为章级；reading 进度改章级 scroll_ratio |
 | D4 | done | **章级 AI（解读/医理/白话）+ 析侧栏竖排 6 Tab** | `chapter-analysis.ts` 加写入路径（writeActive/versioning/history/activate，active 唯一索引）；`buildChapterPrompt`（classic 含白话字段，modern 省略）；`ai.generateChapterAnalysis`（loadConfig→buildChapterPrompt→缓存命中即返→deepseek JSON→writeCache+writeActive，per-chapter 去重）；IPC `chapters:analyze`/`chapters:analysisHistory`；cache 类型改 `'chapter'|'chat'`（去 paragraph_id）；`AnalysisRail` 重写为右侧竖排 6 Tab（writing-mode: vertical-rl，对话/笔记为 D5/D6 占位，白话仅古籍显）；store 加 `analyzeChapter`/`aiGenerating`；ReadingPane AI 按钮接入。`npm run check` 绿（93 测试） |
 | D5 | done | **对话 + 引用 + 流式 token** | `buildChatPrompt`（system=红线+章正文+上下文，history+本轮，quote 拼 `>` 块，temp 0.5 非流式 JSON）；`ai-chat.ts`（一章一会话 uq，sendChat 经 `deepseek.chatStream` 流式 + Layer2 shouldBlock 拒诊 + Layer3 sanitizeOutput 净化，user/assistant 双消息持久化，resetThread）；IPC `ai:threadForChapter`/`sendChat`(经 `event.sender.send('ai:chat:token')` 推流)/`chatHistory`/`resetThread`；store 加 chatThread/messages/streaming/pendingQuote/activeRailTab + sendChatMessage（乐观双气泡+token 增量）/subscribeChatTokens；ChatTab（流式渲染+引用块+清空）；SelectionToolbar「引用」接入（setPendingQuote→切 chat tab，未配 Key 时置灰）。`npm run check` 绿（99 测试） |
-| D6 | todo | 笔记选区化（章 + 选区） | notes 服务已支持选区列，待接 SelectionToolbar「写笔记」 |
+| D6 | done | **笔记选区化（章 + 选区）** | notes 服务/IPC 已就位（createNote 接 start/end/quote，listByChapter）；renderer 加 notesApi（create/listByChapter/delete）+ store notesByChapter/noteEditor/noteDeleteTarget + createNoteFromEditor；NotesTab（选区笔记显 quote + stale 提示 + 删除 + 新建自由笔记）；SelectionToolbar「写笔记」接入（openNoteEditor(quote)）；BookDetailView 加笔记编辑 Modal（预填引用块）+ 删除 ConfirmModal；ReadingPane 高亮合并 excerpts+notes ranges；saveChapterContent 保存后刷新 notes（重新锚定）。`npm run check` 绿（99 测试） |
 | D7 | todo | 打磨 + NFR（虚拟滚动 / a11y / qa-review） |  |
 
 - [ ] Phase 9 exit 达成

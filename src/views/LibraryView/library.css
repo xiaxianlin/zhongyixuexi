@@ -2033,3 +2033,133 @@ body.is-library-detail .lib {
   cursor: not-allowed;
 }
 
+/* ===========================================================================
+   v3.1 NotesTab (析 → 笔记) + note editor modal
+   =========================================================================== */
+.notestab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.notestab__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.notestab__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notecard {
+  position: relative;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--reader-line-soft, rgba(181, 142, 98, 0.25));
+}
+
+.notecard__stale {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #8a5a2b;
+  background: rgba(166, 124, 93, 0.16);
+}
+
+.notecard__quote {
+  margin: 0 0 6px;
+  padding: 4px 8px;
+  border-left: 3px solid var(--accent-soft, #a67c5d);
+  background: rgba(166, 124, 93, 0.08);
+  font-size: 13px;
+  color: var(--reader-ink-soft, #8a7560);
+  border-radius: 0 6px 6px 0;
+}
+
+.notecard__content {
+  margin: 0;
+  font-size: 14px;
+  line-height: var(--lh-relaxed, 1.7);
+  color: var(--reader-ink, #5c4033);
+  white-space: pre-wrap;
+}
+
+.notecard__del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  color: var(--reader-ink-soft, #8a7560);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.notecard:hover .notecard__del {
+  opacity: 1;
+}
+
+.notecard__del:hover {
+  background: rgba(181, 142, 98, 0.18);
+  color: var(--reader-ink, #5c4033);
+}
+
+.notestab__add {
+  align-self: center;
+  border: 1px dashed var(--reader-line-soft, rgba(181, 142, 98, 0.4));
+  border-radius: 8px;
+  background: transparent;
+  color: var(--reader-ink-soft, #8a7560);
+  font-size: 14px;
+  padding: 8px 22px;
+  cursor: pointer;
+}
+
+.notestab__add:hover {
+  background: rgba(181, 142, 98, 0.1);
+  color: var(--reader-ink, #5c4033);
+  border-color: var(--accent-soft, #a67c5d);
+}
+
+/* note editor modal body */
+.noteeditor__quote {
+  margin: 0 0 10px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--accent-soft, #a67c5d);
+  background: rgba(166, 124, 93, 0.08);
+  font-size: 13px;
+  color: var(--reader-ink-soft, #8a7560);
+  border-radius: 0 6px 6px 0;
+  max-height: 80px;
+  overflow: auto;
+}
+
+.noteeditor__textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--reader-line-soft, rgba(181, 142, 98, 0.3));
+  border-radius: 8px;
+  padding: 9px 11px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: var(--lh-relaxed, 1.7);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--reader-ink, #5c4033);
+  outline: none;
+}
+
+.noteeditor__textarea:focus {
+  border-color: var(--accent-soft, #a67c5d);
+}
+

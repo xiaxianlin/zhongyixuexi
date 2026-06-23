@@ -65,6 +65,30 @@ export interface CreateExcerptInput {
   note?: string | null
 }
 
+// ---------- notes (NOTE module, chapter + selection-bound) ----------
+
+export interface NoteDTO {
+  id: string
+  content: string
+  book_id: string | null
+  chapter_id: string | null
+  start_offset: number | null
+  end_offset: number | null
+  quote_text: string | null
+  stale: number
+  created_at: number
+  updated_at: number
+}
+
+export interface CreateNoteInput {
+  content?: string
+  book_id?: string | null
+  chapter_id?: string | null
+  start_offset?: number | null
+  end_offset?: number | null
+  quote_text?: string | null
+}
+
 // ---------- editing (book/chapter title + chapter content + category) ----------
 
 export interface EditBookTitleInput {

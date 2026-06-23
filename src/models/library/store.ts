@@ -16,12 +16,12 @@
  *  - toast
  */
 import { create } from 'zustand'
-import { libraryApi, readingApi, editingApi, excerptsApi } from './api'
+import { libraryApi, readingApi, editingApi, excerptsApi, notesApi } from './api'
 import { aiApi } from '@/models/ai/api'
 import { aiSubCodeFrom } from '@/models/ai/api'
 import type { AiThreadDTO, AiMessageDTO } from '@/models/ai/types'
 import type { ChapterNode } from '@/models/shared/types'
-import type { ChapterContentView, ExcerptDTO } from './types'
+import type { ChapterContentView, ExcerptDTO, NoteDTO } from './types'
 import { flattenChapters } from './helpers'
 import type { ResolvedSelection } from '@/components/page/library/TextBlock'
 
@@ -45,6 +45,12 @@ interface LibraryState {
   // excerpts
   excerpts: ExcerptDTO[]
   excerptDeleteTarget: ExcerptDTO | null
+
+  // notes (chapter + selection-bound)
+  notesByChapter: NoteDTO[]
+  noteDeleteTarget: NoteDTO | null
+  /** Open note editor modal; carries the optional selection-driven quote. */
+  noteEditor: { quote: string | null; draft: string } | null
 
   // chapter title editing (inline)
   editingChapterId: string | null
@@ -78,6 +84,14 @@ interface LibraryState {
   deleteExcerpt: (id: string) => Promise<void>
   setExcerptDeleteTarget: (excerpt: ExcerptDTO | null) => void
   locateExcerpt: (start: number, end: number) => void
+  // notes
+  fetchNotesByChapter: (chapterId: string) => Promise<void>
+  openNoteEditor: (quote: string | null) => void
+  closeNoteEditor: () => void
+  setNoteDraft: (text: string) => void
+  createNoteFromEditor: () => Promise<void>
+  deleteNote: (id: string) => Promise<void>
+  setNoteDeleteTarget: (note: NoteDTO | null) => void
   // chapter title editing
   startEditChapter: (chapterId: string, currentTitle: string) => void
   cancelEditChapter: () => void
@@ -134,6 +148,10 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   excerpts: [],
   excerptDeleteTarget: null,
 
+  notesByChapter: [],
+  noteDeleteTarget: null,
+  noteEditor: null,
+
   editingChapterId: null,
   chapterDraft: '',
 
@@ -170,18 +188,20 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   fetchChapterContent: async (bookId, chapterId) => {
     if (!chapterId) {
-      set({ chapterContent: null, excerpts: [], selection: null })
+      set({ chapterContent: null, excerpts: [], notesByChapter: [], selection: null })
       return
     }
-    set({ chapterContentLoading: true, selection: null, excerpts: [] })
+    set({ chapterContentLoading: true, selection: null, excerpts: [], notesByChapter: [] })
     try {
-      const [content, excerpts] = await Promise.all([
+      const [content, excerpts, notes] = await Promise.all([
         readingApi.getChapterContent(bookId, chapterId),
         excerptsApi.listByChapter(chapterId),
+        notesApi.listByChapter(chapterId),
       ])
       set({
         chapterContent: content,
         excerpts,
+        notesByChapter: notes,
         editingChapterContent: false,
         chapterContentDraft: content?.content ?? '',
       })
@@ -218,10 +238,14 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         id: chapterContent.chapter.id,
         text: chapterContentDraft,
       })
-      const excerpts = await excerptsApi.listByChapter(chapterContent.chapter.id)
+      const [excerpts, notes] = await Promise.all([
+        excerptsApi.listByChapter(chapterContent.chapter.id),
+        notesApi.listByChapter(chapterContent.chapter.id),
+      ])
       set({
         chapterContent: refreshed,
         excerpts,
+        notesByChapter: notes,
         editingChapterContent: false,
         chapterContentDraft: '',
       })
@@ -271,6 +295,60 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     window.dispatchEvent(new CustomEvent('textblock:locate', { detail: { start, end } }))
     set({ selection: { start, end, text: '' } })
   },
+
+  // ----- notes -----
+  fetchNotesByChapter: async (chapterId) => {
+    try {
+      const notes = await notesApi.listByChapter(chapterId)
+      set({ notesByChapter: notes })
+    } catch {
+      set({ notesByChapter: [] })
+    }
+  },
+
+  openNoteEditor: (quote) =>
+    set({ noteEditor: { quote, draft: '' }, selection: null }),
+
+  closeNoteEditor: () => set({ noteEditor: null }),
+
+  setNoteDraft: (text) =>
+    set((s) => (s.noteEditor ? { noteEditor: { ...s.noteEditor, draft: text } } : {})),
+
+  createNoteFromEditor: async () => {
+    const { noteEditor, chapterContent } = get()
+    if (!noteEditor || !chapterContent) return
+    const content = noteEditor.draft.trim()
+    if (!content) {
+      get().showToast('笔记内容不能为空')
+      return
+    }
+    try {
+      await notesApi.create({
+        chapter_id: chapterContent.chapter.id,
+        content,
+        quote_text: noteEditor.quote,
+      })
+      const notes = await notesApi.listByChapter(chapterContent.chapter.id)
+      set({ notesByChapter: notes, noteEditor: null })
+      get().showToast('已保存笔记')
+    } catch (e) {
+      get().showToast(`保存笔记失败：${(e as Error).message}`)
+    }
+  },
+
+  deleteNote: async (id) => {
+    const { chapterContent } = get()
+    if (!chapterContent) return
+    try {
+      await notesApi.delete(id)
+      const notes = await notesApi.listByChapter(chapterContent.chapter.id)
+      set({ notesByChapter: notes, noteDeleteTarget: null })
+    } catch (e) {
+      get().showToast(`删除笔记失败：${(e as Error).message}`)
+    }
+  },
+
+  setNoteDeleteTarget: (note) => set({ noteDeleteTarget: note }),
 
   // ----- chapter title editing -----
   startEditChapter: (chapterId, currentTitle) =>

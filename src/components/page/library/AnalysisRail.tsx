@@ -15,6 +15,7 @@ import { useLibraryStore } from '@/models/library/store'
 import { compactAnalysisText } from '@/models/library/helpers'
 import { ExcerptsTab } from './rail/ExcerptsTab'
 import { ChatTab } from './rail/ChatTab'
+import { NotesTab } from './rail/NotesTab'
 import type { BookListItem } from '@/models/shared/types'
 
 type TabKey = 'chat' | 'analysis' | 'explanation' | 'modern' | 'notes' | 'excerpts'
@@ -40,6 +41,7 @@ export function AnalysisRail({ book }: { book: BookListItem | null }) {
   const setActive = useLibraryStore((s) => s.setActiveRailTab)
   const chapterContent = useLibraryStore((s) => s.chapterContent)
   const excerpts = useLibraryStore((s) => s.excerpts)
+  const notes = useLibraryStore((s) => s.notesByChapter)
   const isClassic = (book?.category ?? 'modern') === 'classic'
 
   const visibleTabs = TABS.filter((t) => !t.classicOnly || isClassic)
@@ -60,7 +62,10 @@ export function AnalysisRail({ book }: { book: BookListItem | null }) {
             <InterpBlock title="白话" text={analysis?.modern} />
           )}
           {active === 'notes' && (
-            <p className="railtab__empty">选区笔记将在下一版本上线。</p>
+            <>
+              <div className="bookdetail__panelTitle">笔记（{notes.length}）</div>
+              <NotesTab />
+            </>
           )}
           {active === 'excerpts' && (
             <>
