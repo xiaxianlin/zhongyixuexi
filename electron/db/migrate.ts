@@ -22,6 +22,7 @@
  *    that rewrites paragraph text must call rebuildFts() afterward.
  */
 import type { DB } from './connection'
+import { up as up0004 } from './migrations/0004_detail_revamp'
 
 interface Migration {
   version: number
@@ -34,17 +35,11 @@ interface Migration {
  * baseline applied via CURRENT_SCHEMA). Append here for each future schema bump.
  */
 export const MIGRATIONS: Migration[] = [
-  // Example for the next change:
-  // {
-  //   version: 4,
-  //   name: 'add books.subtitle',
-  //   up: (db) => {
-  //     const cols = db.prepare("PRAGMA table_info(books)").all() as { name: string }[]
-  //     if (!cols.some((c) => c.name === 'subtitle')) {
-  //       db.exec('ALTER TABLE books ADD COLUMN subtitle TEXT')
-  //     }
-  //   },
-  // },
+  {
+    version: 4,
+    name: 'detail_revamp',
+    up: up0004,
+  },
 ]
 
 /**

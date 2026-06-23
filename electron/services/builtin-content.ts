@@ -142,10 +142,10 @@ export function seedBuiltinContent(): SeedBuiltinResult {
 
   const insertChapter = db.prepare(
     `INSERT INTO chapters
-       (id, book_id, parent_id, order_index, level, title, content_hash,
-        created_at, deleted_at)
+       (id, book_id, parent_id, order_index, level, title, content_hash, content,
+        created_at, updated_at, deleted_at)
      VALUES (@id, @bookId, @parentId, @orderIndex, @level, @title, @contentHash,
-             @createdAt, NULL)`,
+             @content, @createdAt, @createdAt, NULL)`,
   )
 
   const insertParagraph = db.prepare(
@@ -183,6 +183,13 @@ export function seedBuiltinContent(): SeedBuiltinResult {
 
       for (const chapter of data.chapters) {
         const chapterText = chapter.paragraphs.map((p) => normalize(p.text)).join('\n')
+        // v3.1: chapters.content is the whole-chapter plain text used by the
+        // reading pane. Built from the same paragraph join the v4 migration
+        // backfill uses, so seed and migration produce identical content.
+        const chapterContent = chapter.paragraphs
+          .map((p) => normalize(p.text))
+          .filter((t) => t)
+          .join('\n\n')
         insertChapter.run({
           id: chapter.id,
           bookId,
@@ -191,6 +198,7 @@ export function seedBuiltinContent(): SeedBuiltinResult {
           level: chapter.level,
           title: chapter.title,
           contentHash: chapter.contentHash ?? sha256Hex16(chapterText),
+          content: chapterContent,
           createdAt: now,
         })
 

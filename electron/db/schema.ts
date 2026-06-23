@@ -1,7 +1,7 @@
 import { getDb, resetDbFiles } from './connection'
 import { runMigrations, hasLegacySchemaMeta } from './migrate'
 
-const CURRENT_SCHEMA_VERSION = 3
+const CURRENT_SCHEMA_VERSION = 4
 
 const CURRENT_SCHEMA = `
   CREATE TABLE IF NOT EXISTS books (
@@ -23,7 +23,9 @@ const CURRENT_SCHEMA = `
     level        TEXT,
     title        TEXT NOT NULL,
     content_hash TEXT,
+    content      TEXT,
     created_at   INTEGER NOT NULL,
+    updated_at   INTEGER,
     deleted_at   INTEGER,
     FOREIGN KEY (book_id)   REFERENCES books(id)    ON DELETE CASCADE,
     FOREIGN KEY (parent_id) REFERENCES chapters(id) ON DELETE CASCADE

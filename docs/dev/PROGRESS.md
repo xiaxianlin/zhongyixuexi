@@ -3,7 +3,7 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`,末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-18（文档对齐代码现状：内置经典 + 产品收敛重构）
+最后更新：2026-06-23（Phase 9 详情页改造 v3.1 启动 · D1 完成）
 
 ---
 
@@ -186,6 +186,25 @@ Exit:段绑定笔记可增删查。
 | S8.3 | todo | 内置经典数据回归夹具 | 原为 EPUB 夹具,现改为校验 `data/*.json` seed 一致性 |
 
 - [ ] Phase 8 exit 达成
+
+---
+
+## Phase 9 · 详情页改造 v3.1（doing）
+
+> 来源：`docs/idea/20260622.md` · PRD `docs/prd/20260622-detail-revamp.md` · 技术 `docs/tech/20260622-detail-revamp.md` · 计划 `docs/dev/IMPLEMENTATION-v3.1.md`
+> Exit：章级阅读 + 选区三连（摘录/笔记/引用）+ 章级 AI（解读/医理/白话）+ 对话 + 竖排 6 Tab 析栏。
+
+| # | 状态 | 摘要 | 决策/阻塞 |
+|---|---|---|---|
+| D1 | done | schema v4 迁移（chapters.content/updated_at · chapter_analyses · excerpts · notes 选区列 · ai_threads/messages · ai_cache 重建扩 scope/kind · fts_chapters trigram + 三触发器） | 迁移幂等（columnExists / IF NOT EXISTS / aiCacheIsNarrow 守卫）；chapters.content 回填用 `\n\n` 拼 live paragraphs；builtin-content seed 同步写 content + updated_at；`books.category` backfill：五本内置经典→classic，其余→modern；ai_cache 重建段落_id 改可空。`npm run check` 绿（105 测试） |
+| D2 | todo | 分类分组 + 多级章节树 UI（复用现有 buildChapterTree） |  |
+| D3 | todo | 章级阅读区 + 文本选区 + 摘录 + 正文编辑（重新锚定） |  |
+| D4 | todo | 章级 AI（解读/医理/白话）+ 析侧栏竖排 6 Tab |  |
+| D5 | todo | 对话 + 引用 + 流式 token |  |
+| D6 | todo | 笔记选区化（章 + 选区） |  |
+| D7 | todo | 打磨 + NFR（虚拟滚动 / a11y / qa-review） |  |
+
+- [ ] Phase 9 exit 达成
 
 ---
 
