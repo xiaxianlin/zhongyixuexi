@@ -1,9 +1,12 @@
 /**
  * Search domain renderer DTOs — mirror electron/services/search.ts.
+ *
+ * v3.1 chapter-level model: results are chapters (not paragraphs). matchOffset
+ * is the code-point offset of the first match within chapters.content, used to
+ * scroll the reading pane to the hit.
  */
 
 export interface SearchHit {
-  paragraphId: string
   chapterId: string
   bookId: string
   bookTitle: string
@@ -12,7 +15,8 @@ export interface SearchHit {
   snippet: string
   /** bm25 score — lower is more relevant; 0 on the LIKE downgrade path. */
   score: number
-  orderIndex: number
+  /** Code-point offset of the first match within chapters.content (-1 unknown). */
+  matchOffset: number
 }
 
 export interface SearchResult {

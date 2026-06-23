@@ -2,24 +2,23 @@ import { handle } from './registry'
 import {
   editBookTitle,
   editChapterTitle,
-  editParagraphText,
-  mergeParagraphs,
-  splitParagraph,
-  deleteParagraphs,
   createBook,
   deleteBook,
   createChapter,
   deleteChapter,
-  createParagraph,
   setBookCategory,
   createChildChapter,
+  saveChapterContent,
 } from '../services/editing'
 
 /**
- * Editing IPC — book/chapter/paragraph create/delete + title/text edits +
- * paragraph merge/split. Channel naming: `<entity>:<action>`. Each handler
- * receives an `unknown` payload and casts at the boundary (matching notes.ts).
- * The {__ok} envelope is applied by registry.handle().
+ * Editing IPC (v3.1 chapter-level model) — book/chapter create/delete + title
+ * edits + whole-chapter content edits + category. Channel naming: `<entity>:<action>`.
+ * Each handler receives an `unknown` payload and casts at the boundary. The
+ * {__ok} envelope is applied by registry.handle().
+ *
+ * There are no paragraph-level channels (no merge / split / paragraph text edit)
+ * — the chapter is the editing atom.
  */
 export function registerEditingHandlers(): void {
   handle('books:updateTitle', (_event, input: unknown) => {
@@ -47,12 +46,19 @@ export function registerEditingHandlers(): void {
     return editChapterTitle(p.id ?? '', p.title ?? '')
   })
 
+  // Save whole-chapter plain text (reading-pane edit). Re-anchors excerpts +
+  // selection-bound notes inside the same transaction.
+  handle('chapters:saveContent', (_event, input: unknown) => {
+    const p = (input ?? {}) as { id?: string; text?: string }
+    return saveChapterContent(p.id ?? '', p.text ?? '')
+  })
+
   handle('chapters:create', (_event, input: unknown) => {
     const p = (input ?? {}) as { bookId?: string; title?: string }
     return createChapter(p.bookId ?? '', p.title ?? '')
   })
 
-  // v3.1: create a child chapter (nested under parentId) or a root when null.
+  // create a child chapter (nested under parentId) or a root when null.
   handle('chapters:createChild', (_event, input: unknown) => {
     const p = (input ?? {}) as { bookId?: string; parentId?: string | null; title?: string }
     return createChildChapter(p.bookId ?? '', p.parentId ?? null, p.title ?? '')
@@ -61,30 +67,5 @@ export function registerEditingHandlers(): void {
   handle('chapters:delete', (_event, input: unknown) => {
     const p = (input ?? {}) as { id?: string }
     return deleteChapter(p.id ?? '')
-  })
-
-  handle('paragraphs:editText', (_event, input: unknown) => {
-    const p = (input ?? {}) as { id?: string; text?: string }
-    return editParagraphText(p.id ?? '', p.text ?? '')
-  })
-
-  handle('paragraphs:merge', (_event, input: unknown) => {
-    const p = (input ?? {}) as { paragraphIds?: string[] }
-    return mergeParagraphs(Array.isArray(p.paragraphIds) ? p.paragraphIds : [])
-  })
-
-  handle('paragraphs:split', (_event, input: unknown) => {
-    const p = (input ?? {}) as { paragraphId?: string; splitOffset?: number }
-    return splitParagraph(p.paragraphId ?? '', Number(p.splitOffset ?? -1))
-  })
-
-  handle('paragraphs:delete', (_event, input: unknown) => {
-    const p = (input ?? {}) as { paragraphIds?: string[] }
-    return deleteParagraphs(Array.isArray(p.paragraphIds) ? p.paragraphIds : [])
-  })
-
-  handle('paragraphs:create', (_event, input: unknown) => {
-    const p = (input ?? {}) as { chapterId?: string; text?: string }
-    return createParagraph(p.chapterId ?? '', p.text ?? '')
   })
 }

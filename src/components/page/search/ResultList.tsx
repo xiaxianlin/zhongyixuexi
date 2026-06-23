@@ -1,9 +1,10 @@
 /**
  * ResultList — search result list (business component, page-level).
  *
- * Paragraph-level results with snippet highlight + click-to-jump (SRH-03).
- * Reads result/loading/error from the search store; ResultItem navigates via
- * react-router + sets the active paragraph in the session store.
+ * Chapter-level results with snippet highlight + click-to-jump. Reads
+ * result/loading/error from the search store; ResultItem navigates via
+ * react-router + sets a one-shot match offset in the session store so the
+ * reading pane scrolls to the hit on open.
  */
 import { useNavigate } from 'react-router-dom'
 import { useSearchStore } from '@/models/search/store'
@@ -31,12 +32,12 @@ function Snippet({ html }: { html: string }) {
 
 function ResultItem({ hit }: { hit: SearchHit }) {
   const navigate = useNavigate()
-  const setActiveParagraph = useSessionStore((s) => s.setActiveParagraph)
+  const setPendingMatchOffset = useSessionStore((s) => s.setPendingMatchOffset)
   return (
     <li
       className="result"
       onClick={() => {
-        setActiveParagraph(hit.paragraphId)
+        setPendingMatchOffset(hit.matchOffset >= 0 ? hit.matchOffset : null)
         navigate(`/book/${hit.bookId}/chapter/${hit.chapterId}`)
       }}
     >
@@ -71,7 +72,7 @@ export function ResultList() {
       </div>
       <ul className="results__list">
         {result.hits.map((h) => (
-          <ResultItem key={h.paragraphId} hit={h} />
+          <ResultItem key={`${h.chapterId}:${h.matchOffset}`} hit={h} />
         ))}
       </ul>
     </div>

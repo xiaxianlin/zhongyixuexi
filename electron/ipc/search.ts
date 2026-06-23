@@ -1,6 +1,6 @@
 import { handle } from './registry'
 import {
-  searchParagraphs,
+  searchChapters,
   type SearchOpts,
 } from '../services/search'
 
@@ -10,7 +10,7 @@ import {
 export function registerSearchHandlers(): void {
   handle('search:fulltext', (_e, payload: unknown) => {
     const p = (payload ?? {}) as { query?: string } & SearchOpts
-    return searchParagraphs(p.query ?? '', {
+    return searchChapters(p.query ?? '', {
       limit: p.limit,
       offset: p.offset,
       bookIds: p.bookIds,

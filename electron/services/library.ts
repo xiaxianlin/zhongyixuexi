@@ -1,22 +1,15 @@
-import { getDb } from '../db/connection'
-import { AppError } from '../lib/error'
-import { readCoverAsDataUrl } from './covers'
-
 /**
- * Library service (LIB module).
+ * Library service (LIB module, v3.1 chapter-level model).
  *
- * Book list / detail and chapter-tree assembly.
- * All queries go through the better-sqlite3 singleton from getDb(); the
- * connection initializer enforces PRAGMA foreign_keys=ON (00-arch §5.1) so the
- * ON DELETE CASCADE declared on chapters/paragraphs/etc. actually fires.
+ * Book list / detail and chapter-tree assembly. All queries go through the
+ * better-sqlite3 singleton from getDb(); the connection initializer enforces
+ * PRAGMA foreign_keys=ON (00-arch §5.1) so ON DELETE CASCADE declared on
+ * chapters etc. actually fires.
  *
- * Column note: the current schema uses `id` as the stable
- * TEXT primary key on books/chapters/paragraphs (NOT `book_id`/`chapter_id`).
- * paragraphs.id is TEXT while the implicit `rowid` is what fts_paragraphs
- * (content='paragraphs', content_rowid='rowid') keys on.
+ * Column note: `id` is the stable TEXT primary key on books/chapters.
  */
 
-// ---------- DTOs (self-contained; do NOT import models/content.ts) ----------
+// ---------- DTOs (self-contained) ----------
 
 export interface BookListItem {
   id: string
@@ -25,7 +18,6 @@ export interface BookListItem {
   cover: string | null
   category: string | null
   chapter_count: number
-  paragraph_count: number
   /** 0..1 reading progress. */
   progress: number
   updated_at: number
@@ -36,7 +28,7 @@ export interface ChapterNode {
   title: string
   order_index: number
   level?: string | null
-  /** 1 if the chapter has ≥1 analyzed (active paragraph_analyses) live paragraph, else 0. */
+  /** 1 if the chapter has an active chapter-level analysis, else 0. */
   analyzed?: number
   children: ChapterNode[]
 }
@@ -52,12 +44,14 @@ export interface ChapterRow {
   analyzed?: number
 }
 
+import { getDb } from '../db/connection'
+import { AppError } from '../lib/error'
+import { readCoverAsDataUrl } from './covers'
+
 // ---------- list / detail ----------
 
-/**
- * All live books (deleted_at IS NULL) with aggregated chapter_count,
- * paragraph_count and reading progress.
- */
+/** All live books (deleted_at IS NULL) with aggregated chapter_count and
+ *  reading progress. */
 export function listBooks(): BookListItem[] {
   const db = getDb()
   const rows = db
@@ -69,18 +63,14 @@ export function listBooks(): BookListItem[] {
          b.cover,
          b.category,
          b.updated_at,
-         COALESCE(s.chapter_count, 0)   AS chapter_count,
-         COALESCE(s.paragraph_count, 0) AS paragraph_count,
-         COALESCE(rp.percent, 0)        AS progress
+         COALESCE(s.chapter_count, 0) AS chapter_count,
+         COALESCE(rp.percent, 0)      AS progress
        FROM books b
        LEFT JOIN (
-         SELECT c.book_id                 AS book_id,
-                COUNT(DISTINCT c.id)      AS chapter_count,
-                COUNT(p.id)               AS paragraph_count
-         FROM chapters c
-         LEFT JOIN paragraphs p ON p.chapter_id = c.id AND p.deleted_at IS NULL
-         WHERE c.deleted_at IS NULL
-         GROUP BY c.book_id
+         SELECT book_id, COUNT(DISTINCT id) AS chapter_count
+         FROM chapters
+         WHERE deleted_at IS NULL
+         GROUP BY book_id
        ) s ON s.book_id = b.id
        LEFT JOIN reading_progress rp ON rp.book_id = b.id
        WHERE b.deleted_at IS NULL
@@ -112,11 +102,8 @@ export function reorderBooks(bookIds: string[]): BookListItem[] {
 
 /**
  * Returns the chapter tree for a book as a nested structure, built in memory
- * from a single flat query (02-library §7.2: O(n) assembly, no recursive CTE).
- *
- * `analyzed` is 1 when the chapter has any active analysis — either a legacy
- * paragraph-level analysis (paragraph_analyses) or a v3.1 chapter-level one
- * (chapter_analyses). The detail page's tree badge lights up on either.
+ * from a single flat query (O(n) assembly, no recursive CTE). `analyzed` is 1
+ * when the chapter has an active chapter-level analysis (chapter_analyses).
  */
 export function getChapterTree(bookId: string): ChapterNode[] {
   const db = getDb()
@@ -124,15 +111,6 @@ export function getChapterTree(bookId: string): ChapterNode[] {
     .prepare(
       `SELECT c.id, c.parent_id, c.order_index, c.level, c.title,
               EXISTS (
-                SELECT 1
-                FROM paragraph_analyses pa
-                JOIN paragraphs p ON p.id = pa.paragraph_id
-                WHERE p.chapter_id = c.id
-                  AND p.deleted_at IS NULL
-                  AND p.is_noise = 0
-                  AND pa.is_active = 1
-              )
-              OR EXISTS (
                 SELECT 1
                 FROM chapter_analyses ca
                 WHERE ca.chapter_id = c.id
@@ -148,18 +126,7 @@ export function getChapterTree(bookId: string): ChapterNode[] {
 
 /**
  * Pure tree builder. Given flat ChapterRow[] (already ordered by order_index),
- * assemble a nested ChapterNode[] tree.
- *
- * Algorithm: two-pass O(n log n).
- *  Pass 0 — sort a copy by order_index so siblings (roots and per-parent) are
- *           emitted in order regardless of input ordering.
- *  Pass 1 — index every row into a Map<id, node> with an empty children array.
- *  Pass 2 — walk the sorted rows; if parent_id resolves to a known node, attach
- *           as its child, otherwise (parent null OR orphan: parent points to an
- *           id not present in this set) attach to roots. Pre-sorting guarantees
- *           siblings retain order_index order within each bucket.
- *
- * Exported for unit testing without a database.
+ * assemble a nested ChapterNode[] tree. Exported for unit testing.
  */
 export function buildChapterTree(flatRows: ChapterRow[]): ChapterNode[] {
   const sorted = [...flatRows].sort((a, b) => a.order_index - b.order_index)

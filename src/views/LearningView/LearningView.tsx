@@ -48,11 +48,12 @@ export function LearningView() {
 
       <div className="dashboard__row">
         <div className="dashboard__top">
-          <ProgressRing percent={analysisPct} caption="已解读段落" />
+          <ProgressRing percent={analysisPct} caption="已解读章节" />
           <div className="dashboard__stats">
             <StatCard label="书籍" value={String(data.totalBooks)} />
             <StatCard label="章节" value={String(data.totalChapters)} />
             <StatCard label="笔记" value={String(data.noteCount)} />
+            <StatCard label="摘录" value={String(data.excerptCount)} />
             <StatCard label="阅读时长" value={formatDuration(data.totalReadSeconds)} />
           </div>
         </div>

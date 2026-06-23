@@ -1,36 +1,30 @@
 /**
- * Library domain renderer IPC client.
+ * Library domain renderer IPC client (v3.1 chapter-level model).
  *
- * Combines the three library-related channel families used by the book-detail
- * flow: library:* (book list + chapter tree), reading:* (chapter content),
- * notes:* (paragraph-bound note CRUD). Each method unwraps the {__ok} envelope
- * via models/shared/ipc.ts and re-throws structured errors as IpcError.
+ * Combines the library-related channel families used by the book-detail flow:
+ * library:* (book list + chapter tree), chapters:* (whole-chapter content +
+ * edits), excerpts:* (selection-anchored highlights). Each method unwraps the
+ * {__ok} envelope via models/shared/ipc.ts and re-throws structured errors.
  *
- * Mirrors channels registered in electron/ipc/{library,reading,notes}.ts.
+ * Mirrors channels registered in electron/ipc/{library,reading,editing,excerpts}.ts.
  * Components never call these directly — they go through useLibraryStore.
  */
 import { invokeRaw } from '@/models/shared/ipc'
 import type { BookListItem, ChapterNode } from '@/models/shared/types'
 import type {
-  ChapterContent,
-  CreateNoteInput,
-  ParagraphNoteCard,
-  ParagraphDTO,
+  ChapterContentView,
+  CreateChildChapterInput,
+  CreateChapterInput,
+  CreateBookInput,
+  CreateExcerptInput,
+  DeleteInput,
   EditBookTitleInput,
   EditChapterTitleInput,
-  EditTextInput,
-  MergeParagraphsInput,
-  DeleteParagraphsInput,
-  SplitParagraphInput,
-  TitleResult,
+  ExcerptDTO,
   SaveProgressInput,
-  CreateBookInput,
-  CreateChapterInput,
-  CreateChildChapterInput,
-  CreateParagraphInput,
-  DeleteInput,
   SetBookCategoryInput,
   SetBookCategoryResult,
+  TitleResult,
 } from './types'
 
 /** library:* — book list (with progress aggregation) + chapter tree + reorder + cover. */
@@ -44,46 +38,41 @@ export const libraryApi = {
 
 /** reading:* — chapter content + reading-progress persistence. */
 export const readingApi = {
-  getChapter: (bookId: string, chapterId: string) =>
-    invokeRaw<ChapterContent | null>('reading:getChapter', bookId, chapterId),
+  // whole-chapter plain text + active analysis (reading pane).
+  getChapterContent: (bookId: string, chapterId: string) =>
+    invokeRaw<ChapterContentView | null>('chapters:getContent', bookId, chapterId),
 
-  // RD-02: UPSERT per-book progress (read_seconds is a delta, accumulated main-side).
+  // UPSERT per-book progress (read_seconds is a delta, accumulated main-side).
   saveProgress: (input: SaveProgressInput) =>
     invokeRaw<{ ok: true }>('reading:saveProgress', input),
 }
 
-/** notes:* — paragraph-bound note CRUD (NOTE module, converged surface). */
-export const notesApi = {
-  create: (input: CreateNoteInput) => invokeRaw<ParagraphNoteCard>('notes:create', input),
-  delete: (id: string) => invokeRaw<{ ok: true }>('notes:delete', { id }),
-  getByParagraph: (paragraphId: string) =>
-    invokeRaw<ParagraphNoteCard[]>('notes:getByParagraph', { paragraph_id: paragraphId }),
+/** excerpts:* — selection-anchored highlights (v3.1 EXC module, pure-local). */
+export const excerptsApi = {
+  create: (input: CreateExcerptInput) => invokeRaw<ExcerptDTO>('excerpts:create', input),
+  listByChapter: (chapterId: string) =>
+    invokeRaw<ExcerptDTO[]>('excerpts:listByChapter', { chapterId }),
+  listByBook: (bookId: string) =>
+    invokeRaw<ExcerptDTO[]>('excerpts:listByBook', { bookId }),
+  delete: (id: string) => invokeRaw<{ ok: true }>('excerpts:delete', { id }),
 }
 
-/** editing:* — book/chapter/paragraph text edits + paragraph merge/split. */
+/** editing:* — book/chapter title + chapter content edits + category + CRUD. */
 export const editingApi = {
   editBookTitle: (input: EditBookTitleInput) =>
     invokeRaw<TitleResult>('books:updateTitle', input),
   editChapterTitle: (input: EditChapterTitleInput) =>
     invokeRaw<TitleResult>('chapters:updateTitle', input),
-  editParagraphText: (input: EditTextInput) =>
-    invokeRaw<ParagraphDTO>('paragraphs:editText', input),
-  mergeParagraphs: (input: MergeParagraphsInput) =>
-    invokeRaw<ChapterContent>('paragraphs:merge', input),
-  deleteParagraphs: (input: DeleteParagraphsInput) =>
-    invokeRaw<ChapterContent>('paragraphs:delete', input),
-  splitParagraph: (input: SplitParagraphInput) =>
-    invokeRaw<ChapterContent>('paragraphs:split', input),
-  // create / delete — books, chapters, paragraphs
-  createBook: (input: CreateBookInput) => invokeRaw<TitleResult>('books:create', input),
-  deleteBook: (input: DeleteInput) => invokeRaw<{ ok: true }>('books:delete', input),
+  saveChapterContent: (input: { id: string; text: string }) =>
+    invokeRaw<ChapterContentView>('chapters:saveContent', input),
   setBookCategory: (input: SetBookCategoryInput) =>
     invokeRaw<SetBookCategoryResult>('books:setCategory', input),
+  // create / delete — books, chapters
+  createBook: (input: CreateBookInput) => invokeRaw<TitleResult>('books:create', input),
+  deleteBook: (input: DeleteInput) => invokeRaw<{ ok: true }>('books:delete', input),
   createChapter: (input: CreateChapterInput) =>
-    invokeRaw<ChapterContent>('chapters:create', input),
+    invokeRaw<ChapterContentView>('chapters:create', input),
   createChildChapter: (input: CreateChildChapterInput) =>
-    invokeRaw<ChapterContent>('chapters:createChild', input),
+    invokeRaw<ChapterContentView>('chapters:createChild', input),
   deleteChapter: (input: DeleteInput) => invokeRaw<{ ok: true }>('chapters:delete', input),
-  createParagraph: (input: CreateParagraphInput) =>
-    invokeRaw<ChapterContent>('paragraphs:create', input),
 }

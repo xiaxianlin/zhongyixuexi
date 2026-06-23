@@ -1,34 +1,11 @@
 /**
- * Library domain renderer DTOs — content (books/chapters/paragraphs), reading
- * (chapter content view), and notes. Mirrors the main-process service return
- * shapes in electron/services/{library,reading,notes}.ts. Dependency-free so
- * the renderer never imports electron/* code.
+ * Library domain renderer DTOs (v3.1 chapter-level model) — content (books /
+ * chapters), reading (chapter content view), excerpts. Mirrors the main-process
+ * service return shapes in electron/services/{library,reading,excerpts}.ts.
+ * Dependency-free so the renderer never imports electron/* code.
  */
 
-// ---------- content (books / chapters / paragraphs) ----------
-
-export interface ParagraphDTO {
-  id: string
-  chapter_id: string
-  order_index: number
-  text: string
-  interpretation: InterpretationViewDTO
-  edited: number
-  is_noise: number
-}
-
-export interface ParagraphAnalysisMeta {
-  id: string
-  kind: ParagraphAnalysisKind
-  version: number
-  source: string
-  model: string | null
-  meta: Record<string, unknown> | null
-  created_at: number
-  updated_at: number
-}
-
-export type ParagraphAnalysisKind = 'modern'
+// ---------- content (books / chapters) ----------
 
 export interface ChapterDTO {
   id: string
@@ -39,35 +16,56 @@ export interface ChapterDTO {
   title: string
 }
 
-export interface ChapterContent {
-  chapter: ChapterDTO
-  paragraphs: ParagraphDTO[]
-}
-
-export interface InterpretationViewDTO {
-  modern: string | null
-  explanation: string | null
-  analysis: string | null
-  meta: ParagraphAnalysisMeta | null
-}
-
-// ---------- notes ----------
-
-export interface CreateNoteInput {
-  content?: string
-  book_id?: string | null
-  chapter_id?: string | null
-  paragraph_id?: string | null
-}
-
-export interface ParagraphNoteCard {
+export interface ChapterAnalysisMeta {
   id: string
-  content: string
+  kind: string
+  version: number
+  source: string
+  model: string | null
   created_at: number
   updated_at: number
 }
 
-// ---------- editing (book/chapter/paragraph text + merge/split) ----------
+export interface ChapterAnalysisView {
+  modern: string | null
+  explanation: string | null
+  analysis: string | null
+  summary: string | null
+  meta: ChapterAnalysisMeta | null
+}
+
+/** v3.1 reading-pane payload (whole-chapter text + active analysis). */
+export interface ChapterContentView {
+  chapter: ChapterDTO
+  content: string
+  analysis: ChapterAnalysisView
+}
+
+// ---------- excerpts (v3.1 EXC module) ----------
+
+export interface ExcerptDTO {
+  id: string
+  book_id: string
+  chapter_id: string
+  start_offset: number
+  end_offset: number
+  excerpt_text: string
+  note: string | null
+  stale: number
+  created_at: number
+  updated_at: number
+}
+
+export interface CreateExcerptInput {
+  bookId?: string
+  chapterId: string
+  start: number
+  end: number
+  text: string
+  note?: string | null
+}
+
+// ---------- editing (book/chapter title + chapter content + category) ----------
 
 export interface EditBookTitleInput {
   id: string
@@ -77,24 +75,6 @@ export interface EditBookTitleInput {
 export interface EditChapterTitleInput {
   id: string
   title: string
-}
-
-export interface EditTextInput {
-  id: string
-  text: string
-}
-
-export interface MergeParagraphsInput {
-  paragraphIds: string[]
-}
-
-export interface DeleteParagraphsInput {
-  paragraphIds: string[]
-}
-
-export interface SplitParagraphInput {
-  paragraphId: string
-  splitOffset: number
 }
 
 export interface TitleResult {
@@ -120,6 +100,10 @@ export interface CreateChildChapterInput {
   title: string
 }
 
+export interface DeleteInput {
+  id: string
+}
+
 export interface SetBookCategoryInput {
   id: string
   category: 'classic' | 'modern'
@@ -128,15 +112,6 @@ export interface SetBookCategoryInput {
 export interface SetBookCategoryResult {
   id: string
   category: 'classic' | 'modern'
-}
-
-export interface CreateParagraphInput {
-  chapterId: string
-  text: string
-}
-
-export interface DeleteInput {
-  id: string
 }
 
 // ---------- reading progress ----------
@@ -149,7 +124,6 @@ export interface DeleteInput {
 export interface SaveProgressInput {
   bookId: string
   chapterId: string
-  paragraphId: string
   scrollRatio: number
   readSeconds: number
   percent: number

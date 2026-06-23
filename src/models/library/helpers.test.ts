@@ -1,123 +1,98 @@
 /**
  * Unit tests for the library detail helpers. Pure — no DB.
- * Covers computeBookPercent (chapter-index method, RD-02 / LRN-01).
+ * Covers computeBookPercent (chapter-level, v3.1: chapter index + scroll ratio).
  */
 import { describe, it, expect } from 'vitest'
 import { computeBookPercent } from './helpers'
 
 const chapters = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `c${i}` }))
-const paras = (n: number) =>
-  Array.from({ length: n }, (_, i) => ({ id: `p${i}`, order_index: i }))
 
 describe('computeBookPercent', () => {
   it('returns 0 when there are no chapters', () => {
     expect(
-      computeBookPercent({
-        flatChapters: [],
-        selectedChapterId: 'c0',
-        paragraphs: [],
-        selectedParagraphId: null,
-      }),
+      computeBookPercent({ flatChapters: [], selectedChapterId: 'c0', scrollRatio: 0 }),
     ).toBe(0)
   })
 
   it('returns 0 when no chapter is selected', () => {
     expect(
-      computeBookPercent({
-        flatChapters: chapters(3),
-        selectedChapterId: null,
-        paragraphs: paras(5),
-        selectedParagraphId: 'p0',
-      }),
+      computeBookPercent({ flatChapters: chapters(3), selectedChapterId: null, scrollRatio: 0.5 }),
     ).toBe(0)
   })
 
   it('returns 0 when the selected chapter is not in the book', () => {
     expect(
-      computeBookPercent({
-        flatChapters: chapters(3),
-        selectedChapterId: 'nope',
-        paragraphs: paras(5),
-        selectedParagraphId: 'p0',
-      }),
+      computeBookPercent({ flatChapters: chapters(3), selectedChapterId: 'nope', scrollRatio: 0.5 }),
     ).toBe(0)
   })
 
-  it('first chapter / first paragraph is a small positive fraction (≈1/3/5)', () => {
-    // (0 + 1/5) / 3 = 0.0666...
+  it('first chapter at scroll 0 is 0', () => {
+    expect(
+      computeBookPercent({ flatChapters: chapters(3), selectedChapterId: 'c0', scrollRatio: 0 }),
+    ).toBe(0)
+  })
+
+  it('first chapter half-scrolled is (0 + 0.5) / 3', () => {
     const pct = computeBookPercent({
       flatChapters: chapters(3),
       selectedChapterId: 'c0',
-      paragraphs: paras(5),
-      selectedParagraphId: 'p0',
+      scrollRatio: 0.5,
     })
-    expect(pct).toBeCloseTo(1 / 15, 10)
+    expect(pct).toBeCloseTo(0.5 / 3, 10)
     expect(pct).toBeGreaterThan(0)
     expect(pct).toBeLessThan(1)
   })
 
   it('advances as the chapter index grows', () => {
-    // chapter c1 first paragraph: (1 + 1/5) / 3
+    // chapter c1, fully scrolled: (1 + 1) / 3
     const pct = computeBookPercent({
       flatChapters: chapters(3),
       selectedChapterId: 'c1',
-      paragraphs: paras(5),
-      selectedParagraphId: 'p0',
+      scrollRatio: 1,
     })
-    expect(pct).toBeCloseTo((1 + 1 / 5) / 3, 10)
+    expect(pct).toBeCloseTo(2 / 3, 10)
   })
 
-  it('clamps to exactly 1 on the last chapter / last paragraph', () => {
+  it('clamps to exactly 1 on the last chapter at full scroll', () => {
     const pct = computeBookPercent({
       flatChapters: chapters(3),
       selectedChapterId: 'c2',
-      paragraphs: paras(5),
-      selectedParagraphId: 'p4', // last
+      scrollRatio: 1,
     })
     expect(pct).toBe(1)
   })
 
-  it('last chapter but NOT last paragraph stays under 1', () => {
+  it('last chapter but NOT fully scrolled stays under 1', () => {
     const pct = computeBookPercent({
       flatChapters: chapters(3),
       selectedChapterId: 'c2',
-      paragraphs: paras(5),
-      selectedParagraphId: 'p0', // first of last chapter
+      scrollRatio: 0.2,
     })
-    // (2 + 1/5) / 3 = 0.7333 — on the last chapter but only its first paragraph,
-    // so progress is high but must NOT round-trip to 1.
+    // (2 + 0.2) / 3 = 0.7333
     expect(pct).toBeLessThan(1)
-    expect(pct).toBeCloseTo((2 + 1 / 5) / 3, 10)
+    expect(pct).toBeCloseTo(2.2 / 3, 10)
   })
 
-  it('within-chapter fraction tracks the selected paragraph position', () => {
-    // c0, middle paragraph p2 of 5 → (0 + 3/5) / 3
-    const pct = computeBookPercent({
-      flatChapters: chapters(3),
+  it('scroll ratio is clamped to [0,1]', () => {
+    const hi = computeBookPercent({
+      flatChapters: chapters(2),
       selectedChapterId: 'c0',
-      paragraphs: paras(5),
-      selectedParagraphId: 'p2',
+      scrollRatio: 5,
     })
-    expect(pct).toBeCloseTo((3 / 5) / 3, 10)
+    const lo = computeBookPercent({
+      flatChapters: chapters(2),
+      selectedChapterId: 'c0',
+      scrollRatio: -3,
+    })
+    expect(hi).toBeCloseTo(0.5, 10) // (0 + 1) / 2
+    expect(lo).toBe(0)
   })
 
-  it('treats an unknown selected paragraph as fraction 0 within the chapter', () => {
-    // selectedChapter resolves (c1) but paragraph id not in list → withinFraction 0
-    const pct = computeBookPercent({
-      flatChapters: chapters(3),
-      selectedChapterId: 'c1',
-      paragraphs: paras(5),
-      selectedParagraphId: 'missing',
-    })
-    expect(pct).toBeCloseTo(1 / 3, 10)
-  })
-
-  it('never exceeds [0,1] for a single chapter book on its only paragraph', () => {
+  it('single chapter at full scroll is 1', () => {
     const pct = computeBookPercent({
       flatChapters: chapters(1),
       selectedChapterId: 'c0',
-      paragraphs: paras(1),
-      selectedParagraphId: 'p0',
+      scrollRatio: 1,
     })
     expect(pct).toBe(1)
   })

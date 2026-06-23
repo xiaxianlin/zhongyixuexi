@@ -52,55 +52,30 @@ export function formatMedicalExplanation(explanation: string): string {
 }
 
 /**
- * Compute the overall book reading progress (0..1) for the chapter-index method
- * (RD-02 / LRN-01). Deterministic, pure — exported for unit testing.
+ * Compute the overall book reading progress (0..1), chapter-level (v3.1).
+ * Deterministic, pure — exported for unit testing.
  *
- *   percent = (chapterFlatIndex + withinChapterFraction) / totalChapters
+ *   percent = (chapterFlatIndex + scrollRatio) / totalChapters
  *
- * where withinChapterFraction is how far the selected paragraph sits inside the
- * current chapter's paragraph list. The last chapter's last paragraph clamps to
- * exactly 1.0 so a finished book shows 100%.
- *
- * All inputs are data already held by the library store (flatChapters comes from
- * flattenChapters(tree); paragraphs is the current chapter's ParagraphDTO[]),
- * so this needs no extra IPC/SQL.
+ * where scrollRatio is how far the user has scrolled through the current
+ * chapter's content (0..1, from the reading pane). The last chapter clamps to
+ * exactly 1.0 at full scroll so a finished book shows 100%.
  */
 export function computeBookPercent(params: {
   flatChapters: { id: string }[]
   selectedChapterId: string | null
-  paragraphs: { id: string; order_index: number }[]
-  selectedParagraphId: string | null
+  scrollRatio: number
 }): number {
-  const { flatChapters, selectedChapterId, paragraphs, selectedParagraphId } = params
+  const { flatChapters, selectedChapterId, scrollRatio } = params
   const totalChapters = flatChapters.length
   if (totalChapters === 0 || !selectedChapterId) return 0
 
   const chapterIndex = flatChapters.findIndex((c) => c.id === selectedChapterId)
   if (chapterIndex === -1) return 0
 
-  // Within-chapter fraction: position of the selected paragraph in the loaded
-  // chapter's paragraph list (1-based / count), so the first paragraph = 1/n.
-  let withinFraction = 0
-  if (paragraphs.length > 0 && selectedParagraphId) {
-    const paraIndex = paragraphs.findIndex((p) => p.id === selectedParagraphId)
-    if (paraIndex !== -1) {
-      withinFraction = (paraIndex + 1) / paragraphs.length
-    }
-  }
-
-  const raw = (chapterIndex + withinFraction) / totalChapters
-  // Clamp: a value slightly under 1 when on the final paragraph of the last
-  // chapter (e.g. 80/81 + 1/1) would otherwise never reach 100%.
-  const isLastChapter = chapterIndex === totalChapters - 1
-  const isLastParagraph = paraIndexIsLast(paragraphs, selectedParagraphId)
-  if (isLastChapter && isLastParagraph) return 1
+  const ratio = Number.isFinite(scrollRatio) ? Math.min(1, Math.max(0, scrollRatio)) : 0
+  const raw = (chapterIndex + ratio) / totalChapters
+  // Clamp: scrolling to the end of the last chapter shows exactly 100%.
+  if (chapterIndex === totalChapters - 1 && ratio >= 1) return 1
   return Math.min(1, Math.max(0, raw))
-}
-
-function paraIndexIsLast(
-  paragraphs: { id: string }[],
-  selectedParagraphId: string | null,
-): boolean {
-  if (paragraphs.length === 0 || !selectedParagraphId) return false
-  return paragraphs[paragraphs.length - 1]!.id === selectedParagraphId
 }

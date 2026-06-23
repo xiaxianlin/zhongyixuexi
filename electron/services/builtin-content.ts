@@ -79,7 +79,7 @@ function copyBuiltinCover(cover: string): void {
   const srcCandidates = [
     join(app.getAppPath(), 'data', 'covers', cover),
     join(__dirname, '../../data/covers', cover),
-    join(process.cwd(), 'data', 'covers', cover),
+    join(process.cwd(), 'data/covers', cover),
   ]
   const src = srcCandidates.find((c) => existsSync(c))
   if (!src) return // no bundled cover for this book; skip silently
@@ -103,7 +103,7 @@ function validateBuiltinFile(file: BuiltinDataFile, fileName: string): void {
       throw new Error(`内置章节数据格式错误：${fileName}`)
     }
     for (const paragraph of chapter.paragraphs) {
-      if (!paragraph.id || typeof paragraph.text !== 'string') {
+      if (typeof paragraph.text !== 'string') {
         throw new Error(`内置段落数据格式错误：${fileName}`)
       }
     }
@@ -113,16 +113,18 @@ function validateBuiltinFile(file: BuiltinDataFile, fileName: string): void {
   if (typeof expectedChapters === 'number' && expectedChapters !== file.chapters.length) {
     throw new Error(`内置书籍章节数不一致：${fileName} ${file.chapters.length}/${expectedChapters}`)
   }
-
-  const paragraphCount = file.chapters.reduce((sum, chapter) => sum + chapter.paragraphs.length, 0)
-  const expectedParagraphs = file.quality?.paragraphCount
-  if (typeof expectedParagraphs === 'number' && expectedParagraphs !== paragraphCount) {
-    throw new Error(`内置书籍段落数不一致：${fileName} ${paragraphCount}/${expectedParagraphs}`)
-  }
 }
 
 /**
  * Seeds bundled classical content on app startup.
+ *
+ * v3.1 chapter-level model: each chapter's whole text is the concatenation of
+ * its source paragraphs (joined by blank lines), stored in chapters.content.
+ * The source paragraphs array is consumed only at seed time and is NOT
+ * persisted as a separate table — the chapter is the reading atom.
+ *
+ * All built-ins are seeded as category='classic' regardless of the source
+ * file's category field (which holds the school name, e.g. '难经').
  */
 export function seedBuiltinContent(): SeedBuiltinResult {
   const files = BUILTIN_FILES.map((fileName) => ({
@@ -136,8 +138,8 @@ export function seedBuiltinContent(): SeedBuiltinResult {
 
   const insertBook = db.prepare(
     `INSERT INTO books
-       (id, title, author, cover, category, updated_at, deleted_at)
-     VALUES (@id, @title, @author, @cover, @category, @updatedAt, NULL)`,
+       (id, title, author, cover, category, order_index, updated_at, deleted_at)
+     VALUES (@id, @title, @author, @cover, 'classic', @orderIndex, @updatedAt, NULL)`,
   )
 
   const insertChapter = db.prepare(
@@ -148,15 +150,8 @@ export function seedBuiltinContent(): SeedBuiltinResult {
              @content, @createdAt, @createdAt, NULL)`,
   )
 
-  const insertParagraph = db.prepare(
-    `INSERT INTO paragraphs
-       (id, chapter_id, order_index, text, edited, parse_hash, is_noise,
-        quality_flag, created_at, deleted_at)
-     VALUES (@id, @chapterId, @orderIndex, @text, 0, @parseHash, 0,
-             @qualityFlag, @createdAt, NULL)`,
-  )
-
   const tx = db.transaction(() => {
+    let bookOrder = 0
     for (const { data } of files) {
       const bookId = data.book.id
       bookIds.push(bookId)
@@ -167,25 +162,20 @@ export function seedBuiltinContent(): SeedBuiltinResult {
       if (existing) continue
 
       inserted = true
-      const bookParams = {
+      insertBook.run({
         id: bookId,
         title: data.book.title,
         author: data.book.author,
         cover: data.book.cover ?? null,
-        category: data.book.category,
+        orderIndex: bookOrder++,
         updatedAt: now,
-      }
-
-      insertBook.run(bookParams)
+      })
       // copy the bundled cover (data/covers/<cover>) into userData/covers so
       // covers.ts can read it back as a data URL. Idempotent (overwrite).
       if (data.book.cover) copyBuiltinCover(data.book.cover)
 
       for (const chapter of data.chapters) {
-        const chapterText = chapter.paragraphs.map((p) => normalize(p.text)).join('\n')
-        // v3.1: chapters.content is the whole-chapter plain text used by the
-        // reading pane. Built from the same paragraph join the v4 migration
-        // backfill uses, so seed and migration produce identical content.
+        // Whole-chapter text = source paragraphs joined by blank lines.
         const chapterContent = chapter.paragraphs
           .map((p) => normalize(p.text))
           .filter((t) => t)
@@ -197,24 +187,10 @@ export function seedBuiltinContent(): SeedBuiltinResult {
           orderIndex: chapter.orderIndex,
           level: chapter.level,
           title: chapter.title,
-          contentHash: chapter.contentHash ?? sha256Hex16(chapterText),
+          contentHash: chapter.contentHash ?? sha256Hex16(chapterContent),
           content: chapterContent,
           createdAt: now,
         })
-
-        for (const paragraph of chapter.paragraphs) {
-          const text = normalize(paragraph.text)
-          if (!text) continue
-          insertParagraph.run({
-            id: paragraph.id,
-            chapterId: chapter.id,
-            orderIndex: paragraph.orderIndex,
-            text,
-            parseHash: paragraph.parseHash ?? sha256Hex16(text),
-            qualityFlag: paragraph.quality?.flag ?? chapter.quality?.flag ?? 'ok',
-            createdAt: now,
-          })
-        }
       }
     }
 

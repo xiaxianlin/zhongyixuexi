@@ -3,7 +3,7 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`,末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-23（Phase 9 详情页改造 v3.1 · D1 + D2 完成）
+最后更新：2026-06-23（Phase 9 详情页改造 v3.1 · 重设为章级模型，D1+D2+D3 完成）
 
 ---
 
@@ -194,14 +194,16 @@ Exit:段绑定笔记可增删查。
 > 来源：`docs/idea/20260622.md` · PRD `docs/prd/20260622-detail-revamp.md` · 技术 `docs/tech/20260622-detail-revamp.md` · 计划 `docs/dev/IMPLEMENTATION-v3.1.md`
 > Exit：章级阅读 + 选区三连（摘录/笔记/引用）+ 章级 AI（解读/医理/白话）+ 对话 + 竖排 6 Tab 析栏。
 
+**⚠️ 重设决策（2026-06-23）**：原 D1/D2 用 forward-only 迁移保留段级遗留（paragraphs / paragraph_analyses / fts_paragraphs）。因当前无生产数据，改为**直接重设为干净的章级模型**——删除所有段级表与服务，用 reset 策略重建 schema v4。模型大幅简化，无历史债务。下方 D1/D2/D3 记录的是重设后的实现。
+
 | # | 状态 | 摘要 | 决策/阻塞 |
 |---|---|---|---|
-| D1 | done | schema v4 迁移（chapters.content/updated_at · chapter_analyses · excerpts · notes 选区列 · ai_threads/messages · ai_cache 重建扩 scope/kind · fts_chapters trigram + 三触发器） | 迁移幂等（columnExists / IF NOT EXISTS / aiCacheIsNarrow 守卫）；chapters.content 回填用 `\n\n` 拼 live paragraphs；builtin-content seed 同步写 content + updated_at；`books.category` backfill：五本内置经典→classic，其余→modern；ai_cache 重建段落_id 改可空。`npm run check` 绿（105 测试） |
-| D2 | done | 分类分组 + 多级章节树 UI（ChapterTree 递归 + 折叠 + 增小节/重命名/删除；书库按 古籍/现代书 分组；详情页头部分类徽标） | `getChapterTree.analyzed` 子查询扩为段级 OR 章级；新服务 `setBookCategory` + `createChildChapter`（层级≤3 软约束）；`editChapterTitle`/`createChapter` 现写 updated_at；删旧 `ChapterList.tsx`（被 `ChapterTree.tsx` 取代）；IPC `books:setCategory` + `chapters:createChild`；store 加 `addChildChapter`/`setBookCategory`。`npm run check` 绿（111 测试） |
-| D3 | todo | 章级阅读区 + 文本选区 + 摘录 + 正文编辑（重新锚定） |  |
-| D4 | todo | 章级 AI（解读/医理/白话）+ 析侧栏竖排 6 Tab |  |
+| D1 | done | **schema v4 重设**：删 paragraphs/paragraph_analyses/fts_paragraphs；chapters.content 为阅读原子；新增 chapter_analyses/excerpts/ai_threads/ai_messages/fts_chapters；notes 改章+选区绑定；migrate.ts 回归空（reset 式）；books.category CHECK('classic'/'modern')；seed 只写 chapters.content（段落拼 `\n\n`） | reset 策略：user_version≠4 即删库重建；五本内置经典 seed 为 classic。启动验证 `[db] ready · schema v4 · builtin=inserted(5)` |
+| D2 | done | 分类分组 + 多级章节树 UI | `getChapterTree.analyzed` 仅看 chapter_analyses；`setBookCategory`+`createChildChapter`（层级≤3）；ChapterTree 递归+折叠+增小节/重命名/删除；书库按 古籍/现代书 分组；详情页头部分类徽标 |
+| D3 | done | **章级阅读区 + 文本选区 + 摘录 + 正文编辑（重新锚定）** | ReadingPane（整章衬线阅读 + 右上 AI分析/编辑）+ TextBlock（受控渲染+高亮+getOffsetsFromSelection）+ SelectionToolbar（摘录/写笔记/引用 三按钮，后两者 D5/D6 接入）+ ExcerptsTab；`saveChapterContent` 触发 excerpts/notes 重新锚定（excerpt-anchor.ts：精确→prefix/suffix bracket→stale）；search 改 fts_chapters（SearchHit.matchOffset）；learning 改章级计数；删除 ParagraphList/InspectorPanel/段模态/NoteDrawer/paragraph-analysis；store/types/api 全面重写为章级；reading 进度改章级 scroll_ratio |
+| D4 | todo | 章级 AI（解读/医理/白话）+ 析侧栏竖排 6 Tab | ai.ts 现仅 status()；待接 chapter-analyses 生成 |
 | D5 | todo | 对话 + 引用 + 流式 token |  |
-| D6 | todo | 笔记选区化（章 + 选区） |  |
+| D6 | todo | 笔记选区化（章 + 选区） | notes 服务已支持选区列，待接 SelectionToolbar「写笔记」 |
 | D7 | todo | 打磨 + NFR（虚拟滚动 / a11y / qa-review） |  |
 
 - [ ] Phase 9 exit 达成

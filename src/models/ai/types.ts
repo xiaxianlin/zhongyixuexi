@@ -1,19 +1,10 @@
 /**
  * AI domain renderer DTOs + degraded-state mapping (mirror of
  * electron/services/ai.ts DTOs and electron/ai/errors.ts). Dependency-free.
+ *
+ * Chapter-level analysis + chat land in slices D4/D5; for now only the status
+ * DTO (key configured?) is exposed.
  */
-import type { ParagraphAnalysisMeta, InterpretationViewDTO } from '@/models/library/types'
-
-export interface ModernResultDTO {
-  paragraphId: string
-  fromCache: boolean
-  analysisMeta: ParagraphAnalysisMeta | null
-  interpretation: InterpretationViewDTO
-  analysis: string
-  summary: string
-  model: string
-  tokens: number
-}
 
 export interface AiStatusDTO {
   configured: boolean

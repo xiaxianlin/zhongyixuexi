@@ -5,7 +5,7 @@
  * errors as IpcError. Mirrors channels registered in electron/ipc/ai.ts.
  */
 import { invokeRaw, type IpcError } from '@/models/shared/ipc'
-import type { ModernResultDTO, AiStatusDTO, AiSubCode } from './types'
+import type { AiStatusDTO, AiSubCode } from './types'
 
 /** Extract the AI sub-code from an IpcError's details.aiCode. */
 export function aiSubCodeFrom(e: unknown): AiSubCode {
@@ -18,10 +18,7 @@ export function aiSubCodeFrom(e: unknown): AiSubCode {
 
 export type { IpcError }
 
-/** ai:* — status and paragraph interpretation. */
+/** ai:* — status (key configured?). Chapter analysis + chat arrive in D4/D5. */
 export const aiApi = {
   status: () => invokeRaw<AiStatusDTO>('ai:status'),
-
-  generateModern: (paragraphId: string, opts: { force?: boolean } = {}) =>
-    invokeRaw<ModernResultDTO>('ai:generateModern', { paragraphId, ...opts }),
 }

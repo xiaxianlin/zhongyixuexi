@@ -13,7 +13,6 @@ export interface BookListItem {
   cover: string | null
   category: string | null
   chapter_count: number
-  paragraph_count: number
   progress: number
   updated_at: number
 }
@@ -23,7 +22,7 @@ export interface ChapterNode {
   title: string
   order_index: number
   level?: string | null
-  /** 1 if the chapter has ≥1 analyzed paragraph, else 0 (mirrors backend). */
+  /** 1 if the chapter has an active chapter-level analysis, else 0. */
   analyzed?: number
   children: ChapterNode[]
 }

@@ -2,13 +2,14 @@
  * Dev-only end-to-end check. Triggered by ZYXX_INTEGRATION=1 env var in main.
  *
  * The app ships built-in content, so this check inserts a small transient book
- * directly and verifies the list → tree → FTS → search → cascade-delete chain.
+ * directly and verifies the list → tree → FTS → search → cascade-delete chain
+ * against the v3.1 chapter-level model.
  */
 import { randomUUID } from 'node:crypto'
 import { listBooks, getChapterTree } from '../services/library'
-import { searchParagraphs } from '../services/search'
-import { getChapter } from '../services/reading'
-import { createNote, deleteNote, getNotesByParagraph } from '../services/notes'
+import { searchChapters } from '../services/search'
+import { getChapterContent } from '../services/reading'
+import { createNote, deleteNote, getNotesByChapter } from '../services/notes'
 import { getDashboard } from '../services/learning'
 import { getActiveApiKey } from '../services/settings'
 import { deepseek } from '../ai/deepseek'
@@ -23,51 +24,49 @@ function assert(cond: boolean, msg: string): void {
 
 function ftsMatchCount(term: string = FTS_QUERY): number {
   const row = getDb()
-    .prepare('SELECT count(*) AS c FROM fts_paragraphs WHERE fts_paragraphs MATCH ?')
+    .prepare('SELECT count(*) AS c FROM fts_chapters WHERE fts_chapters MATCH ?')
     .get(term) as { c: number }
   return row.c
 }
 
-/** Insert a minimal test book (2 chapters, 3 paragraphs) directly, bypassing AI. */
+/** Insert a minimal test book (2 chapters with whole-chapter content) directly. */
 function insertTestBook(): string {
   const db = getDb()
   const bookId = randomUUID()
   const ch1 = randomUUID()
   const ch2 = randomUUID()
   const now = Date.now()
-  const insP = db.prepare(
-    `INSERT INTO paragraphs
-       (id, chapter_id, order_index, text, edited, parse_hash, is_noise,
-        quality_flag, created_at, deleted_at)
-     VALUES (?, ?, ?, ?, 0, NULL, 0, 'ok', ?, NULL)`,
-  )
   db.transaction(() => {
     db.prepare(
-      `INSERT INTO books (id, title, author, cover, category, updated_at, deleted_at)
-       VALUES (?, ?, ?, NULL, NULL, ?, NULL)`,
+      `INSERT INTO books (id, title, author, cover, category, order_index, updated_at, deleted_at)
+       VALUES (?, ?, ?, NULL, 'modern', 999, ?, NULL)`,
     ).run(bookId, TEST_TITLE, '佚名', now)
     db.prepare(
-      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content_hash, created_at, deleted_at)
-       VALUES (?, ?, NULL, 0, NULL, '上品', NULL, ?, NULL)`,
-    ).run(ch1, bookId, now)
+      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content_hash, content, created_at, updated_at, deleted_at)
+       VALUES (?, ?, NULL, 0, '1', '上品', NULL, ?, ?, ?, NULL)`,
+    ).run(
+      ch1,
+      bookId,
+      '人参，味甘微寒。主补五脏，安精神，定魂魄。\n\n久服轻身延年。一名人衔。',
+      now,
+      now,
+    )
     db.prepare(
-      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content_hash, created_at, deleted_at)
-       VALUES (?, ?, NULL, 1, NULL, '中品', NULL, ?, NULL)`,
-    ).run(ch2, bookId, now)
-    insP.run(randomUUID(), ch1, 0, '人参，味甘微寒。主补五脏，安精神，定魂魄。', now)
-    insP.run(randomUUID(), ch1, 1, '久服轻身延年。一名人衔。', now)
-    insP.run(randomUUID(), ch2, 0, '甘草，味甘平。主五脏六腑寒热邪气。', now)
+      `INSERT INTO chapters (id, book_id, parent_id, order_index, level, title, content_hash, content, created_at, updated_at, deleted_at)
+       VALUES (?, ?, NULL, 1, '1', '中品', NULL, ?, ?, ?, NULL)`,
+    ).run(ch2, bookId, '甘草，味甘平。主五脏六腑寒热邪气。', now, now)
   })()
-  // The ai trigger fires on INSERT and indexes paragraphs into FTS; rebuild as a safety net.
-  db.exec("INSERT INTO fts_paragraphs(fts_paragraphs) VALUES('rebuild')")
+  // The ai trigger fires on INSERT and indexes chapters into FTS; rebuild as a safety net.
+  db.exec("INSERT INTO fts_chapters(fts_chapters) VALUES('rebuild')")
   return bookId
 }
 
 function deleteTestBook(bookId: string): void {
   const db = getDb()
   db.transaction(() => {
+    // hard-delete (FK CASCADE removes chapters + excerpts + ai_threads)
     db.prepare('DELETE FROM books WHERE id = ?').run(bookId)
-    db.exec("INSERT INTO fts_paragraphs(fts_paragraphs) VALUES('rebuild')")
+    db.exec("INSERT INTO fts_chapters(fts_chapters) VALUES('rebuild')")
   })()
 }
 
@@ -111,39 +110,37 @@ export async function runIntegrationCheck(): Promise<void> {
     assert(tree.length === 2, `tree roots=${tree.length}`)
     assert(tree[0].title === '上品', `tree[0]=${tree[0].title}`)
 
-    const chapterContent = getChapter(bookId, tree[0].id)
+    const chapterContent = getChapterContent(bookId, tree[0].id)
     assert(!!chapterContent, 'reading chapter returned null')
-    assert(chapterContent!.paragraphs.length === 2, `chapter paragraphs=${chapterContent!.paragraphs.length}`)
-    const paragraphId = chapterContent!.paragraphs[0]!.id
-    console.log('[integration] reading ok:', chapterContent!.paragraphs.length, 'paragraphs')
+    assert(chapterContent!.content.length > 0, 'chapter content empty')
+    console.log('[integration] reading ok:', chapterContent!.content.length, 'chars')
 
     const matched = ftsMatchCount()
     assert(matched >= 1, `fts match returned ${matched}`)
-    console.log('[integration] fts ok: matched', matched, 'paragraph(s)')
+    console.log('[integration] fts ok: matched', matched, 'chapter(s)')
 
     // SRH search
-    const sr = searchParagraphs(FTS_QUERY)
+    const sr = searchChapters(FTS_QUERY)
     assert(sr.hits.length >= 1, `search returned ${sr.hits.length} hits`)
     assert(!sr.degraded, 'search unexpectedly degraded')
     console.log('[integration] search ok:', sr.hits.length, 'hits, total', sr.total)
 
-    const note = createNote({ paragraph_id: paragraphId, content: '测试笔记：甘温补虚。' })
-    let notes = getNotesByParagraph(paragraphId)
+    const note = createNote({ chapter_id: tree[0].id, content: '测试笔记：甘温补虚。' })
+    let notes = getNotesByChapter(tree[0].id)
     assert(notes.length === 1, `note count after create=${notes.length}`)
     assert(notes[0]!.content === note.content, 'created note content mismatch')
     deleteNote(note.id)
-    notes = getNotesByParagraph(paragraphId)
+    notes = getNotesByChapter(tree[0].id)
     assert(notes.length === 0, `note count after delete=${notes.length}`)
     console.log('[integration] notes ok: create / list / delete')
 
     const dashboard = getDashboard()
     assert(dashboard.totalBooks >= 3, `dashboard totalBooks=${dashboard.totalBooks}`)
     assert(dashboard.totalChapters >= 240, `dashboard totalChapters=${dashboard.totalChapters}`)
-    assert(dashboard.totalParagraphs >= 1000, `dashboard totalParagraphs=${dashboard.totalParagraphs}`)
     console.log('[integration] dashboard ok:', {
       books: dashboard.totalBooks,
       chapters: dashboard.totalChapters,
-      paragraphs: dashboard.totalParagraphs,
+      notes: dashboard.noteCount,
     })
   } finally {
     deleteTestBook(bookId)

@@ -6,6 +6,7 @@ import { registerLearningHandlers } from './learning'
 import { registerNotesHandlers } from './notes'
 import { registerAiHandlers } from './ai'
 import { registerEditingHandlers } from './editing'
+import { registerExcerptsHandlers } from './excerpts'
 
 /** Registers every IPC channel. Called once on app ready. */
 export function registerAllIpc(): void {
@@ -17,4 +18,5 @@ export function registerAllIpc(): void {
   registerNotesHandlers()
   registerAiHandlers()
   registerEditingHandlers()
+  registerExcerptsHandlers()
 }

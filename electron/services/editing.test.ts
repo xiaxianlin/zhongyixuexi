@@ -1,10 +1,9 @@
 /**
  * Unit tests for parse-hash + the analyzed-flag passthrough in buildChapterTree.
  *
- * The editing service's DB writes (merge/split/editText) can't run under vitest
- * (better-sqlite3 is built for Electron's ABI), so only the pure helpers + the
- * pure tree builder are unit-tested here. The DB paths are covered by the
- * integration check (electron/main/integration-check.ts) and manual verification.
+ * The editing service's DB writes can't run under vitest (better-sqlite3 is
+ * built for Electron's ABI), so only the pure helpers + the pure tree builder
+ * are unit-tested here. The DB paths are covered by manual verification.
  */
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'

@@ -1,25 +1,28 @@
 /**
- * Library detail store (Zustand) — Model for the BookDetailView flow.
+ * Library detail store (Zustand) — Model for the BookDetailView flow (v3.1
+ * chapter-level model).
  *
- * Per project rule: persisted data always lives in SQLite; this store holds
- * only session/UI cache for the currently open book detail. Components read
- * state and dispatch actions from here; they do not call IPC directly.
+ * Persisted data lives in SQLite; this store holds only session/UI cache for
+ * the currently open book detail. Components read state and dispatch actions
+ * from here; they do not call IPC directly.
  *
- * The store is keyed by the current bookId + targetChapterId + targetParagraphId
- * (the latter comes from useSessionStore.activeParagraphId). The view layer
- * wires useEffect to the fetch actions (fetchTree / fetchParagraphs / fetchNotes),
- * mirroring the original BookDetail effect dependency chain.
+ * State groups:
+ *  - tree: chapter tree + selected chapter
+ *  - chapterContent: whole-chapter text + active analysis (reading pane)
+ *  - selection: current text selection in the reading pane
+ *  - excerpts: the current chapter's selection-anchored highlights
+ *  - chapter content editing (textarea mode)
+ *  - chapter title editing (inline)
+ *  - toast
  */
 import { create } from 'zustand'
-import { libraryApi, readingApi, notesApi, editingApi } from './api'
-import { aiApi } from '@/models/ai/api'
-import { aiSubCodeFrom } from '@/models/ai/api'
+import { libraryApi, readingApi, editingApi, excerptsApi } from './api'
 import type { ChapterNode } from '@/models/shared/types'
-import type { ParagraphDTO, ParagraphNoteCard } from './types'
-import { compactAnalysisText, flattenChapters } from './helpers'
+import type { ChapterContentView, ExcerptDTO } from './types'
+import { flattenChapters } from './helpers'
+import type { ResolvedSelection } from '@/components/page/library/TextBlock'
 
 const TOAST_TTL_MS = 3200
-const AI_MIN_SPINNER_MS = 450
 
 interface LibraryState {
   // tree
@@ -27,107 +30,58 @@ interface LibraryState {
   treeLoading: boolean
   selectedChapterId: string | null
 
-  // paragraphs
-  paragraphs: ParagraphDTO[]
-  contentLoading: boolean
-  selectedParagraphId: string | null
+  // chapter content (reading pane)
+  chapterContent: ChapterContentView | null
+  chapterContentLoading: boolean
+  editingChapterContent: boolean
+  chapterContentDraft: string
 
-  // notes
-  notes: ParagraphNoteCard[]
-  notesLoading: boolean
-  noteDrawerOpen: boolean
+  // selection
+  selection: ResolvedSelection | null
 
-  // note editor
-  noteDraftContent: string
-  noteSaving: boolean
-  noteModalOpen: boolean
+  // excerpts
+  excerpts: ExcerptDTO[]
+  excerptDeleteTarget: ExcerptDTO | null
 
-  // delete confirm
-  deleteTarget: ParagraphNoteCard | null
-  deletingNote: boolean
-
-  // ai
-  aiGenerating: boolean
-  reanalyzeConfirmOpen: boolean
+  // chapter title editing (inline)
+  editingChapterId: string | null
+  chapterDraft: string
 
   // toast
   toastMessage: string
 
-  // chapter title editing
-  editingChapterId: string | null
-  chapterDraft: string
-
-  // paragraph text editing (single-paragraph modal)
-  editingParagraphId: string | null
-  paragraphDraft: string
-  // paragraph create mode (reuses the edit modal shell): when set, the modal
-  // shows "新建段落" and submits via saveNewParagraph instead of saveParagraphText.
-  paragraphCreateChapterId: string | null
-
-  // paragraph batch-manage mode
-  manageMode: boolean
-  selectedParagraphIds: string[]
-  mergePreviewOpen: boolean
-  deleteConfirmOpen: boolean
-
   // ----- actions -----
   fetchTree: (bookId: string, targetChapterId: string | null) => Promise<void>
   selectChapter: (chapterId: string) => void
-  fetchParagraphs: (
-    bookId: string,
-    chapterId: string,
-    targetParagraphId: string | null,
-  ) => Promise<void>
-  selectParagraph: (paragraphId: string) => void
-  fetchNotes: (paragraphId: string | null) => Promise<void>
-  runAnalysis: (force?: boolean) => Promise<void>
-  requestAnalysis: () => void
-  createParagraphNote: (bookId: string, chapterId: string) => Promise<void>
-  deleteNote: () => Promise<void>
-  setNoteDraftContent: (content: string) => void
-  setNoteModalOpen: (open: boolean) => void
-  setNoteDrawerOpen: (open: boolean) => void
-  setDeleteTarget: (note: ParagraphNoteCard | null) => void
-  setReanalyzeConfirmOpen: (open: boolean) => void
-  showToast: (message: string) => void
-  clearToast: () => void
-  // chapter editing
+  fetchChapterContent: (bookId: string, chapterId: string) => Promise<void>
+  setSelection: (selection: ResolvedSelection | null) => void
+  startEditChapterContent: () => void
+  cancelEditChapterContent: () => void
+  setChapterContentDraft: (text: string) => void
+  saveChapterContent: () => Promise<void>
+  createExcerptFromSelection: () => Promise<void>
+  deleteExcerpt: (id: string) => Promise<void>
+  setExcerptDeleteTarget: (excerpt: ExcerptDTO | null) => void
+  locateExcerpt: (start: number, end: number) => void
+  // chapter title editing
   startEditChapter: (chapterId: string, currentTitle: string) => void
   cancelEditChapter: () => void
   setChapterDraft: (title: string) => void
   saveChapterTitle: () => Promise<void>
-  // paragraph single edit (modal)
-  startEditParagraph: (paragraphId: string, currentText: string) => void
-  cancelEditParagraph: () => void
-  setParagraphDraft: (text: string) => void
-  saveParagraphText: () => Promise<void>
-  splitParagraphAtOffset: (offset: number) => Promise<void>
-  // paragraph create (reuses the edit modal)
-  startCreateParagraph: (chapterId: string) => void
-  cancelCreateParagraph: () => void
-  saveNewParagraph: () => Promise<void>
-  // paragraph batch manage
-  enterManageMode: () => void
-  exitManageMode: () => void
-  toggleParagraphSelected: (paragraphId: string) => void
-  selectAllParagraphs: () => void
-  setMergePreviewOpen: (open: boolean) => void
-  setDeleteConfirmOpen: (open: boolean) => void
-  confirmMergeSelected: () => Promise<void>
-  confirmDeleteSelected: () => Promise<void>
-  // book title editing (returns result; LibraryView refreshes its local book list)
+  // chapter tree CRUD
+  addChapter: (bookId: string, title: string) => Promise<void>
+  addChildChapter: (bookId: string, parentId: string | null, title: string) => Promise<void>
+  deleteChapter: (bookId: string, chapterId: string) => Promise<void>
+  // book category
+  setBookCategory: (bookId: string, category: 'classic' | 'modern') => Promise<boolean>
+  // book title editing (LibraryView refreshes its own book list)
   saveBookTitle: (bookId: string, title: string) => Promise<{ id: string; title: string }>
   // create / delete — books (LibraryView refreshes its own book list)
   addBook: (title: string, author?: string) => Promise<{ id: string; title: string } | null>
   deleteBook: (bookId: string) => Promise<boolean>
-  // create / delete — chapters (refreshes tree + reselects)
-  addChapter: (bookId: string, title: string) => Promise<void>
-  addChildChapter: (bookId: string, parentId: string | null, title: string) => Promise<void>
-  deleteChapter: (bookId: string, chapterId: string) => Promise<void>
-  // book category (classic | modern)
-  setBookCategory: (bookId: string, category: 'classic' | 'modern') => Promise<boolean>
-  // create — paragraphs (updates current paragraph list + selects the new one)
-  addParagraph: (chapterId: string, text: string) => Promise<void>
+  // toast
+  showToast: (message: string) => void
+  clearToast: () => void
 }
 
 let toastTimer: number | null = null
@@ -145,37 +99,20 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   treeLoading: true,
   selectedChapterId: null,
 
-  paragraphs: [],
-  contentLoading: false,
-  selectedParagraphId: null,
+  chapterContent: null,
+  chapterContentLoading: false,
+  editingChapterContent: false,
+  chapterContentDraft: '',
 
-  notes: [],
-  notesLoading: false,
-  noteDrawerOpen: false,
+  selection: null,
 
-  noteDraftContent: '',
-  noteSaving: false,
-  noteModalOpen: false,
-
-  deleteTarget: null,
-  deletingNote: false,
-
-  aiGenerating: false,
-  reanalyzeConfirmOpen: false,
-
-  toastMessage: '',
+  excerpts: [],
+  excerptDeleteTarget: null,
 
   editingChapterId: null,
   chapterDraft: '',
 
-  editingParagraphId: null,
-  paragraphDraft: '',
-  paragraphCreateChapterId: null,
-
-  manageMode: false,
-  selectedParagraphIds: [],
-  mergePreviewOpen: false,
-  deleteConfirmOpen: false,
+  toastMessage: '',
 
   fetchTree: async (bookId, targetChapterId) => {
     set({ treeLoading: true, tree: [], toastMessage: '' })
@@ -197,165 +134,108 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     set({ selectedChapterId: chapterId })
   },
 
-  fetchParagraphs: async (bookId, chapterId, targetParagraphId) => {
+  fetchChapterContent: async (bookId, chapterId) => {
     if (!chapterId) {
-      set({ paragraphs: [], selectedParagraphId: null })
+      set({ chapterContent: null, excerpts: [], selection: null })
       return
     }
-    set({
-      contentLoading: true,
-      selectedParagraphId: null,
-      notes: [],
-      noteDrawerOpen: false,
-      toastMessage: '',
-    })
+    set({ chapterContentLoading: true, selection: null, excerpts: [] })
     try {
-      const content = await readingApi.getChapter(bookId, chapterId)
-      const nextParagraphs = content?.paragraphs ?? []
-      const targetParagraph = targetParagraphId
-        ? nextParagraphs.find((paragraph) => paragraph.id === targetParagraphId)
-        : null
+      const [content, excerpts] = await Promise.all([
+        readingApi.getChapterContent(bookId, chapterId),
+        excerptsApi.listByChapter(chapterId),
+      ])
       set({
-        paragraphs: nextParagraphs,
-        selectedParagraphId: targetParagraph?.id ?? nextParagraphs[0]?.id ?? null,
+        chapterContent: content,
+        excerpts,
+        editingChapterContent: false,
+        chapterContentDraft: content?.content ?? '',
       })
     } catch {
-      set({ paragraphs: [] })
+      set({ chapterContent: null })
     } finally {
-      set({ contentLoading: false })
+      set({ chapterContentLoading: false })
     }
   },
 
-  selectParagraph: (paragraphId) => {
-    set({ selectedParagraphId: paragraphId })
+  setSelection: (selection) => set({ selection }),
+
+  startEditChapterContent: () => {
+    const { chapterContent } = get()
+    if (!chapterContent) return
+    set({
+      editingChapterContent: true,
+      chapterContentDraft: chapterContent.content,
+      selection: null,
+    })
   },
 
-  fetchNotes: async (paragraphId) => {
-    if (!paragraphId) {
-      set({ notes: [], noteDrawerOpen: false })
-      return
-    }
-    set({ notesLoading: true })
+  cancelEditChapterContent: () =>
+    set({ editingChapterContent: false, chapterContentDraft: '' }),
+
+  setChapterContentDraft: (text) => set({ chapterContentDraft: text }),
+
+  saveChapterContent: async () => {
+    const { chapterContent, chapterContentDraft } = get()
+    if (!chapterContent) return
+    set({ chapterContentLoading: true })
     try {
-      const nextNotes = await notesApi.getByParagraph(paragraphId)
-      set({ notes: nextNotes })
-    } catch (e) {
-      get().showToast(`笔记加载失败：${(e as Error).message}`)
-    } finally {
-      set({ notesLoading: false })
-    }
-  },
-
-  runAnalysis: async (force = false) => {
-    const { selectedParagraphId } = get()
-    if (!selectedParagraphId) return
-    const startedAt = Date.now()
-    set({ aiGenerating: true, toastMessage: '' })
-    try {
-      const result = await aiApi.generateModern(selectedParagraphId, { force })
-      const interpretation = {
-        modern: compactAnalysisText(result.interpretation.modern ?? ''),
-        explanation: compactAnalysisText(result.interpretation.explanation ?? ''),
-        analysis: compactAnalysisText(result.interpretation.analysis ?? ''),
-        meta: result.interpretation.meta,
-      }
-      set((state) => ({
-        paragraphs: state.paragraphs.map((paragraph) =>
-          paragraph.id === selectedParagraphId ? { ...paragraph, interpretation } : paragraph,
-        ),
-      }))
-    } catch (e) {
-      const subCode = aiSubCodeFrom(e)
-      get().showToast(
-        subCode === 'AI_KEY_NOT_CONFIGURED'
-          ? '请先在设置中配置 AI API Key'
-          : `AI 解读失败：${(e as Error).message}`,
-      )
-    } finally {
-      const elapsed = Date.now() - startedAt
-      if (elapsed < AI_MIN_SPINNER_MS) {
-        await new Promise((resolve) => window.setTimeout(resolve, AI_MIN_SPINNER_MS - elapsed))
-      }
-      set({ aiGenerating: false })
-    }
-  },
-
-  requestAnalysis: () => {
-    const { selectedParagraphId, paragraphs } = get()
-    if (!selectedParagraphId) return
-    const selected = paragraphs.find((p) => p.id === selectedParagraphId) ?? null
-    const analyzed = Boolean(selected?.interpretation?.meta)
-    if (analyzed) {
-      set({ reanalyzeConfirmOpen: true })
-      return
-    }
-    void get().runAnalysis(true)
-  },
-
-  createParagraphNote: async (bookId, chapterId) => {
-    const { selectedParagraphId, noteDraftContent } = get()
-    if (!selectedParagraphId) return
-    const content = noteDraftContent.trim()
-    if (!content) {
-      get().showToast('先写一点笔记内容')
-      return
-    }
-    set({ noteSaving: true, toastMessage: '' })
-    try {
-      await notesApi.create({
-        book_id: bookId,
-        chapter_id: chapterId,
-        paragraph_id: selectedParagraphId,
-        content,
+      const refreshed = await editingApi.saveChapterContent({
+        id: chapterContent.chapter.id,
+        text: chapterContentDraft,
       })
+      const excerpts = await excerptsApi.listByChapter(chapterContent.chapter.id)
       set({
-        noteDraftContent: '',
-        noteModalOpen: false,
-        noteDrawerOpen: true,
-        notes: await notesApi.getByParagraph(selectedParagraphId),
+        chapterContent: refreshed,
+        excerpts,
+        editingChapterContent: false,
+        chapterContentDraft: '',
       })
+      get().showToast('已保存')
     } catch (e) {
-      get().showToast(`笔记保存失败：${(e as Error).message}`)
+      get().showToast(`保存失败：${(e as Error).message}`)
     } finally {
-      set({ noteSaving: false })
+      set({ chapterContentLoading: false })
     }
   },
 
-  deleteNote: async () => {
-    const { deleteTarget, selectedParagraphId } = get()
-    if (!deleteTarget || !selectedParagraphId) return
-    set({ deletingNote: true, toastMessage: '' })
+  createExcerptFromSelection: async () => {
+    const { selection, chapterContent } = get()
+    if (!selection || !chapterContent) return
     try {
-      await notesApi.delete(deleteTarget.id)
-      set({ deleteTarget: null, notes: await notesApi.getByParagraph(selectedParagraphId) })
+      await excerptsApi.create({
+        bookId: chapterContent.chapter.book_id,
+        chapterId: chapterContent.chapter.id,
+        start: selection.start,
+        end: selection.end,
+        text: selection.text,
+      })
+      const excerpts = await excerptsApi.listByChapter(chapterContent.chapter.id)
+      set({ excerpts, selection: null })
+      get().showToast('已摘录')
     } catch (e) {
-      get().showToast(`删除失败：${(e as Error).message}`)
-    } finally {
-      set({ deletingNote: false })
+      get().showToast(`摘录失败：${(e as Error).message}`)
     }
   },
 
-  setNoteDraftContent: (noteDraftContent) => set({ noteDraftContent }),
-
-  setNoteModalOpen: (noteModalOpen) => set({ noteModalOpen }),
-
-  setNoteDrawerOpen: (noteDrawerOpen) => set({ noteDrawerOpen }),
-
-  setDeleteTarget: (deleteTarget) => set({ deleteTarget }),
-
-  setReanalyzeConfirmOpen: (reanalyzeConfirmOpen) => set({ reanalyzeConfirmOpen }),
-
-  showToast: (message) => {
-    scheduleToastClear(set)
-    set({ toastMessage: message })
+  deleteExcerpt: async (id) => {
+    const { chapterContent } = get()
+    if (!chapterContent) return
+    try {
+      await excerptsApi.delete(id)
+      const excerpts = await excerptsApi.listByChapter(chapterContent.chapter.id)
+      set({ excerpts, excerptDeleteTarget: null })
+    } catch (e) {
+      get().showToast(`删除摘录失败：${(e as Error).message}`)
+    }
   },
 
-  clearToast: () => {
-    if (toastTimer !== null) {
-      window.clearTimeout(toastTimer)
-      toastTimer = null
-    }
-    set({ toastMessage: '' })
+  setExcerptDeleteTarget: (excerpt) => set({ excerptDeleteTarget: excerpt }),
+
+  locateExcerpt: (start, end) => {
+    // signal the reading pane to scroll+flash this range
+    window.dispatchEvent(new CustomEvent('textblock:locate', { detail: { start, end } }))
+    set({ selection: { start, end, text: '' } })
   },
 
   // ----- chapter title editing -----
@@ -386,138 +266,61 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
   },
 
-  // ----- paragraph text editing -----
-  startEditParagraph: (paragraphId, currentText) =>
-    set({ editingParagraphId: paragraphId, paragraphDraft: currentText }),
-
-  cancelEditParagraph: () => set({ editingParagraphId: null, paragraphDraft: '' }),
-
-  setParagraphDraft: (text) => set({ paragraphDraft: text }),
-
-  saveParagraphText: async () => {
-    const { editingParagraphId, paragraphDraft } = get()
-    if (!editingParagraphId) return
-    const text = paragraphDraft.trim()
-    if (!text) {
-      get().showToast('段落内容不能为空')
+  // ----- chapter tree CRUD -----
+  addChapter: async (bookId, title) => {
+    const t = title.trim()
+    if (!t) {
+      get().showToast('章节名不能为空')
       return
     }
     try {
-      const updated = await editingApi.editParagraphText({ id: editingParagraphId, text })
-      set((state) => ({
-        paragraphs: state.paragraphs.map((p) =>
-          p.id === editingParagraphId ? updated : p,
-        ),
-        editingParagraphId: null,
-        paragraphDraft: '',
-      }))
+      await editingApi.createChapter({ bookId, title: t })
+      const nextTree = await libraryApi.tree(bookId)
+      const flat = flattenChapters(nextTree)
+      const last = flat[flat.length - 1] ?? null
+      set({ tree: nextTree, selectedChapterId: last?.id ?? null })
+      get().showToast('已新增章节')
     } catch (e) {
-      get().showToast(`段落保存失败：${(e as Error).message}`)
+      get().showToast(`新增章节失败：${(e as Error).message}`)
     }
   },
 
-  splitParagraphAtOffset: async (offset) => {
-    const { editingParagraphId } = get()
-    if (!editingParagraphId) return
-    set({ editingParagraphId: null, paragraphDraft: '' })
-    try {
-      const content = await editingApi.splitParagraph({
-        paragraphId: editingParagraphId,
-        splitOffset: offset,
-      })
-      set({ paragraphs: content.paragraphs })
-    } catch (e) {
-      get().showToast(`拆分失败：${(e as Error).message}`)
-    }
-  },
-
-  // ----- paragraph create (reuses the edit modal shell) -----
-  startCreateParagraph: (chapterId) =>
-    set({ paragraphCreateChapterId: chapterId, paragraphDraft: '', editingParagraphId: null }),
-
-  cancelCreateParagraph: () => set({ paragraphCreateChapterId: null, paragraphDraft: '' }),
-
-  saveNewParagraph: async () => {
-    const { paragraphCreateChapterId, paragraphDraft } = get()
-    if (!paragraphCreateChapterId) return
-    const text = paragraphDraft.trim()
-    if (!text) {
-      get().showToast('段落内容不能为空')
+  addChildChapter: async (bookId, parentId, title) => {
+    const t = title.trim()
+    if (!t) {
+      get().showToast('章节名不能为空')
       return
     }
     try {
-      const content = await editingApi.createParagraph({
-        chapterId: paragraphCreateChapterId,
-        text,
-      })
-      set({
-        paragraphs: content.paragraphs,
-        selectedParagraphId: content.paragraphs[content.paragraphs.length - 1]?.id ?? null,
-        paragraphCreateChapterId: null,
-        paragraphDraft: '',
-      })
-      get().showToast('已新增段落')
+      const content = await editingApi.createChildChapter({ bookId, parentId, title: t })
+      const nextTree = await libraryApi.tree(bookId)
+      set({ tree: nextTree, selectedChapterId: content.chapter.id ?? null })
+      get().showToast('已新增小节')
     } catch (e) {
-      get().showToast(`新增段落失败：${(e as Error).message}`)
+      get().showToast(`新增小节失败：${(e as Error).message}`)
     }
   },
 
-  // ----- paragraph batch manage mode -----
-  enterManageMode: () =>
-    set({ manageMode: true, selectedParagraphIds: [], mergePreviewOpen: false, deleteConfirmOpen: false }),
-
-  exitManageMode: () =>
-    set({ manageMode: false, selectedParagraphIds: [], mergePreviewOpen: false, deleteConfirmOpen: false }),
-
-  toggleParagraphSelected: (paragraphId) =>
-    set((state) => ({
-      selectedParagraphIds: state.selectedParagraphIds.includes(paragraphId)
-        ? state.selectedParagraphIds.filter((id) => id !== paragraphId)
-        : [...state.selectedParagraphIds, paragraphId],
-    })),
-
-  selectAllParagraphs: () =>
-    set((state) => ({ selectedParagraphIds: state.paragraphs.map((p) => p.id) })),
-
-  setMergePreviewOpen: (mergePreviewOpen) => set({ mergePreviewOpen }),
-
-  setDeleteConfirmOpen: (deleteConfirmOpen) => set({ deleteConfirmOpen }),
-
-  confirmMergeSelected: async () => {
-    const { selectedParagraphIds } = get()
-    if (selectedParagraphIds.length < 2) {
-      get().showToast('至少选择 2 个段落')
-      return
-    }
+  deleteChapter: async (bookId, chapterId) => {
     try {
-      const content = await editingApi.mergeParagraphs({ paragraphIds: [...selectedParagraphIds] })
-      set({
-        paragraphs: content.paragraphs,
-        manageMode: false,
-        selectedParagraphIds: [],
-        mergePreviewOpen: false,
-      })
+      await editingApi.deleteChapter({ id: chapterId })
+      const nextTree = await libraryApi.tree(bookId)
+      const first = nextTree[0] ?? null
+      set({ tree: nextTree, selectedChapterId: first?.id ?? null, chapterContent: null })
+      get().showToast('已删除章节')
     } catch (e) {
-      get().showToast(`合并失败：${(e as Error).message}`)
+      get().showToast(`删除章节失败：${(e as Error).message}`)
     }
   },
 
-  confirmDeleteSelected: async () => {
-    const { selectedParagraphIds } = get()
-    if (selectedParagraphIds.length === 0) {
-      get().showToast('请选择要删除的段落')
-      return
-    }
+  setBookCategory: async (bookId, category) => {
     try {
-      const content = await editingApi.deleteParagraphs({ paragraphIds: [...selectedParagraphIds] })
-      set({
-        paragraphs: content.paragraphs,
-        manageMode: false,
-        selectedParagraphIds: [],
-        deleteConfirmOpen: false,
-      })
+      await editingApi.setBookCategory({ id: bookId, category })
+      get().showToast(category === 'classic' ? '已设为古籍' : '已设为现代书')
+      return true
     } catch (e) {
-      get().showToast(`删除失败：${(e as Error).message}`)
+      get().showToast(`分类切换失败：${(e as Error).message}`)
+      return false
     }
   },
 
@@ -564,93 +367,17 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
     }
   },
 
-  // ----- create / delete — chapters -----
-  addChapter: async (bookId, title) => {
-    const t = title.trim()
-    if (!t) {
-      get().showToast('章节名不能为空')
-      return
-    }
-    try {
-      await editingApi.createChapter({ bookId, title: t })
-      // refresh the tree so the new chapter appears, then select it
-      const nextTree = await libraryApi.tree(bookId)
-      const flat = flattenChapters(nextTree)
-      const last = flat[flat.length - 1] ?? null
-      set({ tree: nextTree, selectedChapterId: last?.id ?? null })
-      get().showToast('已新增章节')
-    } catch (e) {
-      get().showToast(`新增章节失败：${(e as Error).message}`)
-    }
+  showToast: (message) => {
+    scheduleToastClear(set)
+    set({ toastMessage: message })
   },
 
-  addChildChapter: async (bookId, parentId, title) => {
-    const t = title.trim()
-    if (!t) {
-      get().showToast('章节名不能为空')
-      return
+  clearToast: () => {
+    if (toastTimer !== null) {
+      window.clearTimeout(toastTimer)
+      toastTimer = null
     }
-    try {
-      await editingApi.createChildChapter({ bookId, parentId, title: t })
-      const nextTree = await libraryApi.tree(bookId)
-      // select the newly added child: the last descendant of parentId (or last root)
-      const flat = flattenChapters(nextTree)
-      let target: { id: string } | null = null
-      if (parentId) {
-        // find last node whose ancestor chain includes parentId
-        for (let i = flat.length - 1; i >= 0; i--) {
-          if (flat[i]!.id === parentId || flat[i]!.id !== parentId) {
-            target = flat[i]!
-            break
-          }
-        }
-      }
-      if (!target) target = flat[flat.length - 1] ?? null
-      set({ tree: nextTree, selectedChapterId: target?.id ?? null })
-      get().showToast('已新增小节')
-    } catch (e) {
-      get().showToast(`新增小节失败：${(e as Error).message}`)
-    }
-  },
-
-  setBookCategory: async (bookId, category) => {
-    try {
-      await editingApi.setBookCategory({ id: bookId, category })
-      get().showToast(category === 'classic' ? '已设为古籍' : '已设为现代书')
-      return true
-    } catch (e) {
-      get().showToast(`分类切换失败：${(e as Error).message}`)
-      return false
-    }
-  },
-
-  deleteChapter: async (bookId, chapterId) => {
-    try {
-      await editingApi.deleteChapter({ id: chapterId })
-      const nextTree = await libraryApi.tree(bookId)
-      const first = nextTree[0] ?? null
-      set({ tree: nextTree, selectedChapterId: first?.id ?? null, paragraphs: [] })
-      get().showToast('已删除章节')
-    } catch (e) {
-      get().showToast(`删除章节失败：${(e as Error).message}`)
-    }
-  },
-
-  // ----- create — paragraphs -----
-  addParagraph: async (chapterId, text) => {
-    const body = text.trim()
-    if (!body) {
-      get().showToast('段落内容不能为空')
-      return
-    }
-    try {
-      const content = await editingApi.createParagraph({ chapterId, text: body })
-      const last = content.paragraphs[content.paragraphs.length - 1] ?? null
-      set({ paragraphs: content.paragraphs, selectedParagraphId: last?.id ?? null })
-      get().showToast('已新增段落')
-    } catch (e) {
-      get().showToast(`新增段落失败：${(e as Error).message}`)
-    }
+    set({ toastMessage: '' })
   },
 }))
 

@@ -3,10 +3,10 @@
 export interface DashboardDTO {
   totalBooks: number
   totalChapters: number
-  totalParagraphs: number
-  analyzedParagraphs: number
+  analyzedChapters: number
   analysisRate: number
   noteCount: number
+  excerptCount: number
   activeReadingBooks: number
   totalReadSeconds: number
   heatmap: Record<string, number>

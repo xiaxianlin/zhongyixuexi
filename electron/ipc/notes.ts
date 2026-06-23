@@ -2,7 +2,7 @@ import { handle } from './registry'
 import {
   createNote,
   deleteNote,
-  getNotesByParagraph,
+  getNotesByChapter,
   type CreateNoteInput,
 } from '../services/notes'
 
@@ -15,8 +15,8 @@ export function registerNotesHandlers(): void {
     return { ok: true }
   })
 
-  handle('notes:getByParagraph', (_event, payload: unknown) => {
-    const p = (payload ?? {}) as { paragraph_id?: string }
-    return getNotesByParagraph(p.paragraph_id ?? '')
+  handle('notes:listByChapter', (_event, payload: unknown) => {
+    const p = (payload ?? {}) as { chapterId?: string }
+    return getNotesByChapter(p.chapterId ?? '')
   })
 }

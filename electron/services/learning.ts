@@ -1,9 +1,8 @@
 /**
- * Learning dashboard aggregation.
+ * Learning dashboard aggregation (v3.1 chapter-level model).
  *
- * The current product no longer has review cards or quizzes. "Learning" is the
- * user's real reading/study footprint: built-in classics, paragraphs read,
- * analyses generated, and notes written.
+ * "Learning" is the user's real reading/study footprint: books, chapters,
+ * chapters analyzed, notes + excerpts written, and reading time.
  */
 
 import { getDb } from '../db/connection'
@@ -11,10 +10,10 @@ import { getDb } from '../db/connection'
 export interface DashboardDTO {
   totalBooks: number
   totalChapters: number
-  totalParagraphs: number
-  analyzedParagraphs: number
+  analyzedChapters: number
   analysisRate: number
   noteCount: number
+  excerptCount: number
   activeReadingBooks: number
   totalReadSeconds: number
   heatmap: Record<string, number>
@@ -47,26 +46,17 @@ export function getDashboard(): DashboardDTO {
      JOIN books b ON b.id = ch.book_id
      WHERE ch.deleted_at IS NULL AND b.deleted_at IS NULL`,
   )
-  const totalParagraphs = count(
-    `SELECT COUNT(*) AS cnt
-     FROM paragraphs p
-     JOIN chapters ch ON ch.id = p.chapter_id
+  const analyzedChapters = count(
+    `SELECT COUNT(DISTINCT ca.chapter_id) AS cnt
+     FROM chapter_analyses ca
+     JOIN chapters ch ON ch.id = ca.chapter_id
      JOIN books b ON b.id = ch.book_id
-     WHERE p.deleted_at IS NULL AND p.is_noise = 0 AND ch.deleted_at IS NULL AND b.deleted_at IS NULL`,
-  )
-  const analyzedParagraphs = count(
-    `SELECT COUNT(DISTINCT pa.paragraph_id) AS cnt
-     FROM paragraph_analyses pa
-     JOIN paragraphs p ON p.id = pa.paragraph_id
-     JOIN chapters ch ON ch.id = p.chapter_id
-     JOIN books b ON b.id = ch.book_id
-     WHERE pa.is_active = 1
-       AND p.deleted_at IS NULL
-       AND p.is_noise = 0
+     WHERE ca.is_active = 1
        AND ch.deleted_at IS NULL
        AND b.deleted_at IS NULL`,
   )
   const noteCount = count(`SELECT COUNT(*) AS cnt FROM notes WHERE deleted_at IS NULL`)
+  const excerptCount = count(`SELECT COUNT(*) AS cnt FROM excerpts`)
   const progress = db
     .prepare(
       `SELECT COUNT(*) AS activeReadingBooks,
@@ -89,10 +79,10 @@ export function getDashboard(): DashboardDTO {
   return {
     totalBooks,
     totalChapters,
-    totalParagraphs,
-    analyzedParagraphs,
-    analysisRate: totalParagraphs === 0 ? 0 : analyzedParagraphs / totalParagraphs,
+    analyzedChapters,
+    analysisRate: totalChapters === 0 ? 0 : analyzedChapters / totalChapters,
     noteCount,
+    excerptCount,
     activeReadingBooks: progress?.activeReadingBooks ?? 0,
     totalReadSeconds: progress?.totalReadSeconds ?? 0,
     heatmap: getHeatmap(new Date().getFullYear()),
@@ -119,15 +109,21 @@ function getHeatmap(year: number): Record<string, number> {
          WHERE deleted_at IS NULL AND updated_at >= ? AND updated_at < ?
          GROUP BY day
          UNION ALL
+         SELECT date(created_at / 1000, 'unixepoch', 'localtime') AS day,
+                COUNT(*) AS cnt
+         FROM excerpts
+         WHERE created_at >= ? AND created_at < ?
+         GROUP BY day
+         UNION ALL
          SELECT date(updated_at / 1000, 'unixepoch', 'localtime') AS day,
                 COUNT(*) AS cnt
-         FROM paragraph_analyses
+         FROM chapter_analyses
          WHERE is_active = 1 AND updated_at >= ? AND updated_at < ?
          GROUP BY day
        )
        GROUP BY day`,
     )
-    .all(start, end, start, end, start, end) as { day: string; cnt: number }[]
+    .all(start, end, start, end, start, end, start, end) as { day: string; cnt: number }[]
 
   return Object.fromEntries(rows.map((row) => [row.day, row.cnt]))
 }
