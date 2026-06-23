@@ -67,7 +67,13 @@ export function ChapterTree({ bookId }: { bookId: string }) {
         )}
       </div>
       {treeLoading ? (
-        <p className="bookdetail__empty">加载目录…</p>
+        <div className="bookdetail__skeletonList" aria-label="加载目录">
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className="bookdetail__skeletonRow">
+              <span className="skeleton skeleton--title" style={{ width: `${50 + (i % 3) * 18}%` }} />
+            </div>
+          ))}
+        </div>
       ) : tree.length === 0 ? (
         <p className="bookdetail__empty">无章节</p>
       ) : (

@@ -142,7 +142,14 @@ export function ReadingPane({ bookId }: { bookId: string }) {
       </div>
 
       {loading ? (
-        <p className="bookdetail__empty">加载正文…</p>
+        <div className="bookdetail__paragraphList bookdetail__readingScroll" aria-label="加载正文">
+          <span className="skeleton skeleton--title" />
+          <span className="skeleton skeleton--text" style={{ width: '92%' }} />
+          <span className="skeleton skeleton--text" style={{ width: '88%' }} />
+          <span className="skeleton skeleton--text" style={{ width: '95%' }} />
+          <span className="skeleton skeleton--text" style={{ width: '70%' }} />
+          <span className="skeleton skeleton--text" style={{ width: '90%' }} />
+        </div>
       ) : !chapterContent ? (
         <p className="bookdetail__empty">无正文</p>
       ) : editing ? (

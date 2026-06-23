@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- 朱砂印章 favicon：圆角红底 + 白文"中"字，契合中医经典学习 -->
+  <rect width="64" height="64" rx="14" fill="#8c2d25"/>
+  <rect x="3" y="3" width="58" height="58" rx="12" fill="none" stroke="#fff9ee" stroke-width="1.5" opacity="0.5"/>
+  <!-- "中" 字白文 -->
+  <g fill="none" stroke="#fff9ee" stroke-width="4.5" stroke-linecap="round">
+    <!-- 口 -->
+    <rect x="20" y="24" width="24" height="18" rx="1.5"/>
+    <!-- 竖 -->
+    <line x1="32" y1="14" x2="32" y2="52"/>
+  </g>
+</svg>

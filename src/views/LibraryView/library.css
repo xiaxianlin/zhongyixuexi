@@ -2184,3 +2184,17 @@ body.is-library-detail .lib {
   border-color: var(--accent-soft, #a67c5d);
 }
 
+/* 骨架屏加载态（章节目录/正文）—— 形状匹配内容，取代裸文字 */
+.bookdetail__skeletonList {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 10px 8px;
+}
+
+.bookdetail__skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+

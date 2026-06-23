@@ -308,3 +308,161 @@ code {
   padding: 1px 6px;
   border-radius: 6px;
 }
+
+/* ==========================================================================
+   润色层（redesign skill）—— 在古墨宣纸语言内补全"未完成感"
+   全部为非破坏性增强：动效 / 交互态 / 加载态 / 可访问性
+   ========================================================================== */
+
+/* 平滑滚动：章节内锚点、摘录定位不再瞬跳 */
+html {
+  scroll-behavior: smooth;
+}
+
+/* 全局焦点环（a11y 必需，非可选）—— 朱砂细圈，契合墨意 */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* 移除默认 outline 仅在 :focus-visible 提供时（避免鼠标点击残留） */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* 按钮通用交互态：hover 微抬、active 按压（物理反馈） */
+button,
+.app__navBtn,
+.app__themeBtn,
+.app__back,
+.app__searchBtn {
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease,
+    transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+button:active:not(:disabled),
+.app__navBtn:active:not(:disabled),
+.app__back:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* 墨晕渐显进场动效（气韵生动）—— 视图切换时内容如墨晕化开 */
+@keyframes inkFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.app__main > * {
+  animation: inkFadeIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* 卡片进场：错落渐显（staggered）—— 书库网格、笔记/摘录列表 */
+@keyframes inkRise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lib__grid > .bookcard,
+.notestab__list > .notecard,
+.excerptCard {
+  animation: inkRise 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* 前 8 个卡片错落 40ms 延迟（避免长列表过度延迟） */
+.lib__grid > .bookcard:nth-child(1) { animation-delay: 0ms; }
+.lib__grid > .bookcard:nth-child(2) { animation-delay: 40ms; }
+.lib__grid > .bookcard:nth-child(3) { animation-delay: 80ms; }
+.lib__grid > .bookcard:nth-child(4) { animation-delay: 120ms; }
+.lib__grid > .bookcard:nth-child(5) { animation-delay: 160ms; }
+.lib__grid > .bookcard:nth-child(6) { animation-delay: 200ms; }
+
+/* 减少动效偏好（a11y）：尊重用户系统设置 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* 骨架屏加载态（取代裸"加载中…"文字）—— 形状匹配内容 */
+@keyframes skeletonShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(181, 142, 98, 0.08) 25%,
+    rgba(181, 142, 98, 0.18) 50%,
+    rgba(181, 142, 98, 0.08) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+.skeleton--text {
+  height: 14px;
+  margin-bottom: 8px;
+}
+.skeleton--title {
+  height: 22px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+/* 全局滚动条美化（暖驼金，契合纸面） */
+* {
+  scrollbar-color: rgba(181, 142, 98, 0.55) transparent;
+  scrollbar-width: thin;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(181, 142, 98, 0.5);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(151, 111, 70, 0.7);
+  background-clip: padding-box;
+  border: 2px solid transparent;
+}
+
+/* text-wrap 平衡：标题/卡片名避免孤字独占末行 */
+.bookdetail__title,
+.bookcard__titleOnly,
+.lib__groupLabel,
+.dashboard__period {
+  text-wrap: balance;
+}
+
+/* 选区高亮配色（阅读区选中正文）—— 淡绛而非浏览器默认蓝 */
+::selection {
+  background: rgba(189, 134, 88, 0.28);
+  color: var(--fg);
+}
