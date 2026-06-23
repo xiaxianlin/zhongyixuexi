@@ -64,6 +64,7 @@ export type AiSubCode =
   | 'AI_PARSE_ERROR'
   | 'AI_GUARD_BLOCKED'
   | 'AI_PROVIDER_NOT_CONFIGURED'
+  | 'AI_ABORTED'
   | 'AI_UNKNOWN'
 
 /** User-facing degraded-state reason derived from an AI sub-code. */

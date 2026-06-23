@@ -17,10 +17,32 @@ import { AppError } from '../lib/error'
 import { deepseek } from '../ai/deepseek'
 import { buildChatPrompt } from '../ai/prompts'
 import { shouldBlock, sanitizeOutput, REFUSAL_TEXT } from '../ai/guard'
+import { aiError } from '../ai/errors'
 import { loadConfig } from './ai'
 
 const HISTORY_LIMIT = 8
 const CHAPTER_CONTENT_BUDGET = 4000 // chars; ~2k tokens, leaves room for output
+
+/**
+ * In-flight chat requests, keyed by threadId. Prevents duplicate concurrent
+ * sends on the same thread (C-2) and tracks the AbortController so a chapter
+ * switch / book close can cancel the stream (W-1).
+ */
+const inflight = new Map<string, { controller: AbortController; promise: Promise<unknown> }>()
+
+/** Abort any in-flight stream for a chapter (called on chapter switch / book
+ *  close). Returns true if a stream was cancelled. */
+export function abortChapterChat(chapterId: string): boolean {
+  const db = getDb()
+  const thread = db
+    .prepare('SELECT id FROM ai_threads WHERE chapter_id = ?')
+    .get(chapterId) as { id: string } | undefined
+  if (!thread) return false
+  const entry = inflight.get(thread.id)
+  if (!entry) return false
+  entry.controller.abort()
+  return true
+}
 
 export interface AiThreadDTO {
   id: string
@@ -113,7 +135,24 @@ function loadChapterContext(chapterId: string): ChapterChatContext {
 
 function truncateContent(content: string): string {
   if (content.length <= CHAPTER_CONTENT_BUDGET) return content
-  return content.slice(0, CHAPTER_CONTENT_BUDGET) + '\n\n…（原文过长，已截断）'
+  // Truncate at a paragraph/sentence boundary near the budget so we don't cut
+  // mid-clause. Prefer the last paragraph break before the budget; fall back to
+  // a sentence-ending punctuation mark; last resort a hard cut.
+  const cut = content.slice(0, CHAPTER_CONTENT_BUDGET)
+  const paraBreak = cut.lastIndexOf('\n\n')
+  if (paraBreak >= CHAPTER_CONTENT_BUDGET * 0.6) {
+    return content.slice(0, paraBreak) + '\n\n…（原文过长，已截断）'
+  }
+  const sentenceEnd = Math.max(
+    cut.lastIndexOf('。'),
+    cut.lastIndexOf('；'),
+    cut.lastIndexOf('！'),
+    cut.lastIndexOf('？'),
+  )
+  if (sentenceEnd >= CHAPTER_CONTENT_BUDGET * 0.6) {
+    return content.slice(0, sentenceEnd + 1) + '\n\n…（原文过长，已截断）'
+  }
+  return cut + '…（原文过长，已截断）'
 }
 
 /** Persist one message row, returning the DTO. */
@@ -187,12 +226,39 @@ export interface SendChatResult {
  * Send a user message + stream the assistant reply. `onToken(delta)` fires for
  * each streamed chunk; the sanitized full reply is persisted on completion.
  *
+ * Concurrency: one in-flight request per thread (C-2). A duplicate call while
+ * one is running rejects with AI_ABORTED. The stream is cancellable via the
+ * thread's AbortController (W-1) — abortChapterChat(chapterId) cancels it; on
+ * abort the user turn stays but no assistant row is written.
+ *
  * The red-line guard runs first: a blocked query is answered with the fixed
  * refusal text (no model call, no billing) and both messages are stored.
  */
 export async function sendChat(
   input: SendChatInput,
   onToken?: (delta: string) => void,
+): Promise<SendChatResult> {
+  // C-2: per-thread de-dup. A duplicate concurrent call on the same thread
+  // rejects immediately rather than queuing a second billable request.
+  const existing = inflight.get(input.threadId)
+  if (existing) {
+    throw aiError('AI_ABORTED', '该章节已有进行中的对话请求')
+  }
+  const controller = new AbortController()
+  const run = sendChatImpl(input, onToken, controller.signal)
+  const entry = { controller, promise: run }
+  inflight.set(input.threadId, entry)
+  try {
+    return (await run) as SendChatResult
+  } finally {
+    if (inflight.get(input.threadId) === entry) inflight.delete(input.threadId)
+  }
+}
+
+async function sendChatImpl(
+  input: SendChatInput,
+  onToken: ((delta: string) => void) | undefined,
+  signal: AbortSignal,
 ): Promise<SendChatResult> {
   const db = getDb()
   const thread = db
@@ -245,6 +311,7 @@ export async function sendChat(
     cfg,
     {
       onDelta: (delta) => onToken?.(delta),
+      signal,
     },
   )
 

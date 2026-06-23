@@ -1,4 +1,5 @@
 import { handle } from './registry'
+import { AppError } from '../lib/error'
 import {
   createExcerpt,
   listExcerptsByChapter,
@@ -21,11 +22,22 @@ export function registerExcerptsHandlers(): void {
       text?: string
       note?: string | null
     }
+    // Boundary validation: require chapterId + a sane [start,end) range before
+    // touching the service (which re-validates against the live content).
+    if (!p.chapterId) throw new AppError('VALIDATION', '摘录缺少 chapterId')
+    if (
+      !Number.isInteger(p.start) ||
+      !Number.isInteger(p.end) ||
+      p.start! < 0 ||
+      p.end! <= p.start!
+    ) {
+      throw new AppError('VALIDATION', '摘录选区范围非法')
+    }
     return createExcerpt({
       bookId: p.bookId,
-      chapterId: p.chapterId ?? '',
-      start: Number(p.start ?? -1),
-      end: Number(p.end ?? -1),
+      chapterId: p.chapterId,
+      start: p.start!,
+      end: p.end!,
       text: p.text ?? '',
       note: p.note ?? null,
     })

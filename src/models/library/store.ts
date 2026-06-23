@@ -291,9 +291,11 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
   setExcerptDeleteTarget: (excerpt) => set({ excerptDeleteTarget: excerpt }),
 
   locateExcerpt: (start, end) => {
-    // signal the reading pane to scroll+flash this range
+    // signal the reading pane to scroll+flash this range. Does NOT touch the
+    // selection state (which drives the toolbar and must hold a real user
+    // selection with non-empty text); the locate event is consumed by
+    // ReadingPane's flashRange listener.
     window.dispatchEvent(new CustomEvent('textblock:locate', { detail: { start, end } }))
-    set({ selection: { start, end, text: '' } })
   },
 
   // ----- notes -----
@@ -509,14 +511,24 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
 
   // ----- D5: chapter-scoped chat -----
   fetchChatThread: async (bookId, chapterId) => {
+    // W-1: cancel any in-flight stream from the previous chapter before loading
+    // the new one, so we stop paying for tokens the user will never see.
+    const prevChapterId = get().chatThread?.chapter_id
+    if (prevChapterId && prevChapterId !== chapterId) {
+      try {
+        await aiApi.abortChapterChat(prevChapterId)
+      } catch {
+        // best-effort
+      }
+    }
     if (!chapterId) {
-      set({ chatThread: null, chatMessages: [], pendingQuote: null })
+      set({ chatThread: null, chatMessages: [], pendingQuote: null, chatStreaming: false })
       return
     }
     try {
       const thread = await aiApi.threadForChapter(bookId, chapterId)
       const messages = await aiApi.chatHistory(thread.id)
-      set({ chatThread: thread, chatMessages: messages })
+      set({ chatThread: thread, chatMessages: messages, chatStreaming: false })
     } catch {
       set({ chatThread: null, chatMessages: [] })
     }
@@ -580,17 +592,26 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         ],
       })
     } catch (e) {
-      // replace the empty assistant bubble with an error note
+      // replace the empty assistant bubble with an error note (or drop it on abort)
       const subCode = aiSubCodeFrom(e)
-      const errText =
-        subCode === 'AI_KEY_NOT_CONFIGURED'
-          ? '请先在设置中配置 AI API Key'
-          : `对话失败：${(e as Error).message}`
-      set({
-        chatMessages: get().chatMessages.map((m) =>
-          m.id === optimisticAssistant.id ? { ...m, content: errText } : m,
-        ),
-      })
+      if (subCode === 'AI_ABORTED') {
+        // user switched chapter / closed book — drop the optimistic bubbles
+        set({
+          chatMessages: get().chatMessages.filter(
+            (m) => m.id !== optimisticUser.id && m.id !== optimisticAssistant.id,
+          ),
+        })
+      } else {
+        const errText =
+          subCode === 'AI_KEY_NOT_CONFIGURED'
+            ? '请先在设置中配置 AI API Key'
+            : `对话失败：${(e as Error).message}`
+        set({
+          chatMessages: get().chatMessages.map((m) =>
+            m.id === optimisticAssistant.id ? { ...m, content: errText } : m,
+          ),
+        })
+      }
     } finally {
       set({ chatStreaming: false })
     }

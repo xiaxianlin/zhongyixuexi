@@ -211,7 +211,7 @@ const CURRENT_SCHEMA = `
   CREATE TABLE IF NOT EXISTS chapter_analyses (
     id           TEXT PRIMARY KEY,
     chapter_id   TEXT NOT NULL,
-    kind         TEXT NOT NULL DEFAULT 'modern',
+    kind         TEXT NOT NULL DEFAULT 'chapter',
     version      INTEGER NOT NULL,
     is_active    INTEGER NOT NULL DEFAULT 1,
     modern       TEXT,

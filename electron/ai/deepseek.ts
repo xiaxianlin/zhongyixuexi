@@ -32,6 +32,10 @@ export interface ChatOptions {
 
 export interface ChatStreamOptions extends ChatOptions {
   onDelta?: (chunk: string, snapshot: { chars: number; chunks: number }) => void
+  /** External abort signal. When aborted, the in-flight request is cancelled
+   *  (the internal timeout controller is also linked to it). Used by ai-chat to
+   *  cancel a stream when the user switches chapter / closes the book. */
+  signal?: AbortSignal
 }
 
 /** Sleep helper with ±20% jitter to de-sync concurrent retries. */
@@ -214,6 +218,13 @@ export class DeepSeekHttp implements DeepSeekClient {
       clearTimeout(timer)
       timer = setTimeout(() => ctl.abort(), timeoutMs)
     }
+    // link an external abort signal (chapter switch / book close) to our controller
+    const externalSignal = opts.signal
+    const onExternalAbort = (): void => ctl.abort()
+    if (externalSignal) {
+      if (externalSignal.aborted) ctl.abort()
+      else externalSignal.addEventListener('abort', onExternalAbort, { once: true })
+    }
 
     try {
       const res = await this.fetchImpl(url, {
@@ -244,6 +255,11 @@ export class DeepSeekHttp implements DeepSeekClient {
       const isAbort =
         (e instanceof DOMException && e.name === 'AbortError') ||
         (e instanceof Error && e.name === 'AbortError')
+      // Distinguish a user-initiated abort (external signal) from a timeout:
+      // a user abort is expected, not an error — rethrow as a soft AI_ABORTED.
+      if (isAbort && externalSignal?.aborted) {
+        throw aiError('AI_ABORTED', '对话已取消')
+      }
       throw aiError(
         isAbort ? 'AI_TIMEOUT' : 'AI_SERVER_ERROR',
         isAbort ? `AI 请求超时（${timeoutMs}ms）` : `AI 网络错误：${(e as Error).message || 'unknown'}`,
@@ -251,6 +267,7 @@ export class DeepSeekHttp implements DeepSeekClient {
       )
     } finally {
       clearTimeout(timer)
+      if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort)
     }
   }
 }

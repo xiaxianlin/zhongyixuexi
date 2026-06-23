@@ -48,4 +48,7 @@ export const aiApi = {
 
   resetThread: (threadId: string) =>
     invokeRaw<{ ok: true }>('ai:resetThread', { threadId }),
+
+  abortChapterChat: (chapterId: string) =>
+    invokeRaw<{ aborted: boolean }>('ai:abortChapterChat', { chapterId }),
 }

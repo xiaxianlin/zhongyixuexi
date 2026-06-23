@@ -43,7 +43,7 @@ interface ActiveChapterAnalysisRow {
   analysis_updated_at: number | null
 }
 
-/** SQL fragment + join that left-joins the active 'modern' chapter analysis.
+/** SQL fragment + join that left-joins the active 'chapter' chapter analysis.
  *  Use within a query that already aliases the chapters table as `c`. */
 export function activeChapterAnalysisSql(): { columns: string; join: string } {
   return {
@@ -60,7 +60,7 @@ export function activeChapterAnalysisSql(): { columns: string; join: string } {
               ca.updated_at    AS analysis_updated_at`,
     join: `LEFT JOIN chapter_analyses ca
              ON ca.chapter_id = c.id
-            AND ca.kind = 'modern'
+            AND ca.kind = 'chapter'
             AND ca.is_active = 1`,
   }
 }
@@ -109,7 +109,7 @@ export function getActiveChapterAnalysis(chapterId: string): ActiveChapterAnalys
 // Write path (D4) — active-unique versioning
 // ============================================================================
 
-export const DEFAULT_CHAPTER_ANALYSIS_KIND = 'modern' as const
+export const DEFAULT_CHAPTER_ANALYSIS_KIND = 'chapter' as const
 export type ChapterAnalysisKind = typeof DEFAULT_CHAPTER_ANALYSIS_KIND
 
 export interface BuildChapterAnalysisInput {

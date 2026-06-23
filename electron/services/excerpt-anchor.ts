@@ -39,6 +39,11 @@ export interface ReanchorResult {
 }
 
 const MIN_OVERLAP_RATIO = 0.6
+/** Excerpts longer than this skip the prefix/suffix bracket scan (it would do
+ *  up to 2×24 indexOf passes over the full new text). Long selections are rare
+ *  and the exact-match path already handles them; falling straight to stale is
+ *  safer than a slow scan on a huge chapter. */
+const BRACKET_MAX_EXCERPT_LEN = 200
 
 export function reanchorRange(input: ReanchorInput): ReanchorResult {
   const { oldText, newText, start, end, excerptText } = input
@@ -92,6 +97,7 @@ function bracketRelocate(
   text: string,
   excerpt: string,
 ): { start: number; end: number } | null {
+  if (excerpt.length > BRACKET_MAX_EXCERPT_LEN) return null
   const maxPrefix = Math.min(excerpt.length, 24)
   let prefixLen = 0
   let prefixAt = -1

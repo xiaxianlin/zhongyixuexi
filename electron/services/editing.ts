@@ -71,12 +71,13 @@ export function createBook(title: string, author?: string): { id: string; title:
   return { id, title: t }
 }
 
-/** Soft-delete a book and cascade the soft-delete to its chapters. Excerpts /
- *  chapter_analyses / ai_threads are hard-cascaded by FK (real DELETE not needed
- *  here since their FKs are CASCADE on chapters, but we soft-delete chapters to
- *  keep them recoverable; FK CASCADE won't fire on UPDATE so we rely on the
- *  chapter soft-delete + UI filtering). reading_progress for this book is
- *  hard-deleted (its FK CASCADE only fires on a real DELETE). */
+/** Soft-delete a book and hard-delete its chapters so the FK CASCADE children
+ *  (excerpts, chapter_analyses, ai_threads/ai_messages) are cleaned up. FK
+ *  CASCADE only fires on a real DELETE (not on UPDATE), so soft-deleting chapters
+ *  would leave orphans — we hard-delete them here. notes.chapter_id is SET NULL
+ *  by FK so free notes survive. reading_progress rows are removed explicitly
+ *  (their FK CASCADE fires on the chapter hard-delete, but we clear book-level
+ *  rows first for clarity). The book itself is soft-deleted (recoverable). */
 export function deleteBook(bookId: string): { ok: true } {
   const db = getDb()
   return db.transaction(() => {
@@ -85,13 +86,12 @@ export function deleteBook(bookId: string): { ok: true } {
       .get(bookId)
     if (!exists) throw new AppError('NOT_FOUND', `书籍 ${bookId} 不存在`)
     const now = Date.now()
-    db.prepare('UPDATE chapters SET deleted_at = ? WHERE book_id = ? AND deleted_at IS NULL').run(
-      now,
-      bookId,
-    )
-    // hard-delete this book's reading_progress (FK CASCADE won't fire on soft-delete)
+    // hard-delete this book's reading_progress (FK CASCADE won't fire on book soft-delete)
     db.prepare('DELETE FROM reading_progress WHERE book_id = ?').run(bookId)
-    // soft-delete the book
+    // HARD-delete chapters → triggers FK CASCADE on excerpts / chapter_analyses /
+    // ai_threads(+ai_messages); notes.chapter_id SET NULL (free notes survive).
+    db.prepare('DELETE FROM chapters WHERE book_id = ?').run(bookId)
+    // soft-delete the book (recoverable)
     db.prepare('UPDATE books SET deleted_at = ? WHERE id = ?').run(now, bookId)
     return { ok: true as const }
   })()
@@ -177,11 +177,16 @@ export function createChildChapter(
   })()
 }
 
-/** Soft-delete a chapter (and its subtree via self-FK CASCADE on a real DELETE
- *  is NOT available with soft-delete, so we explicitly soft-delete descendants).
- *  Notes bound to it are SET NULL by FK on a real delete; with soft-delete we
- *  detach them explicitly so they survive as free notes. reading_progress rows
- *  referencing this chapter are removed. */
+/** Delete a chapter and its subtree. We HARD-delete so that the FK CASCADE
+ *  children (excerpts, chapter_analyses, ai_threads/ai_messages) are cleaned up
+ *  — soft-deleting would leave orphans (FK CASCADE only fires on real DELETE).
+ *  notes.chapter_id is SET NULL by FK on the chapter delete, so free notes
+ *  survive. reading_progress rows referencing these chapters are removed.
+ *
+ *  Subtree collection: chapters use a self-referential parent_id FK with
+ *  CASCADE, so deleting a parent already cascades to children — but we collect
+ *  the subtree explicitly first to clear reading_progress for all of them
+ *  (progress rows would otherwise become orphans since their FK is on book_id). */
 export function deleteChapter(chapterId: string): { ok: true } {
   const db = getDb()
   return db.transaction(() => {
@@ -189,9 +194,9 @@ export function deleteChapter(chapterId: string): { ok: true } {
       .prepare('SELECT book_id FROM chapters WHERE id = ? AND deleted_at IS NULL')
       .get(chapterId) as { book_id: string } | undefined
     if (!row) throw new AppError('NOT_FOUND', `章节 ${chapterId} 不存在`)
-    const now = Date.now()
 
-    // collect this chapter + all descendants (recursive parent_id closure)
+    // collect this chapter + all descendants (recursive parent_id closure) so we
+    // can clear their reading_progress rows explicitly.
     const toDelete = new Set<string>([chapterId])
     let frontier = [chapterId]
     while (frontier.length > 0) {
@@ -209,15 +214,11 @@ export function deleteChapter(chapterId: string): { ok: true } {
     }
 
     const delPh = [...toDelete].map(() => '?').join(',')
-    // detach notes bound to any of these chapters (soft-delete won't fire FK SET NULL)
-    db.prepare(
-      `UPDATE notes SET chapter_id = NULL, updated_at = ?
-       WHERE chapter_id IN (${delPh}) AND deleted_at IS NULL`,
-    ).run(now, ...toDelete)
-    // remove progress rows referencing these chapters
+    // clear progress rows referencing these chapters
     db.prepare(`DELETE FROM reading_progress WHERE chapter_id IN (${delPh})`).run(...toDelete)
-    // soft-delete the chapters
-    db.prepare(`UPDATE chapters SET deleted_at = ? WHERE id IN (${delPh})`).run(now, ...toDelete)
+    // HARD-delete the chapters → FK CASCADE removes excerpts / chapter_analyses /
+    // ai_threads(+ai_messages); FK SET NULL detaches notes (free notes survive).
+    db.prepare(`DELETE FROM chapters WHERE id IN (${delPh})`).run(...toDelete)
     return { ok: true as const }
   })()
 }

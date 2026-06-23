@@ -12,6 +12,7 @@ import {
   getThreadHistory,
   sendChat,
   resetThread,
+  abortChapterChat,
 } from '../services/ai-chat'
 
 export function registerAiHandlers(): void {
@@ -70,5 +71,12 @@ export function registerAiHandlers(): void {
   handle('ai:resetThread', (_event, payload: unknown) => {
     const p = (payload ?? {}) as { threadId?: string }
     return resetThread(p.threadId ?? '')
+  })
+
+  // W-1: cancel an in-flight chat stream when the user switches chapter / closes
+  // the book. Returns { aborted: boolean }.
+  handle('ai:abortChapterChat', (_event, payload: unknown) => {
+    const p = (payload ?? {}) as { chapterId?: string }
+    return { aborted: abortChapterChat(p.chapterId ?? '') }
   })
 }
