@@ -134,6 +134,7 @@ body.is-library-detail .lib {
   position: relative;
   display: flex;
   flex-direction: column;
+  aspect-ratio: 3 / 4;
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
   overflow: hidden;
@@ -165,13 +166,12 @@ body.is-library-detail .lib {
   cursor: grabbing;
 }
 
-/* 封面区：填满操作栏以上的空间，保持 3:4 书脊比例 */
+/* 封面区：填满操作栏以上的所有空间（整卡 3:4） */
 .bookcard__cover {
   position: relative;
   width: 100%;
   flex: 1 1 auto;
   min-height: 0;
-  aspect-ratio: 3 / 4;
   overflow: hidden;
   background: linear-gradient(135deg, var(--qianjiang, #f1dfc6), var(--surface-2, #fffdf6));
 }
