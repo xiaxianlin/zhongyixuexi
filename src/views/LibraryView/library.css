@@ -130,7 +130,7 @@ body.is-library-detail .lib {
 /* corner category badge on a book card */
 .bookcard__catBadge {
   position: absolute;
-  top: 8px;
+  bottom: 8px;
   left: 8px;
   z-index: 2;
   padding: 2px 7px;
@@ -630,30 +630,31 @@ body.is-library-detail .lib {
 
 .bookdetail__addChildBtn {
   flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  display: none;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--reader-ink-soft, #8a7560);
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   cursor: pointer;
   padding: 0;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .bookdetail__chapter:hover .bookdetail__addChildBtn,
 .bookdetail__addChildBtn:focus-visible {
-  display: inline-flex;
-  background: rgba(181, 142, 98, 0.14);
+  opacity: 1;
 }
 
 .bookdetail__addChildBtn:hover {
-  background: rgba(181, 142, 98, 0.28);
-  color: var(--reader-ink, #5c4033);
+  background: rgba(189, 134, 88, 0.18);
+  color: var(--reader-accent-deep, #5c4033);
 }
 
 /* category badge in the book-detail header */
@@ -797,10 +798,10 @@ body.is-library-detail .lib {
   background: transparent;
   color: var(--reader-soft-ink);
   cursor: pointer;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 
 .bookdetail__chapter:hover .bookdetail__editBtn,
@@ -1629,13 +1630,14 @@ body.is-library-detail .lib {
   border-radius: 8px;
   background: rgba(255, 249, 238, 0.92);
   color: var(--danger, #b3261e);
-  font-size: 14px;
+  font-family: var(--font-title);
+  font-size: 16px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.15s ease;
-  z-index: 2;
+  z-index: 3;
 }
 
 .bookcard:hover .bookcard__delBtn,
@@ -1656,8 +1658,8 @@ body.is-library-detail .lib {
 }
 
 .bookdetail__addBtn {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1666,7 +1668,7 @@ body.is-library-detail .lib {
   border-radius: 6px;
   background: transparent;
   color: var(--reader-title);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -1681,25 +1683,26 @@ body.is-library-detail .lib {
 /* 章删除按钮（与重命名✎并排） */
 .bookdetail__delBtn {
   flex: 0 0 auto;
-  width: 22px;
-  height: 22px;
-  display: none;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: transparent;
   color: var(--danger, #b3261e);
-  font-size: 12px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0;
   transition: opacity 0.15s ease, background 0.15s ease;
 }
 
-.bookdetail__chapter:hover .bookdetail__delBtn {
-  display: inline-flex;
+.bookdetail__chapter:hover .bookdetail__delBtn,
+.bookdetail__delBtn:focus-visible {
+  opacity: 0.7;
 }
 
 .bookdetail__delBtn:hover {
@@ -2182,6 +2185,149 @@ body.is-library-detail .lib {
 
 .noteeditor__textarea:focus {
   border-color: var(--accent-soft, #a67c5d);
+}
+
+/* ===========================================================================
+   v3.1 SelectionToolbar — 选区悬浮三按钮（摘录 / 写笔记 / 引用）
+   =========================================================================== */
+.seltb {
+  position: fixed;
+  z-index: 1100;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 10px;
+  background: rgba(47, 33, 24, 0.94);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(47, 33, 24, 0.28);
+  animation: inkRise 0.18s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+.seltb__btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: rgba(255, 249, 238, 0.88);
+  font-family: var(--font-title);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1;
+  padding: 8px 14px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.seltb__btn:hover:not(:disabled) {
+  background: rgba(255, 249, 238, 0.16);
+  color: #fff9ee;
+}
+
+.seltb__btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.seltb__btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+/* ===========================================================================
+   v3.1 TextBlock — 阅读区受控正文渲染 + 选区高亮
+   =========================================================================== */
+.textblock {
+  font-family: var(--font-title, var(--font-serif));
+  font-size: 18px;
+  line-height: var(--lh-relax, 1.9);
+  color: var(--fg, #2f2118);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.textblock__mark {
+  background: rgba(189, 134, 88, 0.22);
+  border-radius: 3px;
+  padding: 1px 0;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+
+.textblock__mark--note {
+  background: rgba(140, 45, 37, 0.16);
+}
+
+/* ===========================================================================
+   v3.1 ExcerptsTab — 摘录卡片列表
+   =========================================================================== */
+.railtab__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.excerptCard {
+  position: relative;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--reader-line-soft, rgba(181, 142, 98, 0.25));
+}
+
+.excerptCard__stale {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  color: #8a5a2b;
+  background: rgba(166, 124, 93, 0.16);
+}
+
+.excerptCard__text {
+  margin: 0 0 6px;
+  padding: 4px 8px;
+  border-left: 3px solid var(--accent-soft, #a67c5d);
+  background: rgba(166, 124, 93, 0.08);
+  font-size: 13px;
+  color: var(--reader-ink-soft, #8a7560);
+  border-radius: 0 6px 6px 0;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.excerptCard__text:hover {
+  background: rgba(166, 124, 93, 0.16);
+}
+
+.excerptCard__note {
+  margin: 0;
+  font-size: 14px;
+  line-height: var(--lh-relaxed, 1.7);
+  color: var(--reader-ink, #5c4033);
+}
+
+.excerptCard__del {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: transparent;
+  color: var(--reader-ink-soft, #8a7560);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.excerptCard:hover .excerptCard__del {
+  opacity: 1;
+}
+
+.excerptCard__del:hover {
+  background: rgba(181, 142, 98, 0.18);
+  color: var(--reader-ink, #5c4033);
 }
 
 /* 骨架屏加载态（章节目录/正文）—— 形状匹配内容，取代裸文字 */
