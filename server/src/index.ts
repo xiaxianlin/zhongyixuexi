@@ -3,6 +3,7 @@ import { ensureBootstrapAdmin } from './auth/bootstrap'
 import { registerActorDecoration } from './auth/request-actor'
 import { closePool, getPool } from './db/connection'
 import { runMigrations } from './db/migrate'
+import { registerAdminRoutes } from './routes/admin'
 import { registerAuthRoutes } from './routes/auth'
 import { registerContentRoutes } from './routes/content'
 
@@ -21,6 +22,7 @@ async function main(): Promise<void> {
     await ensureBootstrapAdmin(pool)
     registerAuthRoutes(app, pool)
     registerContentRoutes(app, pool)
+    registerAdminRoutes(app, pool)
   } else {
     app.log.warn('DATABASE_URL not set — skipping migrations and DB-backed routes')
   }
