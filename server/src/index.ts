@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 import { ensureBootstrapAdmin } from './auth/bootstrap'
+import { registerActorDecoration } from './auth/request-actor'
 import { closePool, getPool } from './db/connection'
 import { runMigrations } from './db/migrate'
 import { registerAuthRoutes } from './routes/auth'
@@ -8,6 +9,8 @@ const PORT = Number(process.env.PORT ?? 4000)
 
 async function main(): Promise<void> {
   const app = Fastify({ logger: true })
+
+  registerActorDecoration(app)
 
   app.get('/health', async () => ({ status: 'ok' }))
 
