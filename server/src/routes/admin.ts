@@ -5,6 +5,7 @@ import { createInviteCode, listInviteCodes, revokeInviteCode } from '../auth/inv
 import { requireAdmin } from '../auth/require-admin'
 import * as contentAdmin from '../content/admin'
 import { NotFoundError, ValidationError } from '../lib/errors'
+import { applyBalanceAdjustment, getBalance, listAdjustments, type AdjustmentInput } from '../wallet/repository'
 
 interface BookParams {
   bookId: string
@@ -17,6 +18,9 @@ interface ParagraphParams {
 }
 interface InviteCodeParams {
   id: string
+}
+interface WalletParams {
+  userId: string
 }
 
 export function registerAdminRoutes(app: FastifyInstance, pool: Pool): void {
@@ -142,6 +146,28 @@ export function registerAdminRoutes(app: FastifyInstance, pool: Pool): void {
       admin.post<{ Params: InviteCodeParams }>('/invite-codes/:id/revoke', async (request, reply) => {
         await revokeInviteCode(pool, request.params.id)
         return reply.code(204).send()
+      })
+
+      // ---- wallets (WALLET-02/03) — manual top-ups, no payment gateway ----
+      admin.post<{ Params: WalletParams; Body: AdjustmentInput }>(
+        '/wallets/:userId/adjustments',
+        async (request, reply) => {
+          const result = await applyBalanceAdjustment(
+            pool,
+            request.params.userId,
+            request.body,
+            request.actor.userId as string,
+          )
+          return reply.code(201).send(result)
+        },
+      )
+
+      admin.get<{ Params: WalletParams }>('/wallets/:userId', async (request) => {
+        const [balance, adjustments] = await Promise.all([
+          getBalance(pool, request.params.userId),
+          listAdjustments(pool, request.params.userId),
+        ])
+        return { userId: request.params.userId, balance, adjustments }
       })
     },
     { prefix: '/admin' },

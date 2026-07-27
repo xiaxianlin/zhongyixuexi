@@ -130,6 +130,39 @@ export const MIGRATIONS: Migration[] = [
       )
     },
   },
+  {
+    version: 3,
+    name: 'create_wallet_tables',
+    up: async (client) => {
+      // One row per member; created lazily by the first balance_adjustments
+      // upsert (WALLET-02) rather than at registration, since a free member
+      // who never charges up has nothing to track yet.
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS wallets (
+          user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          balance_tokens BIGINT NOT NULL DEFAULT 0,
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `)
+      // Append-only ledger of admin-applied top-ups/corrections (WALLET-02) —
+      // this table, not a payment gateway webhook, is the only record of a
+      // "charge" in the system (proposal §5.1/§7).
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS balance_adjustments (
+          id UUID PRIMARY KEY,
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          delta_tokens BIGINT NOT NULL,
+          amount_cny NUMERIC(10, 2),
+          note TEXT,
+          created_by UUID NOT NULL REFERENCES users(id),
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `)
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_balance_adjustments_user ON balance_adjustments(user_id, created_at DESC)',
+      )
+    },
+  },
 ]
 
 /** Pure planning step (no DB access) — kept separate so it's unit-testable without Postgres. */

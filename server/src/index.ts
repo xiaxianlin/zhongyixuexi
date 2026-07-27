@@ -6,6 +6,7 @@ import { runMigrations } from './db/migrate'
 import { registerAdminRoutes } from './routes/admin'
 import { registerAuthRoutes } from './routes/auth'
 import { registerContentRoutes } from './routes/content'
+import { registerWalletRoutes } from './routes/wallet'
 
 const PORT = Number(process.env.PORT ?? 4000)
 
@@ -23,6 +24,7 @@ async function main(): Promise<void> {
     registerAuthRoutes(app, pool)
     registerContentRoutes(app, pool)
     registerAdminRoutes(app, pool)
+    registerWalletRoutes(app, pool)
   } else {
     app.log.warn('DATABASE_URL not set — skipping migrations and DB-backed routes')
   }
