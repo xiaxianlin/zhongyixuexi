@@ -3,18 +3,18 @@
 > 驱动规则见 `loop-engineering.md`。每轮循环首读本文件取下一个 `todo`,末写更新。
 > 状态：`todo` / `doing` / `done` / `blocked` / `skipped`
 
-最后更新：2026-06-18（文档对齐代码现状：内置经典 + 产品收敛重构）
+最后更新：2026-07-27（新增 Phase 9：在线化改造，todo，见方案文档 `docs/dev/proposal-online-membership-billing.md`）
 
 ---
 
 ## ⚠️ 关于本文档的本次重写
 
-本项目在 Phase 0–7 完成后经历了一次**产品收敛重构**,大量已"done"的功能被刻意移除/简化,但本文档此前仍按原始愿景记录。为避免文档误导,本次按**当前代码真实形态**重写:
+本项目在 Phase 0–7 完成后经历了一次**产品收敛重构**,大量已"done"的功能被刻意移除/简化,但本文档此前仍按原始愿景记录。为避免文档误导,本文按**当前代码真实形态**维护:
 
-- **迁移机制**:从"forward-only migrations v1~v10"改为 `electron/db/schema.ts` 单一 `CURRENT_SCHEMA`(`CURRENT_SCHEMA_VERSION=2`),版本不符即 `resetDbFiles()` 删库重建(仅适用开发期)。
-- **内容来源**:从"用户导入 EPUB"改为**内置三本中医经典**(`data/{nanjing,suwen,lingshu}-original.json`,`seedBuiltinContent()` 启动时 seed)。
-- **已移除的模块/能力**:导入 UI、段级校对、书签、记忆卡/SM-2/测验、双链/笔记本/标签、术语词典/知识图谱、备份导入导出、书籍文件管理。
-- **留存的核心**:三栏书籍详情页(章/段/AI 解读)、段级 AI 白话解读、FTS5 全文检索、段绑定笔记 CRUD、AI 凭证(safeStorage)、阅读足迹仪表盘。
+- **迁移机制**:`electron/db/schema.ts` 当前 `CURRENT_SCHEMA_VERSION=3`。v0/v2 开发期旧库 reset 重建;v3 起通过 `electron/db/migrate.ts` 的 `MIGRATIONS[]` forward-only 升级,保留用户数据。
+- **内容来源**:从"用户导入 EPUB"改为**内置五本中医经典**(`data/{nanjing,suwen,lingshu,shanghanlun,jinkuiyaolue}-original.json`,`seedBuiltinContent()` 启动时 seed/sync)。
+- **已移除的模块/能力**:导入 UI、完整段级校对工作台、书签、记忆卡/SM-2/测验、双链/笔记本/标签、术语词典/知识图谱、备份导入导出、书籍文件管理。
+- **留存的核心**:三栏书籍详情页(章/段/AI 解读)、书/章/段轻量编辑、封面上传与书序调整、段级 AI 白话解读、FTS5 全文检索、段绑定笔记/自由笔记、AI 凭证(safeStorage)、阅读足迹仪表盘。
 
 下方表格按当前实际形态重排;旧 vision 的完整历史归档见文末「变更日志(重构前)」。
 
@@ -43,19 +43,20 @@
 
 ### IPC 通道(`electron/ipc/`)
 
-仅 12 个 channel,全部经 `electron/ipc/registry.ts` 的 `handle()` 信封包装:
+共 30 个 channel,全部经 `electron/ipc/registry.ts` 的 `handle()` 信封包装:
 
 | 模块 | Channel |
 |---|---|
-| library | `library:list` · `library:tree` |
-| reading | `reading:getChapter` |
+| library | `library:list` · `library:tree` · `library:reorder` · `books:uploadCover` |
+| editing | `books:updateTitle` · `books:create` · `books:delete` · `chapters:updateTitle` · `chapters:create` · `chapters:delete` · `paragraphs:editText` · `paragraphs:merge` · `paragraphs:split` · `paragraphs:delete` · `paragraphs:create` |
+| reading | `reading:getChapter` · `reading:saveProgress` · `reading:getProgress` |
 | search | `search:fulltext` |
 | ai | `ai:status` · `ai:generateModern` |
-| notes | `notes:create` · `notes:delete` · `notes:getByParagraph` |
+| notes | `notes:create` · `notes:update` · `notes:delete` · `notes:getByParagraph` · `notes:listFree` |
 | settings | `settings:listProviders` · `settings:saveProvider` · `settings:setActiveProvider` |
 | learning | `learning:getDashboard` |
 
-渲染进程经 `src/lib/*-api.ts`(`invokeRaw`)调用;preload(`electron/preload/index.ts`)只暴露 `{invoke, on}`。
+渲染进程经 `src/models/*/api.ts` 与 `src/models/shared/ipc.ts` 调用;preload(`electron/preload/index.ts`)只暴露 `{invoke, on}`。
 
 ---
 
@@ -82,11 +83,11 @@ Exit:内置经典 seed → 书库浏览 → 章节树 → 段落 → 详情页�
 |---|---|---|
 | S1.1 | done | schema:`books / chapters / paragraphs`(双键 + 软删 + 级联) — 现归入单一 `schema.ts` |
 | S1.2 | done | FTS5 `fts_paragraphs`(trigram + ai/ad/au 触发器,软删/噪声过滤) |
-| S1.3 | done | 内置经典 seed(`builtin-content.ts`,读 `data/*-original.json`,事务写库 + rebuildFts) |
-| S1.4 | done | 书库浏览 + 章节树(`library:list` 进度聚合、`library:tree` 内存建树) |
-| S1.5 | done | 书籍详情页(`LibraryView`/`BookDetail`,章/段/析三栏 + 段绑定笔记 + AI 解读) |
+| S1.3 | done | 内置五经 seed/sync(`builtin-content.ts`,读 `data/*-original.json`,hash 追踪 + 稳定 ID 同步 + rebuildFts) |
+| S1.4 | done | 书库浏览 + 章节树(`library:list` 进度聚合、`library:tree` 内存建树、`library:reorder`) |
+| S1.5 | done | 书籍详情页(`LibraryView`/`BookDetail`,章/段/析三栏 + 段绑定/自由笔记 + AI 解读 + 轻量编辑) |
 
-> **已移除(原 PRD IMP-01~08 / LIB-03~04)**:EPUB 导入 UI、段级校对编辑器、章级编辑、去重、书籍元信息编辑、删除级联 UI。EPUB 解析服务代码(`electron/services/epub.ts` 等)与导入中间格式见 `docs/dev/book-import-json.md`,保留为内容生产工具链,不在应用运行路径内。
+> **已移除(原 PRD IMP-01~08)**:EPUB 导入 UI、完整段级校对工作台、重新解析 UI、导入去重 UI。轻量书/章/段编辑、封面上传、书籍软删除已恢复为当前书库能力。EPUB/网页抓取脚本与导入中间格式见 `docs/dev/book-import-json.md`,保留为内容生产工具链,不在应用运行路径内。
 
 - [x] Phase 1 exit 达成
 
@@ -98,10 +99,10 @@ Exit:书籍详情页内可流畅阅读章节段落、AI 解读对齐。
 | # | 状态 | 摘要 |
 |---|---|---|
 | S2.1 | done | 三栏详情页布局(章目录 / 段列表 / 析面板),古风排版 |
-| S2.2 | done | 段级阅读进度(`reading_progress`,按 book_id 唯一) |
+| S2.2 | done | 段级阅读进度(`reading:saveProgress`/`reading:getProgress`,`reading_progress` 按 book_id 唯一) |
 | S2.3 | done | 段落选择 + 解读面板联动(白话/医理/解读) |
 
-> **已移除(原 RD)**:独立三栏工作台、拖拽调宽/折叠、布局预设、繁简/拼音、逐段锁定同步滚动、词条浮窗、沉浸模式、多 Tab/多窗、快捷键体系、书签、RD 模块目录(`src/modules/reading/` 仅剩 `types.ts`)。阅读能力收敛进 `src/modules/library/LibraryView.tsx` 的 `BookDetail`。
+> **已移除(原 RD)**:独立三栏工作台、拖拽调宽/折叠、布局预设、繁简/拼音、逐段锁定同步滚动、词条浮窗、沉浸模式、多 Tab/多窗、快捷键体系、书签。阅读能力收敛进 `src/views/LibraryView/BookDetailView.tsx`。
 
 - [x] Phase 2 exit 达成
 
@@ -169,9 +170,9 @@ Exit:段绑定笔记可增删查。
 
 | # | 状态 | 摘要 |
 |---|---|---|
-| S7.1 | done | `notes` 表 + 段绑定笔记 CRUD(`notes:create` / `notes:delete` / `notes:getByParagraph`) |
+| S7.1 | done | `notes` 表 + 段绑定/自由笔记 CRUD(`notes:create` / `notes:update` / `notes:delete` / `notes:getByParagraph` / `notes:listFree`) |
 
-> **已彻底移除(原 NOTE)**:双链 `[[ ]]`、`note_links`、`wikiLinks` 解析、backlinks、标签/笔记本(`tags`/`tag_refs`/`notebooks`)、导出 MD/HTML/PDF、笔记全文搜索。笔记退化为段绑定的轻量文本,UI 在 `BookDetail` 的抽屉/弹窗内。
+> **已彻底移除(原 NOTE)**:双链 `[[ ]]`、`note_links`、`wikiLinks` 解析、backlinks、标签/笔记本(`tags`/`tag_refs`/`notebooks`)、导出 MD/HTML/PDF、笔记全文搜索。笔记收敛为轻量文本;段绑定入口在 `BookDetail` 抽屉/弹窗内,自由笔记在 `src/views/NotesView/`。
 
 - [x] Phase 7 exit 达成
 
@@ -181,19 +182,43 @@ Exit:段绑定笔记可增删查。
 
 | # | 状态 | 摘要 | 决策/阻塞 |
 |---|---|---|---|
-| S8.1 | doing | electron-builder(Win nsis / macOS dmg) + forward-only 迁移 | 迁移已重写为 forward-only(`migrate.ts`):v3 库升级保留数据,v0/v2 旧开发库 reset 重建(首版无真实用户)。electron-builder 配置已补全(macOS dmg arm64/x64 + Win nsis x64),`npm run dist:mac` 出 dmg。图标待补(build/icon.icns/.ico) |
+| S8.1 | done | electron-builder(Win nsis / macOS dmg) + forward-only 迁移 | 迁移已重写为 forward-only(`migrate.ts`):v3 库升级保留数据,v0/v2 旧开发库 reset 重建(首版无真实用户)。electron-builder 配置已补全(macOS dmg arm64/x64 + Win nsis x64),`npm run dist:mac` 出 dmg。图标待补(build/icon.icns/.ico) |
 | S8.2 | todo | 更新策略(前端热更 + electron-updater) | 首版延后,手动下载;macOS 自动更新需代码签名 |
-| S8.3 | todo | 内置经典数据回归夹具 | 原为 EPUB 夹具,现改为校验 `data/*.json` seed 一致性 |
+| S8.3 | done | 内置经典数据回归夹具 | 校验 `data/*.json` 的 `quality` 计数与正文页脚污染;覆盖五本内置经典 |
 
 - [ ] Phase 8 exit 达成
 
 ---
 
+## Phase 9 · 在线化改造(邀请制 + Token 计费)(todo · 产品方向转型,尚未开始)
+
+> **产品方向说明**:Phase 0-8 是本地 Electron 桌面应用,已上线/进行中,不受本 Phase 影响。Phase 9 是把产品转型为"部署在香港服务器、邀请码注册、三级权限(游客/免费会员/充值会员)、AI 问答按 token 用量人工记账计费"的在线站点,推翻了 PRD v3.1 的 C-1(只做 PC)与 C-2(本地优先无账号无服务端)。完整方案论证、架构草图、数据模型、合规结论见 `docs/dev/proposal-online-membership-billing.md`;PRD 已同步更新为 v4.0 目标形态。
+>
+> **在 Phase 9 完成前,当前实际运行的产品仍是 v3.1 描述的本地桌面应用**,不要假设在线版已存在。
+
+Exit:邀请码注册/登录可用 → 三级权限矩阵在 API 层生效 → 管理员可通过内容后台上传/发布经典 → 免费会员可读原文+AI 解读 → 充值会员可发起多轮 AI 问答并按 token 实时扣减余额 → 管理员可生成邀请码、人工充值记账 → 站点部署在香港服务器可访问。
+
+| # | 状态 | 摘要 |
+|---|---|---|
+| S9.1 | done | 后端服务脚手架:`server/`(Fastify + `pg`)+ PostgreSQL 连接(`server/src/db/connection.ts`)与 forward-only 迁移 runner(`server/src/db/migrate.ts`,`schema_migrations` 表跟踪已应用版本,镜像 `electron/db/migrate.ts` 的 per-migration 事务/失败回滚设计)。`server/src/index.ts` 暴露 `GET /health`,`DATABASE_URL` 未设置时跳过迁移并告警而非崩溃。新增 `tsconfig.server.json`(第三个 TS root,CommonJS 输出到 `out-server/`)、`typecheck:server`/`server:dev`/`server:build`/`server:start` script、eslint 的 `server/**` node globals 块。依赖新增 `fastify`/`pg`/`@types/pg`/`tsx`。`npm run check` 全绿(14 test files/98 tests,含 `migrate.test.ts` 对纯函数 `getPendingMigrations` 的单测,不依赖真实 DB)。另用本机 Homebrew Postgres 起了一个临时实例做端到端烟雾测试(server 启动 → 连接 → 建表 → `/health` 200),验证后已清理,未留存到仓库。**`electron/services/*`/`electron/ai/*` 的业务逻辑迁移复用留给后续 slice(S9.4/S9.7 等实际用到时再迁),本 slice 只搭地基。** |
+| S9.2 | todo | 账号与邀请码:`users`/`invite_codes` 表 + 邀请码注册 + 登录(JWT/Session);不含短信/邮箱验证码等公开注册流程 |
+| S9.3 | todo | 三级权限中间件:游客/免费会员/充值会员的接口级鉴权,对齐 PRD §3.2 权限矩阵(原文/AI 解读/AI 问答三个能力点) |
+| S9.4 | todo | 内容服务迁移:`books`/`chapters`/`paragraphs` 从本地 SQLite 迁到共享 PostgreSQL(全局共享,不需要 `user_id`);全文检索从 FTS5 迁到 Postgres `tsvector`/`pg_trgm` |
+| S9.5 | todo | 内容管理后台:书/章/段上传/编辑/发布下线界面,复用现有 `editing.ts` 的 CRUD 逻辑改造为管理员操作;邀请码生成/管理界面 |
+| S9.6 | todo | 钱包与人工充值记账:`wallets`/`balance_adjustments` 表 + 管理员充值界面 + 余额展示,不对接任何支付网关 |
+| S9.7 | todo | AI 问答(RAG + 多轮对话):`conversations`/`messages`/`token_usage_ledger` 表;基于全文检索做检索增强;每次调用按 usage 字段记账并从钱包余额扣减;红线拦截比段级解读更严格 |
+| S9.8 | todo | Web 前端迁移:Electron 渲染进程 → 独立 Web 前端,`src/models/shared/ipc.ts` 换成 HTTP client;`src/views`/`src/components` 平移;按权限矩阵渲染/隐藏功能;删除 `api_credentials`/SET-01 用户自配 Key UI |
+| S9.9 | todo | 部署上线:香港服务器部署、HTTPS、基础限流/防刷与监控 |
+
+- [ ] Phase 9 exit 达成
+
+---
+
 ## 关键决策与约束(当前)
 
-1. **schema 单源**:`electron/db/schema.ts` 是唯一 DDL 来源,`CURRENT_SCHEMA_VERSION=3`。`prepareDatabase()` + `migrate.ts` `runMigrations()` 走 forward-only:v3 库升级保留数据,v0/v2 旧开发库 reset 重建。新 schema 改动在 `migrate.ts` 的 `MIGRATIONS[]` 加一条 + bump version。
-2. **内置内容**:启动 `seedBuiltinContent()` 幂等 seed 三本经典(难经/素问/灵枢),已存在则跳过。
-3. **IPC 收紧**:preload 只暴露 `{invoke, on}`;模块 API 在 `src/lib/*-api.ts` 用 `invokeRaw('module:action')` 包装。
+1. **schema 单源**:`electron/db/schema.ts` 是当前 DDL baseline,`CURRENT_SCHEMA_VERSION=3`。`prepareDatabase()` + `migrate.ts` `runMigrations()` 走 forward-only:v3 库升级保留数据,v0/v2 旧开发库 reset 重建。新 schema 改动在 `migrate.ts` 的 `MIGRATIONS[]` 加一条 + bump version。
+2. **内置内容**:启动 `seedBuiltinContent()` 幂等 seed/sync 五本经典(难经/素问/灵枢/伤寒论/金匮要略)。`settings` 记录 `builtin.sha256.<bookId>`;源 JSON 变化时按稳定 ID 同步,保留用户编辑段落、用户新增内容与用户删除行。
+3. **IPC 收紧**:preload 只暴露 `{invoke, on}`;模块 API 在 `src/models/*/api.ts` 与 `src/models/shared/ipc.ts` 用 `invokeRaw('module:action')` 包装。
 4. **foreign_keys=ON**:每连接强制(`connection.ts`),否则 CASCADE 静默失效。
 5. **paragraphs 双键**:`id TEXT PK`(稳定)+ 隐式 `rowid`(FTS5 `content_rowid`),不可破坏。
 6. **FTS 同步归 IMP**:ai/ad/au 触发器 + `rebuildFts`,别处只读。
@@ -202,7 +227,9 @@ Exit:段绑定笔记可增删查。
 
 ## 变更日志
 
-- 2026-06-18:**文档对齐重构**。本次重写按代码现状校正:迁移机制(reset 式)、内置经典(替换 EPUB 导入)、已移除模块清单(导入/卡片/测验/双链/词典/备份等)。旧愿景历史见下方「变更日志(重构前)」。
+- 2026-07-27:**新增 Phase 9(在线化改造,todo)**。产品方向提议从本地桌面转型为邀请制在线站点(香港服务器、三级权限、AI 问答 token 计费、人工充值记账),PRD 同步升级为 v4.0 目标形态,方案细节见 `docs/dev/proposal-online-membership-billing.md`。Phase 0-8(本地桌面版)现状不受影响,仍是当前真实运行的代码。
+- 2026-07-03:**文档再次对齐当前实现**。更新为五本内置经典、30 个 IPC、schema v3 forward-only 迁移、内置内容 hash 同步、自由笔记与轻量书/章/段编辑;补内置数据回归测试。
+- 2026-06-18:**文档对齐重构**。本次重写按当时代码现状校正:内置经典(替换 EPUB 导入)、已移除模块清单(导入/卡片/测验/双链/词典/备份等)。旧愿景历史见下方「变更日志(重构前)」。
 - 2026-06-16 ~ 2026-06-17:详见「变更日志(重构前)」。
 
 ---
@@ -225,10 +252,10 @@ Exit:段绑定笔记可增删查。
 - 2026-06-16:Phase 2(RD)+3(SRH) 完成(dev-rd/dev-srh agent 并行)— 三栏阅读工作台/段级进度/书签/同步滚动/快捷键;FTS5 全文检索+全库高亮+术语词典。**Phase 2 & 3 exit 达成。**
 - 2026-06-16:Phase 4(SET)+6(LRN)+7(NOTE) 完成(dev-set/dev-lrn/dev-note agent 并行)— safeStorage Key/备份/设置、SM-2 记忆卡/测验/仪表盘、笔记/双链/导出。**Wave 1 全完,Phase 4/6/7 exit 达成。**
 - 2026-06-16:Phase 5(AI) 完成(dev-ai agent)— DeepSeek 客户端/ai_cache/白话解读/RAG 问答/失败降级/三层红线/AI 卡片。**所有功能模块(Phase 0-7)就绪,剩 Phase 8 打包。**
-- 2026-06-16:导入解析流程调整 — EPUB 导入改为"全书 AI 解析"主路径;schema v10 `ai_generation_tasks`(注:此迁移版本号体系已被后续 reset 式 schema 取代)。
+- 2026-06-16:导入解析流程调整 — EPUB 导入改为"全书 AI 解析"主路径;schema v10 `ai_generation_tasks`(注:此历史迁移版本号体系已被后续 v3 baseline 取代)。
 - 重构期(2026-06-16 之后,跨多个 commit):
   - `refactor(notes): keep paragraph note surface only` — 笔记收缩为段绑定 CRUD。
-  - `refactor(ipc): expose only current app surface` — IPC 从 50+ 收缩到 12 个。
-  - `refactor(db): drop legacy data compatibility` — 移除兼容层,改为 reset 式 schema。
+  - `refactor(ipc): expose only current app surface` — IPC 从 50+ 收缩到当时的最小运行面。
+  - `refactor(db): drop legacy data compatibility` — 移除旧兼容层。
   - `test(integration): cover current study surfaces` — 集成测试对齐收敛后形态。
-  - `feat: split neijing into suwen+lingshu, rename nanjing, drop prefaces` — 内置经典整理为三本独立书。
+  - `feat: split neijing into suwen+lingshu, rename nanjing, drop prefaces` — 内置经典先整理为独立书目,后续扩展为五本。
