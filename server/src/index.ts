@@ -5,6 +5,7 @@ import { closePool, getPool } from './db/connection'
 import { runMigrations } from './db/migrate'
 import { registerAdminRoutes } from './routes/admin'
 import { registerAuthRoutes } from './routes/auth'
+import { registerChatRoutes } from './routes/chat'
 import { registerContentRoutes } from './routes/content'
 import { registerWalletRoutes } from './routes/wallet'
 
@@ -25,6 +26,7 @@ async function main(): Promise<void> {
     registerContentRoutes(app, pool)
     registerAdminRoutes(app, pool)
     registerWalletRoutes(app, pool)
+    registerChatRoutes(app, pool)
   } else {
     app.log.warn('DATABASE_URL not set — skipping migrations and DB-backed routes')
   }

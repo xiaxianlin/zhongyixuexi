@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
-import type { Pool } from 'pg'
+import type { Pool, PoolClient } from 'pg'
 import type { WalletBalanceLookup } from '../auth/tier'
+import { withTransaction } from '../db/with-transaction'
 import { NotFoundError } from '../lib/errors'
 import { validateAdjustmentInput, type AdjustmentInput } from './validation'
 
@@ -29,7 +30,41 @@ export interface AdjustmentSummary {
   createdAt: Date
 }
 
-/** WALLET-02: applies one manual top-up/correction — upserts the wallet balance and appends the audit-trail row in one transaction. */
+/**
+ * Upserts the wallet balance and appends the audit-trail row, using an
+ * already-open client. Exported so ai/chat-service.ts can deduct a
+ * question's token cost in the SAME transaction as persisting its messages —
+ * `applyBalanceAdjustment` below wraps this for the standalone admin route.
+ */
+export async function applyAdjustmentWithClient(
+  client: PoolClient,
+  userId: string,
+  deltaTokens: number,
+  amountCny: number | null,
+  note: string | null,
+  createdBy: string,
+): Promise<number> {
+  await client.query(
+    `INSERT INTO wallets (user_id, balance_tokens)
+     VALUES ($1, $2)
+     ON CONFLICT (user_id) DO UPDATE
+       SET balance_tokens = wallets.balance_tokens + EXCLUDED.balance_tokens,
+           updated_at = now()`,
+    [userId, deltaTokens],
+  )
+  await client.query(
+    `INSERT INTO balance_adjustments (id, user_id, delta_tokens, amount_cny, note, created_by)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
+    [randomUUID(), userId, deltaTokens, amountCny, note, createdBy],
+  )
+  const { rows } = await client.query<{ balance_tokens: string }>(
+    'SELECT balance_tokens FROM wallets WHERE user_id = $1',
+    [userId],
+  )
+  return Number(rows[0]!.balance_tokens)
+}
+
+/** WALLET-02: applies one manual top-up/correction (admin route) — see applyAdjustmentWithClient for the transaction-reuse variant. */
 export async function applyBalanceAdjustment(
   pool: Pool,
   userId: string,
@@ -38,46 +73,20 @@ export async function applyBalanceAdjustment(
 ): Promise<{ balance: number }> {
   validateAdjustmentInput(input)
 
-  const client = await pool.connect()
-  try {
-    await client.query('BEGIN')
-
+  const balance = await withTransaction(pool, async (client) => {
     const userExists = await client.query('SELECT 1 FROM users WHERE id = $1', [userId])
     if (userExists.rowCount === 0) throw new NotFoundError('user not found')
 
-    await client.query(
-      `INSERT INTO wallets (user_id, balance_tokens)
-       VALUES ($1, $2)
-       ON CONFLICT (user_id) DO UPDATE
-         SET balance_tokens = wallets.balance_tokens + EXCLUDED.balance_tokens,
-             updated_at = now()`,
-      [userId, input.deltaTokens],
+    return applyAdjustmentWithClient(
+      client,
+      userId,
+      input.deltaTokens,
+      input.amountCny ?? null,
+      input.note?.trim() || null,
+      createdBy,
     )
-    await client.query(
-      `INSERT INTO balance_adjustments (id, user_id, delta_tokens, amount_cny, note, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
-      [
-        randomUUID(),
-        userId,
-        input.deltaTokens,
-        input.amountCny ?? null,
-        input.note?.trim() || null,
-        createdBy,
-      ],
-    )
-
-    const { rows } = await client.query<{ balance_tokens: string }>(
-      'SELECT balance_tokens FROM wallets WHERE user_id = $1',
-      [userId],
-    )
-    await client.query('COMMIT')
-    return { balance: Number(rows[0]!.balance_tokens) }
-  } catch (err) {
-    await client.query('ROLLBACK')
-    throw err
-  } finally {
-    client.release()
-  }
+  })
+  return { balance }
 }
 
 export async function listAdjustments(pool: Pool, userId: string): Promise<AdjustmentSummary[]> {

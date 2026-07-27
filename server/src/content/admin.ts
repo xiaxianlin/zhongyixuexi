@@ -10,22 +10,8 @@
  */
 import { randomUUID } from 'node:crypto'
 import type { Pool, PoolClient } from 'pg'
+import { withTransaction } from '../db/with-transaction'
 import { NotFoundError, ValidationError } from '../lib/errors'
-
-async function withTransaction<T>(pool: Pool, fn: (client: PoolClient) => Promise<T>): Promise<T> {
-  const client = await pool.connect()
-  try {
-    await client.query('BEGIN')
-    const result = await fn(client)
-    await client.query('COMMIT')
-    return result
-  } catch (err) {
-    await client.query('ROLLBACK')
-    throw err
-  } finally {
-    client.release()
-  }
-}
 
 async function renumberChapter(client: PoolClient, chapterId: string): Promise<void> {
   const { rows } = await client.query<{ id: string }>(

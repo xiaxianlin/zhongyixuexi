@@ -163,6 +163,60 @@ export const MIGRATIONS: Migration[] = [
       )
     },
   },
+  {
+    version: 4,
+    name: 'create_ai_qa_tables',
+    up: async (client) => {
+      // AI-05: multi-turn Q&A. Unlike paragraph_analyses (S9.4's plan — global,
+      // shared cache), a conversation is per-user and not cacheable — every
+      // question is a fresh, individually-billed call (proposal §4).
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS conversations (
+          id UUID PRIMARY KEY,
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          title TEXT,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `)
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_conversations_user ON conversations(user_id, updated_at DESC)',
+      )
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS messages (
+          id UUID PRIMARY KEY,
+          conversation_id UUID NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+          role TEXT NOT NULL CHECK (role IN ('user', 'assistant')),
+          content TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `)
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at)',
+      )
+
+      // tokens_deducted mirrors total_tokens today (1 token of usage = 1 token
+      // of balance, no markup applied at spend time — markup happens at
+      // top-up time per proposal §5.2). Kept as its own column so a future
+      // spend-time markup policy doesn't need a schema change.
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS token_usage_ledger (
+          id UUID PRIMARY KEY,
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          conversation_id UUID REFERENCES conversations(id) ON DELETE SET NULL,
+          prompt_tokens INTEGER NOT NULL,
+          completion_tokens INTEGER NOT NULL,
+          total_tokens INTEGER NOT NULL,
+          tokens_deducted BIGINT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `)
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_token_usage_user ON token_usage_ledger(user_id, created_at DESC)',
+      )
+    },
+  },
 ]
 
 /** Pure planning step (no DB access) — kept separate so it's unit-testable without Postgres. */
