@@ -4,6 +4,7 @@ import { registerActorDecoration } from './auth/request-actor'
 import { closePool, getPool } from './db/connection'
 import { runMigrations } from './db/migrate'
 import { registerAuthRoutes } from './routes/auth'
+import { registerContentRoutes } from './routes/content'
 
 const PORT = Number(process.env.PORT ?? 4000)
 
@@ -19,6 +20,7 @@ async function main(): Promise<void> {
     await runMigrations(pool)
     await ensureBootstrapAdmin(pool)
     registerAuthRoutes(app, pool)
+    registerContentRoutes(app, pool)
   } else {
     app.log.warn('DATABASE_URL not set — skipping migrations and DB-backed routes')
   }

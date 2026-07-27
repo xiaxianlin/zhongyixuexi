@@ -62,6 +62,74 @@ export const MIGRATIONS: Migration[] = [
       `)
     },
   },
+  {
+    version: 2,
+    name: 'create_content_tables',
+    up: async (client) => {
+      // pg_trgm backs the full-text search (SRH-01): a GIN trigram index on
+      // paragraphs.text plays the role SQLite's FTS5 trigram tokenizer + the
+      // paragraphs_ai/ad/au sync triggers played there. Postgres indexes are
+      // maintained transactionally by the engine on every insert/update, so
+      // no equivalent sync triggers are needed here.
+      await client.query('CREATE EXTENSION IF NOT EXISTS pg_trgm')
+
+      // Content is global (shared across every member), not per-user — no
+      // user_id column. `status`/`created_by` back the content admin
+      // workflow (CMS-01/CMS-02/CMS-03, S9.5); parse-era fields from the old
+      // EPUB-import pipeline (parse_hash/is_noise/quality_flag/edited) are
+      // dropped since content is now authored directly through the CMS, not
+      // parsed and re-synced from bundled JSON.
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS books (
+          id UUID PRIMARY KEY,
+          title TEXT NOT NULL,
+          author TEXT,
+          cover TEXT,
+          category TEXT,
+          order_index INTEGER NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+          created_by UUID REFERENCES users(id) ON DELETE SET NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          deleted_at TIMESTAMPTZ
+        )
+      `)
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS chapters (
+          id UUID PRIMARY KEY,
+          book_id UUID NOT NULL REFERENCES books(id) ON DELETE CASCADE,
+          parent_id UUID REFERENCES chapters(id) ON DELETE CASCADE,
+          order_index INTEGER NOT NULL,
+          level TEXT,
+          title TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          deleted_at TIMESTAMPTZ
+        )
+      `)
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_chapters_book ON chapters(book_id) WHERE deleted_at IS NULL',
+      )
+      await client.query('CREATE INDEX IF NOT EXISTS idx_chapters_parent ON chapters(parent_id)')
+
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS paragraphs (
+          id UUID PRIMARY KEY,
+          chapter_id UUID NOT NULL REFERENCES chapters(id) ON DELETE CASCADE,
+          order_index INTEGER NOT NULL,
+          text TEXT NOT NULL,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          deleted_at TIMESTAMPTZ
+        )
+      `)
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_paragraphs_chapter ON paragraphs(chapter_id) WHERE deleted_at IS NULL',
+      )
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_paragraphs_text_trgm ON paragraphs USING GIN (text gin_trgm_ops)',
+      )
+    },
+  },
 ]
 
 /** Pure planning step (no DB access) — kept separate so it's unit-testable without Postgres. */
