@@ -1,6 +1,8 @@
 import Fastify from 'fastify'
+import { ensureBootstrapAdmin } from './auth/bootstrap'
 import { closePool, getPool } from './db/connection'
 import { runMigrations } from './db/migrate'
+import { registerAuthRoutes } from './routes/auth'
 
 const PORT = Number(process.env.PORT ?? 4000)
 
@@ -10,9 +12,12 @@ async function main(): Promise<void> {
   app.get('/health', async () => ({ status: 'ok' }))
 
   if (process.env.DATABASE_URL) {
-    await runMigrations(getPool())
+    const pool = getPool()
+    await runMigrations(pool)
+    await ensureBootstrapAdmin(pool)
+    registerAuthRoutes(app, pool)
   } else {
-    app.log.warn('DATABASE_URL not set — skipping migrations; DB-backed routes will fail')
+    app.log.warn('DATABASE_URL not set — skipping migrations and DB-backed routes')
   }
 
   await app.listen({ port: PORT, host: '0.0.0.0' })
