@@ -54,32 +54,43 @@ export default function ChatPage() {
     <div>
       <h1>AI 问答</h1>
       <p className="hint">仅充值会员可用，按 token 用量从钱包余额扣减。</p>
-      {balance !== null && <p className="hint">当前余额：{balance.toLocaleString()} token</p>}
       {needsTopUp && (
         <p className="error">需要充值会员才能提问 —— 请联系管理员充值，或到"我的钱包"查看余额。</p>
       )}
       {error && <p className="error">{error}</p>}
 
-      <div className="chat-log">
-        {turns.map((turn, i) => (
-          <div key={i} className={`chat-message ${turn.role}`}>
-            <strong>{turn.role === 'user' ? '我' : 'AI'}：</strong>
-            {turn.content}
+      <div className="chatPage">
+        <div className="chatPage__main">
+          <div className="chat-log">
+            {turns.map((turn, i) => (
+              <div key={i} className={`chat-message ${turn.role}`}>
+                <strong>{turn.role === 'user' ? '我' : 'AI'}：</strong>
+                {turn.content}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      <form onSubmit={handleSubmit}>
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="就经典内容提问…"
-          rows={3}
-        />
-        <button type="submit" disabled={submitting}>
-          {submitting ? '发送中…' : '发送'}
-        </button>
-      </form>
+          <form onSubmit={handleSubmit}>
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="就经典内容提问…"
+              rows={2}
+            />
+            <button type="submit" disabled={submitting}>
+              {submitting ? '发送中…' : '发送'}
+            </button>
+          </form>
+        </div>
+
+        <div className="chatPage__wallet">
+          <div className="chatPage__walletLabel">钱包余额</div>
+          <div className="chatPage__walletValue tabular">
+            {balance !== null ? balance.toLocaleString() : '—'}
+          </div>
+          <p className="hint">token</p>
+        </div>
+      </div>
     </div>
   )
 }

@@ -31,7 +31,7 @@ export default function WalletPage() {
     <div>
       <h1>我的钱包</h1>
       <p>
-        余额：<strong>{wallet.balance.toLocaleString()}</strong> token
+        余额：<strong className="tabular">{wallet.balance.toLocaleString()}</strong> token
       </p>
       <p className="hint">
         充值方式：转账给运营方后，由管理员在后台手动为你的账号充值，系统不接支付渠道。
@@ -51,8 +51,10 @@ export default function WalletPage() {
           <tbody>
             {wallet.adjustments.map((a) => (
               <tr key={a.id}>
-                <td>{new Date(a.createdAt).toLocaleString()}</td>
-                <td>{a.deltaTokens > 0 ? `+${a.deltaTokens}` : a.deltaTokens}</td>
+                <td className="tabular">{new Date(a.createdAt).toLocaleString()}</td>
+                <td className={`num ${a.deltaTokens > 0 ? 'delta-pos' : 'delta-neg'}`}>
+                  {a.deltaTokens > 0 ? `+${a.deltaTokens}` : a.deltaTokens}
+                </td>
                 <td>{a.note ?? '—'}</td>
               </tr>
             ))}

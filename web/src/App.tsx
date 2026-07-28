@@ -29,7 +29,7 @@ function navBtnClass({ isActive }: { isActive: boolean }): string {
 
 function Nav() {
   const { isLoggedIn, isAdmin, logout } = useAuth()
-  const { label, cycleTheme } = useTheme()
+  const { label, toggleTheme } = useTheme()
   return (
     <header className="app__header">
       <Link to="/" className="app__title">
@@ -62,9 +62,9 @@ function Nav() {
       <button
         type="button"
         className="app__themeBtn"
-        onClick={cycleTheme}
-        title="切换主题"
-        aria-label="切换主题"
+        onClick={toggleTheme}
+        title="切换明暗"
+        aria-label="切换明暗"
       >
         {label}
       </button>

@@ -29,10 +29,9 @@ export default function LibraryPage() {
         {books?.map((book) => (
           <li key={book.id}>
             <Link to={`/books/${book.id}`} className="bookcard">
-              <span className="bookcard__title">
-                {book.title}
-                {book.author && <span className="bookcard__author">{book.author}</span>}
-              </span>
+              {book.category && <span className="bookcard__category">{book.category}</span>}
+              <span className="bookcard__title">{book.title}</span>
+              {book.author && <span className="bookcard__author">{book.author}</span>}
             </Link>
           </li>
         ))}
