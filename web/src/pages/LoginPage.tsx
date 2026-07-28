@@ -30,7 +30,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div>
+    <div className="card authCard">
       <h1>登录</h1>
       <form onSubmit={handleSubmit}>
         <input

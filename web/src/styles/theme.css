@@ -1,0 +1,109 @@
+/* ==========================================================================
+   暖纸古籍风 —— 主题 token（固定宣纸白）
+   设计语言见 docs/design/ink-wash-research.md
+   理念：留白 / 气韵 / 虚实 / 以少胜多；大气端庄 = 敢留白、大字号、沉稳克制
+   ========================================================================== */
+
+:root {
+  /* ---- 字体：宋体为骨（端庄正大），黑体为 UI（克制），等宽为数字 ---- */
+  --font-title: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong",
+    "SimSun", serif;
+  --font-serif: "Source Han Serif SC", "Noto Serif SC", "Songti SC", "STSong",
+    "SimSun", serif;
+  --font-sans: "Source Han Sans SC", "PingFang SC", "Microsoft YaHei",
+    system-ui, sans-serif;
+  --font-mono: "SF Mono", Menlo, Consolas, monospace;
+
+  /* ---- 尺度（大气：大字 / 大行距 / 大间距） ---- */
+  --fs-display: 34px;
+  --fs-title: 26px;
+  --fs-h2: 21px;
+  --fs-body: 18px;
+  --fs-small: 14px;
+  --lh-relax: 1.9; /* 阅读行高，从容 */
+  --lh-tight: 1.5; /* UI 行高 */
+  --space-xs: 6px;
+  --space-sm: 12px;
+  --space-md: 20px;
+  --space-lg: 32px;
+  --space-xl: 56px; /* 大留白 */
+
+  /* ---- 宣纸纤维噪点（背景叠一层极淡纹理） ---- */
+  --paper-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+
+  /* ---- 暖米纸（唯一主题） ---- */
+  --bg: #f5ead6; /* 暖纸底 */
+  --surface: #fff9ee; /* 主纸面 */
+  --surface-2: #fffdf6; /* 抬高纸面 */
+
+  --fg: #2f2118; /* 焦墨棕 */
+  --muted-fg: #76604d; /* 次级棕墨 */
+  --faint-fg: #a18466; /* 清墨/占位 */
+
+  --accent: #8c2d25; /* 枣红：标题/选中/主操作 */
+  --accent-soft: #bd8658; /* 棕金：hover/描边 */
+  --accent-contrast: #fff9ee;
+
+  --border: rgba(181, 142, 98, 0.36); /* 驼金细线 */
+  --border-strong: rgba(151, 111, 70, 0.64);
+
+  --huaqing: #6b7b72; /* 青灰：弱信息 */
+  --zheshi: #9a7654; /* 棕金文字 */
+  --qianjiang: #f1dfc6; /* 浅绛纸笺 */
+
+  --card-radius: 14px;
+  --control-radius: 10px;
+  --shadow-soft: 0 10px 24px rgba(119, 82, 45, 0.06);
+
+  color-scheme: light;
+}
+
+/* ---- 水墨主题：加深纸底、墨色加重，仍为浅色调（适合长时间阅读的"护眼"档） ---- */
+[data-theme='ink'] {
+  --bg: #e8dcc4;
+  --surface: #efe5d0;
+  --surface-2: #f4ecd9;
+
+  --fg: #241a11;
+  --muted-fg: #5f4d3c;
+  --faint-fg: #8a7257;
+
+  --accent: #7a2620;
+  --accent-soft: #a5753f;
+  --accent-contrast: #f4ecd9;
+
+  --border: rgba(120, 90, 55, 0.42);
+  --border-strong: rgba(95, 70, 42, 0.66);
+
+  --huaqing: #56685f;
+  --zheshi: #7a6044;
+  --qianjiang: #e3d0b4;
+
+  color-scheme: light;
+}
+
+/* ---- 夜间主题：深底浅字，护眼 ---- */
+[data-theme='dark'] {
+  --bg: #1c160f;
+  --surface: #241d14;
+  --surface-2: #2c2418;
+
+  --fg: #ece0c9;
+  --muted-fg: #b6a285;
+  --faint-fg: #806c54;
+
+  --accent: #d98a4e; /* 夜间用暖橙替代枣红，对比更柔和 */
+  --accent-soft: #c47a45;
+  --accent-contrast: #1c160f;
+
+  --border: rgba(189, 134, 88, 0.32);
+  --border-strong: rgba(189, 134, 88, 0.6);
+
+  --huaqing: #8aa39a;
+  --zheshi: #b08a64;
+  --qianjiang: #3a3022;
+
+  --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.32);
+
+  color-scheme: dark;
+}

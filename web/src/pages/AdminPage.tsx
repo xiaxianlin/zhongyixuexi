@@ -64,7 +64,7 @@ function BooksSection() {
   }
 
   return (
-    <section>
+    <section className="card">
       <h2>书籍管理</h2>
       {error && <p className="error">{error}</p>}
       <table>
@@ -269,7 +269,7 @@ function InviteCodesSection() {
   }
 
   return (
-    <section>
+    <section className="card">
       <h2>邀请码管理</h2>
       {error && <p className="error">{error}</p>}
       <table>
@@ -357,7 +357,7 @@ function WalletSection() {
   }
 
   return (
-    <section>
+    <section className="card">
       <h2>会员充值（人工记账，不接支付渠道）</h2>
       {error && <p className="error">{error}</p>}
       {result && <p className="hint">{result}</p>}

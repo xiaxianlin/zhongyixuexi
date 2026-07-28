@@ -23,13 +23,17 @@ export default function LibraryPage() {
     <div>
       <h1>书库</h1>
       {error && <p className="error">{error}</p>}
-      {!books && !error && <p>加载中…</p>}
+      {!books && !error && <p className="hint">加载中…</p>}
       {books && books.length === 0 && <p className="hint">暂无已发布的经典。</p>}
-      <ul>
+      <ul className="lib__grid">
         {books?.map((book) => (
           <li key={book.id}>
-            <Link to={`/books/${book.id}`}>{book.title}</Link>
-            {book.author && <span className="hint"> · {book.author}</span>}
+            <Link to={`/books/${book.id}`} className="bookcard">
+              <span className="bookcard__title">
+                {book.title}
+                {book.author && <span className="bookcard__author">{book.author}</span>}
+              </span>
+            </Link>
           </li>
         ))}
       </ul>

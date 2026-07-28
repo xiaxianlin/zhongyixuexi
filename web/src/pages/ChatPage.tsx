@@ -60,7 +60,7 @@ export default function ChatPage() {
       )}
       {error && <p className="error">{error}</p>}
 
-      <div>
+      <div className="chat-log">
         {turns.map((turn, i) => (
           <div key={i} className={`chat-message ${turn.role}`}>
             <strong>{turn.role === 'user' ? '我' : 'AI'}：</strong>

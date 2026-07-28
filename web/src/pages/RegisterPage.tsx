@@ -31,7 +31,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
+    <div className="card authCard">
       <h1>邀请码注册</h1>
       <p className="hint">本站不开放自主注册，需要有效邀请码。</p>
       <form onSubmit={handleSubmit}>
