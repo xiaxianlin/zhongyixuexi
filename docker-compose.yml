@@ -1,0 +1,61 @@
+# Single-VPS deployment target for the online pivot (Phase 9 / S9.9).
+# Not wired into any CI — this is what to run ON the actual server once
+# Docker is installed there. Put real secrets in a `.env` file next to this
+# one (see server/.env.example); docker compose loads it automatically.
+#
+#   docker compose up -d --build
+#
+# TLS/domain/reverse-proxy are NOT included here — see the S9.9 note in
+# docs/dev/PROGRESS.md for what's still manual (this repo has no access to
+# provision the actual server, register a domain, or issue a certificate).
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zhongyixuexi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: zhongyixuexi
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U zhongyixuexi']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://zhongyixuexi:${POSTGRES_PASSWORD}@postgres:5432/zhongyixuexi
+      PORT: 4000
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_BOOTSTRAP_USERNAME: ${ADMIN_BOOTSTRAP_USERNAME}
+      ADMIN_BOOTSTRAP_PASSWORD: ${ADMIN_BOOTSTRAP_PASSWORD}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-https://api.deepseek.com}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-deepseek-chat}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-300}
+    ports:
+      - '4000:4000'
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - '8080:80'
+
+volumes:
+  postgres-data:

@@ -1,4 +1,5 @@
 import cors from '@fastify/cors'
+import rateLimit from '@fastify/rate-limit'
 import Fastify from 'fastify'
 import { ensureBootstrapAdmin } from './auth/bootstrap'
 import { registerActorDecoration } from './auth/request-actor'
@@ -20,6 +21,14 @@ async function main(): Promise<void> {
   // carries no CSRF risk and avoids hardcoding an allowlist for this small,
   // invite-only deployment.
   await app.register(cors, { origin: true })
+
+  // S9.9 basic anti-abuse: a generous global ceiling per IP, with much
+  // stricter per-route limits on /auth/* (brute force) and /chat (the only
+  // metered, costly endpoint) set via each route's own `config.rateLimit`.
+  await app.register(rateLimit, {
+    max: Number(process.env.RATE_LIMIT_MAX ?? 300),
+    timeWindow: '1 minute',
+  })
 
   registerActorDecoration(app)
 

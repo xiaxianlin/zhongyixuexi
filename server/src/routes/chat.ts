@@ -17,7 +17,13 @@ export function registerChatRoutes(app: FastifyInstance, pool: Pool): void {
 
   app.post<{ Body: ChatBody }>(
     '/chat',
-    { preHandler: requireTier('paid_member', wallet) },
+    {
+      preHandler: requireTier('paid_member', wallet),
+      // Each call is a real, billed DeepSeek round trip — cap the rate
+      // independently of the wallet balance so a runaway client can't hammer
+      // the upstream API even while it still has tokens to spend.
+      config: { rateLimit: { max: 20, timeWindow: '1 minute' } },
+    },
     async (request, reply) => {
       const provider = getProviderConfig()
       const result = await askQuestion(pool, provider, deepseek, {

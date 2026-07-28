@@ -1,0 +1,13 @@
+node_modules
+out/
+out-server/
+out-web/
+release/
+.vite/
+coverage/
+.git/
+.claude/
+*.db
+*.db-journal
+.env
+.env.local
