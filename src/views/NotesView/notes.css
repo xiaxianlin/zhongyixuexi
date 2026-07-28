@@ -1,0 +1,56 @@
+/* 我的笔记（自由笔记）页样式 */
+.notes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.notes-page__hero {
+  /* 复用 settings__hero 的卡片基底 */
+}
+
+.notes-page__empty {
+  padding: 32px;
+  text-align: center;
+}
+
+.notes-page__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.notes-page__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-soft);
+}
+
+.notes-page__cardHead {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.notes-page__text {
+  margin: 0;
+  color: var(--fg);
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.72;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .notes-page__grid {
+    grid-template-columns: 1fr;
+  }
+}
