@@ -4,6 +4,7 @@ import type { Pool } from 'pg'
 import { createInviteCode, listInviteCodes, revokeInviteCode } from '../auth/invite-code-admin'
 import { requireAdmin } from '../auth/require-admin'
 import * as contentAdmin from '../content/admin'
+import { getBookDetail, listAllBooksForAdmin } from '../content/repository'
 import { NotFoundError, ValidationError } from '../lib/errors'
 import { applyBalanceAdjustment, getBalance, listAdjustments, type AdjustmentInput } from '../wallet/repository'
 
@@ -35,6 +36,14 @@ export function registerAdminRoutes(app: FastifyInstance, pool: Pool): void {
       })
 
       // ---- books ----
+      admin.get('/books', async () => ({ books: await listAllBooksForAdmin(pool) }))
+
+      admin.get<{ Params: BookParams }>('/books/:bookId', async (request, reply) => {
+        const detail = await getBookDetail(pool, request.params.bookId, { includeUnpublished: true })
+        if (!detail) return reply.code(404).send({ error: 'book not found' })
+        return detail
+      })
+
       admin.post<{ Body: contentAdmin.CreateBookInput }>('/books', async (request, reply) => {
         const book = await contentAdmin.createBook(pool, request.body, request.actor.userId as string)
         return reply.code(201).send(book)
@@ -130,6 +139,24 @@ export function registerAdminRoutes(app: FastifyInstance, pool: Pool): void {
       admin.delete<{ Params: ParagraphParams }>('/paragraphs/:paragraphId', async (request, reply) => {
         const result = await contentAdmin.deleteParagraph(pool, request.params.paragraphId)
         return reply.send(result)
+      })
+
+      // ---- users (read-only — the admin wallet UI needs a userId to credit) ----
+      admin.get('/users', async () => {
+        const { rows } = await pool.query<{
+          id: string
+          username: string
+          role: 'member' | 'admin'
+          created_at: Date
+        }>('SELECT id, username, role, created_at FROM users ORDER BY created_at DESC')
+        return {
+          users: rows.map((r) => ({
+            id: r.id,
+            username: r.username,
+            role: r.role,
+            createdAt: r.created_at,
+          })),
+        }
       })
 
       // ---- invite codes (AUTH-04) ----

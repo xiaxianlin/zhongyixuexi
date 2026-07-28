@@ -1,3 +1,4 @@
+import cors from '@fastify/cors'
 import Fastify from 'fastify'
 import { ensureBootstrapAdmin } from './auth/bootstrap'
 import { registerActorDecoration } from './auth/request-actor'
@@ -13,6 +14,12 @@ const PORT = Number(process.env.PORT ?? 4000)
 
 async function main(): Promise<void> {
   const app = Fastify({ logger: true })
+
+  // The web frontend (web/) is a separate origin from this API — auth is
+  // Bearer-token based (no cookies), so reflecting the request origin here
+  // carries no CSRF risk and avoids hardcoding an allowlist for this small,
+  // invite-only deployment.
+  await app.register(cors, { origin: true })
 
   registerActorDecoration(app)
 

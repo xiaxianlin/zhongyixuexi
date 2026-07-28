@@ -1,6 +1,7 @@
 node_modules/
 out/
 out-server/
+out-web/
 dist/
 release/
 .vite/

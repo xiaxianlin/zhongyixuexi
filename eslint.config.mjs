@@ -21,7 +21,7 @@ export default tseslint.config(
   },
 
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}', 'web/src/**/*.{ts,tsx}'],
     languageOptions: { globals: globals.browser },
     plugins: { 'react-hooks': reactHooks, 'react-refresh': reactRefresh },
     rules: {
@@ -41,6 +41,11 @@ export default tseslint.config(
 
   {
     files: ['server/**/*.ts'],
+    languageOptions: { globals: globals.node },
+  },
+
+  {
+    files: ['vite.web.config.ts'],
     languageOptions: { globals: globals.node },
   },
 

@@ -35,6 +35,37 @@ export async function listPublishedBooks(pool: Pool): Promise<BookSummary[]> {
   }))
 }
 
+export interface AdminBookSummary extends BookSummary {
+  status: 'draft' | 'published'
+}
+
+/** CMS-01: the admin book list needs drafts too, not just what LIB-02 shows the public. */
+export async function listAllBooksForAdmin(pool: Pool): Promise<AdminBookSummary[]> {
+  const { rows } = await pool.query<{
+    id: string
+    title: string
+    author: string | null
+    cover: string | null
+    category: string | null
+    order_index: number
+    status: 'draft' | 'published'
+  }>(
+    `SELECT id, title, author, cover, category, order_index, status
+     FROM books
+     WHERE deleted_at IS NULL
+     ORDER BY order_index`,
+  )
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    author: r.author,
+    cover: r.cover,
+    category: r.category,
+    orderIndex: r.order_index,
+    status: r.status,
+  }))
+}
+
 export interface ParagraphRow {
   id: string
   chapterId: string
@@ -48,7 +79,11 @@ export interface BookDetail {
   paragraphsByChapter: Record<string, ParagraphRow[]>
 }
 
-export async function getBookDetail(pool: Pool, bookId: string): Promise<BookDetail | null> {
+export async function getBookDetail(
+  pool: Pool,
+  bookId: string,
+  options: { includeUnpublished?: boolean } = {},
+): Promise<BookDetail | null> {
   const bookResult = await pool.query<{
     id: string
     title: string
@@ -59,8 +94,8 @@ export async function getBookDetail(pool: Pool, bookId: string): Promise<BookDet
   }>(
     `SELECT id, title, author, cover, category, order_index
      FROM books
-     WHERE id = $1 AND status = 'published' AND deleted_at IS NULL`,
-    [bookId],
+     WHERE id = $1 AND deleted_at IS NULL AND ($2::boolean OR status = 'published')`,
+    [bookId, options.includeUnpublished ?? false],
   )
   const bookRow = bookResult.rows[0]
   if (!bookRow) return null
