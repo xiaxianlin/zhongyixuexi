@@ -55,6 +55,9 @@ export const notesApi = {
   delete: (id: string) => invokeRaw<{ ok: true }>('notes:delete', { id }),
   getByParagraph: (paragraphId: string) =>
     invokeRaw<ParagraphNoteCard[]>('notes:getByParagraph', { paragraph_id: paragraphId }),
+  listFree: () => invokeRaw<ParagraphNoteCard[]>('notes:listFree'),
+  update: (id: string, content: string) =>
+    invokeRaw<ParagraphNoteCard>('notes:update', { id, content }),
 }
 
 /** editing:* — book/chapter/paragraph text edits + paragraph merge/split. */

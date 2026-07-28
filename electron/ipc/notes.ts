@@ -3,6 +3,8 @@ import {
   createNote,
   deleteNote,
   getNotesByParagraph,
+  listFreeNotes,
+  updateNote,
   type CreateNoteInput,
 } from '../services/notes'
 
@@ -18,5 +20,12 @@ export function registerNotesHandlers(): void {
   handle('notes:getByParagraph', (_event, payload: unknown) => {
     const p = (payload ?? {}) as { paragraph_id?: string }
     return getNotesByParagraph(p.paragraph_id ?? '')
+  })
+
+  handle('notes:listFree', () => listFreeNotes())
+
+  handle('notes:update', (_event, payload: unknown) => {
+    const p = (payload ?? {}) as { id?: string; content?: string }
+    return updateNote(p.id ?? '', p.content ?? '')
   })
 }

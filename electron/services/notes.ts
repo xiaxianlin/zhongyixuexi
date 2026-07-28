@@ -82,3 +82,33 @@ export function getNotesByParagraph(paragraphId: string): ParagraphNoteCard[] {
     .all(paragraphId) as ParagraphNoteCard[]
   return rows
 }
+
+/** Notes orphaned by a deleted paragraph (paragraph_id SET NULL by editing.ts on delete/merge/split). */
+export function listFreeNotes(): ParagraphNoteCard[] {
+  const db = getDb()
+  const rows = db
+    .prepare(
+      `SELECT id, content, created_at, updated_at
+       FROM notes
+       WHERE paragraph_id IS NULL AND deleted_at IS NULL
+       ORDER BY updated_at DESC`,
+    )
+    .all() as ParagraphNoteCard[]
+  return rows
+}
+
+export function updateNote(id: string, content: string): ParagraphNoteCard {
+  const db = getDb()
+  const now = Date.now()
+  const body = content.trim()
+  const result = db
+    .prepare('UPDATE notes SET content = ?, updated_at = ? WHERE id = ? AND deleted_at IS NULL')
+    .run(body, now, id)
+  if (result.changes === 0) {
+    throw new AppError('NOT_FOUND', `笔记 ${id} 不存在或已删除`)
+  }
+  const row = db
+    .prepare('SELECT id, content, created_at, updated_at FROM notes WHERE id = ?')
+    .get(id) as ParagraphNoteCard
+  return row
+}
