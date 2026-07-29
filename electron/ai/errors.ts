@@ -13,20 +13,9 @@
  * or full response bodies — only HTTP status codes and generic reasons.
  */
 import { AppError } from '../lib/error'
+import type { AiSubCode } from '@shared/core/ai/errors'
 
-/** Fine-grained AI sub-code (carried in AppError.details.aiCode). */
-export type AiSubCode =
-  | 'AI_KEY_NOT_CONFIGURED'
-  | 'AI_STORAGE_UNAVAILABLE'
-  | 'AI_AUTH_ERROR'
-  | 'AI_QUOTA_EXCEEDED'
-  | 'AI_TIMEOUT'
-  | 'AI_SERVER_ERROR'
-  | 'AI_REQUEST_FAILED'
-  | 'AI_PARSE_ERROR'
-  | 'AI_GUARD_BLOCKED'
-  | 'AI_PROVIDER_NOT_CONFIGURED'
-  | 'AI_UNKNOWN'
+export type { AiSubCode }
 
 export interface AiErrorDetails {
   aiCode: AiSubCode

@@ -6,6 +6,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY tsconfig.server.json tsconfig.server.build.json ./
+COPY shared ./shared
 COPY server ./server
 RUN npx tsc -p tsconfig.server.build.json
 
@@ -16,4 +17,4 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/out-server ./out-server
 EXPOSE 4000
-CMD ["node", "out-server/src/index.js"]
+CMD ["node", "out-server/server/src/index.js"]

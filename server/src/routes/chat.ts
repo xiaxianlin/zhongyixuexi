@@ -15,11 +15,15 @@ interface ChatBody {
 /** AI-02 degraded-mode copy per failure reason — kept separate from AiError's own (operator-facing) message. */
 const AI_ERROR_MESSAGES: Record<AiSubCode, string> = {
   AI_KEY_NOT_CONFIGURED: 'AI 服务暂未配置，问答功能暂不可用',
+  AI_STORAGE_UNAVAILABLE: 'AI 服务暂未配置，问答功能暂不可用',
   AI_AUTH_ERROR: 'AI 服务暂时不可用，请稍后再试或联系管理员',
   AI_QUOTA_EXCEEDED: 'AI 服务额度已用尽，请稍后再试',
   AI_TIMEOUT: 'AI 服务响应超时，请稍后重试',
   AI_SERVER_ERROR: 'AI 服务暂时不可用，请稍后重试',
   AI_REQUEST_FAILED: 'AI 服务调用失败，请稍后重试',
+  AI_PARSE_ERROR: 'AI 返回结果解析异常，请稍后重试',
+  AI_GUARD_BLOCKED: '该问题涉及诊疗或用药建议，暂无法解答',
+  AI_PROVIDER_NOT_CONFIGURED: 'AI 服务暂未配置，问答功能暂不可用',
   AI_UNKNOWN: 'AI 服务出现未知错误，请稍后重试',
 }
 

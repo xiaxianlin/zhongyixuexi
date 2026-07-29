@@ -1,8 +1,12 @@
 /**
  * AI domain renderer DTOs + degraded-state mapping (mirror of
- * electron/services/ai.ts DTOs and electron/ai/errors.ts). Dependency-free.
+ * electron/services/ai.ts DTOs; AiSubCode itself comes from
+ * @shared/core/ai/errors). Dependency-free.
  */
 import type { ParagraphAnalysisMeta, InterpretationViewDTO } from '@/models/library/types'
+import type { AiSubCode } from '@shared/core/ai/errors'
+
+export type { AiSubCode }
 
 export interface ModernResultDTO {
   paragraphId: string
@@ -20,20 +24,6 @@ export interface AiStatusDTO {
   provider: string | null
   model: string | null
 }
-
-/** AI error sub-code, mirrored from electron/ai/errors.ts AiSubCode. */
-export type AiSubCode =
-  | 'AI_KEY_NOT_CONFIGURED'
-  | 'AI_STORAGE_UNAVAILABLE'
-  | 'AI_AUTH_ERROR'
-  | 'AI_QUOTA_EXCEEDED'
-  | 'AI_TIMEOUT'
-  | 'AI_SERVER_ERROR'
-  | 'AI_REQUEST_FAILED'
-  | 'AI_PARSE_ERROR'
-  | 'AI_GUARD_BLOCKED'
-  | 'AI_PROVIDER_NOT_CONFIGURED'
-  | 'AI_UNKNOWN'
 
 /** User-facing degraded-state reason derived from an AI sub-code. */
 export type DegradedReason =

@@ -63,7 +63,7 @@
     "check": "npm run typecheck && npm run lint && npm run test",
     "server:dev": "tsx watch server/src/index.ts",
     "server:build": "tsc -p tsconfig.server.build.json",
-    "server:start": "node out-server/src/index.js",
+    "server:start": "node out-server/server/src/index.js",
     "web:dev": "vite --config vite.web.config.ts",
     "web:build": "vite build --config vite.web.config.ts",
     "web:preview": "vite preview --config vite.web.config.ts"
