@@ -3,7 +3,7 @@
  *
  * Covers layer 2 (shouldBlock — keyword/regex pre-check) precision/recall and
  * layer 3 (sanitizeOutput — dosage-expression scrubbing). Layer 1 (System
- * Prompt) presence is covered in prompts.test.ts.
+ * Prompt) presence is covered in each platform's prompts.test.ts.
  */
 import { describe, it, expect } from 'vitest'
 import { shouldBlock, sanitizeOutput, REFUSAL_TEXT, DOSAGE_SCRUB_TEXT } from './guard'
@@ -31,7 +31,7 @@ describe('shouldBlock (layer 2 — pre-call keyword scan)', () => {
     // These are exactly the kind of question we want to answer.
     expect(shouldBlock('人参性味是什么').blocked).toBe(false)
     expect(shouldBlock('补五脏是什么意思').blocked).toBe(false)
-    expectBlock(shouldBlock('黄芪补气固表的医理是什么'), false)
+    expect(shouldBlock('黄芪补气固表的医理是什么').blocked).toBe(false)
     expect(shouldBlock('').blocked).toBe(false)
     expect(shouldBlock('什么是归经').blocked).toBe(false)
   })
@@ -42,10 +42,6 @@ describe('shouldBlock (layer 2 — pre-call keyword scan)', () => {
     expect(r.refusal).toBe(REFUSAL_TEXT)
   })
 })
-
-function expectBlock(r: { blocked: boolean }, expected: boolean): void {
-  expect(r.blocked).toBe(expected)
-}
 
 describe('sanitizeOutput (layer 3 — post-call dosage scrub)', () => {
   it('scrubs digit + unit dosage expressions', () => {

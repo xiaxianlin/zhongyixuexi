@@ -1,13 +1,18 @@
 /**
  * Red-line guard (S5.5 / 07-ai.md §9). Three layers:
  *
- * Layer 1 — System Prompt hard-prohibition (in prompts.ts RED_LINE_PROMPT).
+ * Layer 1 — System Prompt hard-prohibition (shared/core/ai/red-line.ts).
  * Layer 2 — pre-call keyword/regex scan (this file, `shouldBlock`): if the
  *           user query is a diagnosis/prescription/dosage request, return a
  *           fixed refusal WITHOUT calling the model (no network, no billing).
  * Layer 3 — post-call output sanitization (this file, `sanitizeOutput`):
  *           scrub dosage expressions (number + unit) and prescription phrasing
  *           from the model's answer.
+ *
+ * Free-form Q&A (server's AI-05) needs this more than fixed-template paragraph
+ * analysis (desktop's AI-01) does, since open questions have a much larger
+ * surface for "what should I take for X" framing — but the logic itself is
+ * platform-neutral and applies equally to either.
  *
  * All patterns are pure functions — exported and unit-tested. The keyword list
  * is intentionally conservative (precision over recall): we'd rather let a

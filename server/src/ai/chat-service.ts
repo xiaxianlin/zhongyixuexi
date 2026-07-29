@@ -12,7 +12,7 @@ import { ValidationError } from '../lib/errors'
 import { applyAdjustmentWithClient, getBalance } from '../wallet/repository'
 import { getOrCreateConversation, insertMessage, loadHistory, touchConversation } from './conversation'
 import type { DeepSeekClient } from './deepseek'
-import { sanitizeOutput, shouldBlock } from './guard'
+import { sanitizeOutput, shouldBlock } from '../../../shared/core/ai/guard'
 import { buildQaPrompt } from './prompts'
 import type { ProviderConfig } from './types'
 
