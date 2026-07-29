@@ -214,6 +214,20 @@ Exit:邀请码注册/登录可用 → 三级权限矩阵在 API 层生效 → �
 
 ---
 
+## Phase 10 · 桌面版 + 在线版共享架构(doing)
+
+> **背景**:在线版(`server/`+`web/`)此前是手工"照着桌面版重写一遍"的产物——`web/` 的 theme.css 从 `src/` 拷贝后被改成青瓷绿又改回来,`server/src/ai/*` 是 `electron/ai/*` 的手工复制且已经漂移(`AiSubCode` 少 3 个值、丢了 streaming)。用户明确要求:桌面版和在线版都要维护,但要把技术架构理顺,让内容/组件/类型能真正共享,不再手动同步。方案见 `/Users/xiaxianlin/.claude/plans/nested-napping-whisper.md`(plan mode 产出,已获批准):新增 `shared/{core,node,ui}` 三层目录 + tsconfig/vite 路径别名(不用 npm workspaces,理由见方案文档),分 15 个 slice 迁移。
+
+Exit:`shared/` 机制稳定运行,AI 客户端/内容算法/DTO 类型/CSS 主题不再有桌面-在线两份手工拷贝;三栏阅读工作台(章节树/段落列表/AI解读面板)通过共享组件同时服务桌面版和在线版。
+
+| # | 状态 | 摘要 |
+|---|---|---|
+| S10.1 | done | 共享机制 + theme.css/main.css 迁移:新建 `shared/{core,node,ui}` 目录;4 个 tsconfig(node/web/server/webapp)加 `@shared/*` paths(server 端**不**加,见下);`electron.vite.config.ts` 的 main/preload/renderer 三处 `resolve.alias` 都加 `@shared`(main/preload 此前完全没有 alias 配置,只有 renderer 有,tsconfig 的 paths 只管类型检查、不管 Vite/Rollup 实际打包解析,两处都要配才生效);`vite.web.config.ts` 同样加 alias;`eslint.config.mjs` 加两条 `no-restricted-imports`(`src/**`+`web/src/**` 禁止导入 `@shared/node/*`;`electron/**`+`server/**` 禁止导入 `@shared/ui/*`)。`git mv src/styles/{theme,main}.css` 到 `shared/ui/`,`src/main.tsx` 改用 `@shared/ui/*` 导入;删掉 `web/src/styles/theme.css` 的青瓷绿分支,`web/src/main.tsx` 改成导入同一份 `@shared/ui/theme.css`+`main.css`。**web/src/index.css 做了必要改写**(不只是"挪文件"):它原本自己声明了一套 `--celadon`/`--bronze`/`--cinnabar` 等 token 和一套重复的 `.app`/`.app__header`/`.app__nav` 规则——换成共享 theme.css 后这些变量全部不存在,不改的话页面会渲染成"变量未定义"的破样式。改法:删掉 index.css 里所有和 shared main.css 重复的壳规则(`.app`/`.app__header`/`.app__nav`/`.app__main` 等,现在统一由 shared main.css 提供),只保留桌面版没有对应页面的新增样式(登录/注册/钱包/问答/后台的表单/表格/卡片/聊天气泡),并把这些新增样式里的颜色引用全部换成桌面版 theme.css 里真实存在的变量名(`--accent`/`--accent-soft`/`--border`/`--card-radius`/`--control-radius`/`--shadow-soft`/`--qianjiang`/`--zheshi` 等),不再新造颜色。补了一条 `.app__title` 规则(桌面版品牌区是纯 `<h1>`,在线版品牌区兼作"回书库"链接用 `<a class="app__title">`,shared main.css 只样式化 `.app__header h1` 选择器,补一条等价样式)。**`tsconfig.server.json` 这次没加 paths/include**:它有显式 `rootDir: "server"`,一旦把 `shared/**/*.ts` 纳入编译会直接报 `TS6059`(File is not under 'rootDir'),而 S10.1 这一步 server 端还不需要真正导入 shared 代码,索性把 rootDir 改造(连带 `server:start`/Dockerfile 的 `out-server/src/index.js` 路径一起改)推迟到 S10.3(server 第一次真正 import shared 代码的 slice)一次性做,避免现在为了"配置完整性"引入不必要的破坏性改动。**踩了一个坑并修复**:`web/Dockerfile` 只 `COPY web ./web`,没有 `COPY shared ./shared`,第一次重新构建 docker 镜像时构建失败(旧容器没被换掉,视觉上表现为"在线版没有同步"),补了这一行就好了——这是本 slice 唯一的真实 bug,记录下来提醒 S10.3 起任何 server 端 slice 也要检查 `server/Dockerfile` 有没有漏 `COPY shared`。`npm run check` 全绿(4 个 tsconfig 都过,含 node/web/webapp 三个新增了 `shared/**/*.ts` 到 include 但没有 rootDir 冲突,已确认);桌面端 `npm run build`(electron-vite 生产构建)成功确认 `@shared` 别名对 main/preload/renderer 都生效;本机 docker-compose 重新构建 web 镜像后真实浏览器截图确认:书库/阅读页/登录页配色和布局都已经变回桌面版的暖纸古籍风(暖米纸底 + 枣红强调色 + 圆角卡片投影),不再是青瓷绿。 |
+
+- [ ] Phase 10 exit 达成
+
+---
+
 ## 关键决策与约束(当前)
 
 1. **schema 单源**:`electron/db/schema.ts` 是当前 DDL baseline,`CURRENT_SCHEMA_VERSION=3`。`prepareDatabase()` + `migrate.ts` `runMigrations()` 走 forward-only:v3 库升级保留数据,v0/v2 旧开发库 reset 重建。新 schema 改动在 `migrate.ts` 的 `MIGRATIONS[]` 加一条 + bump version。

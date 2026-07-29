@@ -5,7 +5,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 
 export default tseslint.config(
-  { ignores: ['out', 'dist', 'release', 'coverage', 'node_modules'] },
+  { ignores: ['out', 'out-web', 'out-server', 'dist', 'release', 'coverage', 'node_modules'] },
 
   js.configs.recommended,
   ...tseslint.configs.recommended,
@@ -31,17 +31,28 @@ export default tseslint.config(
       // prescription is overkill here.
       'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // shared/node/* is Node-only (and, for the AI client, holds the platform's
+      // API key) — never importable from a browser bundle.
+      'no-restricted-imports': ['error', { patterns: [{ group: ['@shared/node/*'], message: 'shared/node/* is Node-only — not importable from src/ or web/.' }] }],
     },
   },
 
   {
     files: ['electron/**/*.ts', 'electron.vite.config.ts', 'vitest.config.ts'],
     languageOptions: { globals: globals.node },
+    rules: {
+      // shared/ui/* assumes DOM/window and browser-only libraries — never
+      // importable from the main process.
+      'no-restricted-imports': ['error', { patterns: [{ group: ['@shared/ui/*'], message: 'shared/ui/* is browser-only — not importable from electron/ or server/.' }] }],
+    },
   },
 
   {
     files: ['server/**/*.ts'],
     languageOptions: { globals: globals.node },
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [{ group: ['@shared/ui/*'], message: 'shared/ui/* is browser-only — not importable from electron/ or server/.' }] }],
+    },
   },
 
   {

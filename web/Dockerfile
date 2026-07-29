@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY tsconfig.webapp.json vite.web.config.ts ./
+COPY shared ./shared
 COPY web ./web
 ARG VITE_API_BASE_URL
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}

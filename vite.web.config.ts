@@ -5,7 +5,9 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   root: resolve(__dirname, 'web'),
   plugins: [react()],
-  resolve: { alias: { '@': resolve(__dirname, 'web/src') } },
+  resolve: {
+    alias: { '@': resolve(__dirname, 'web/src'), '@shared': resolve(__dirname, 'shared') },
+  },
   server: { port: 5173 },
   build: { outDir: resolve(__dirname, 'out-web') },
 })

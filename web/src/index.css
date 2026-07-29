@@ -1,168 +1,34 @@
-/* 「青瓷诊脉」— 界格版式:仿雕版框线网格,取代圆角卡片 + 投影。
-   token 见 styles/theme.css。类名沿用早前移植版本,视觉全部重写。 */
+/* 在线版页面壳(.app/.app__header/.app__nav/.app__main 等)由 @shared/ui/main.css
+   提供,和桌面版是同一份文件。这里只补桌面版没有的页面(登录/注册/钱包/问答/
+   管理后台/检索)——token 全部引用 @shared/ui/theme.css 里桌面版已有的变量,
+   不新造颜色。 */
 
-:root {
-  font-family: var(--font-sans);
-  color: var(--fg);
-  background: var(--bg);
-}
-
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-  font-family: var(--font-sans);
-  font-size: var(--fs-body);
-  color: var(--fg);
-  background-color: var(--bg);
-}
-
-#root {
-  min-height: 100vh;
-}
-
-::selection {
-  background: var(--celadon-tint);
-  color: var(--celadon-deep);
-}
-
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-title);
-  color: var(--fg);
-  letter-spacing: 0.06em;
-  line-height: 1.4;
-}
-
-h1 {
-  font-size: var(--fs-title);
-  margin: 0 0 var(--space-md);
-}
-
-h2 {
-  font-size: var(--fs-h2);
-  margin: var(--space-lg) 0 var(--space-sm);
-  font-weight: 700;
-}
-
-h3,
-h4 {
-  font-size: var(--fs-body);
-  margin: var(--space-md) 0 var(--space-xs);
-}
-
-a {
-  color: var(--celadon-deep);
-}
-
-a:hover {
-  color: var(--celadon);
-}
-
-code {
-  font-family: var(--font-mono);
-  background: var(--celadon-tint);
-  color: var(--fg);
-  padding: 1px 6px;
-  border-radius: var(--radius);
-}
-
-/* ---- 应用外壳 ---- */
-
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.app__header {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
-  padding: 20px 44px;
-  border-bottom: 1px solid var(--border);
-  flex-wrap: wrap;
-}
-
+/* 桌面版品牌标题是纯 <h1>(main.css 的 .app__header h1 选一次);在线版品牌区
+   兼作"回书库"链接,用 <a class="app__title">,故补一条等价样式。 */
 .app__title {
   margin: 0;
   font-family: var(--font-title);
-  font-size: var(--fs-h2);
+  font-size: var(--fs-title);
   font-weight: 700;
+  color: var(--accent);
   letter-spacing: 0.14em;
-  color: var(--celadon-deep);
   text-decoration: none;
   white-space: nowrap;
 }
 
-.app__nav {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
+/* ---- 提示文案 ---- */
 
-.app__navBtn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--muted-fg);
-  padding: 6px 14px;
-  border-radius: var(--radius);
-  cursor: pointer;
+.error {
+  color: var(--accent);
   font-size: var(--fs-small);
-  font-family: var(--font-sans);
-  letter-spacing: 0.04em;
-  text-decoration: none;
-  display: inline-block;
 }
 
-.app__navBtn:hover {
-  border-color: var(--border);
-  color: var(--celadon-deep);
-}
-
-.app__navBtn.is-active {
-  border-color: var(--celadon);
-  color: var(--celadon-deep);
-}
-
-.app__spacer {
-  flex: 1;
-}
-
-.app__themeBtn {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius);
-  border: 1px solid var(--border-strong);
-  background: transparent;
+.hint {
   color: var(--muted-fg);
-  cursor: pointer;
   font-size: var(--fs-small);
-  font-family: var(--font-title);
 }
 
-.app__themeBtn:hover {
-  border-color: var(--celadon);
-  color: var(--celadon-deep);
-}
-
-.app__main {
-  flex: 1;
-  min-height: 0;
-  padding: 40px 44px 100px;
-  font-size: var(--fs-body);
-  line-height: var(--lh-tight);
-  max-width: 1040px;
-  width: 100%;
-  margin: 0 auto;
-}
-
-/* ---- 表单/控件 ---- */
+/* ---- 表单/控件(桌面版没有表单场景,这部分是在线版新增) ---- */
 
 form {
   display: flex;
@@ -177,9 +43,9 @@ select {
   font: inherit;
   font-family: var(--font-sans);
   color: var(--fg);
-  background: var(--bg);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--control-radius);
   padding: 9px 12px;
 }
 
@@ -187,7 +53,7 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  border-color: var(--celadon);
+  border-color: var(--accent-soft);
 }
 
 input::placeholder,
@@ -197,19 +63,18 @@ textarea::placeholder {
 
 button {
   font: inherit;
-  font-family: var(--font-sans);
-  font-size: var(--fs-small);
-  letter-spacing: 0.04em;
-  color: var(--surface);
-  background: var(--celadon-deep);
+  font-family: var(--font-title);
+  letter-spacing: 0.08em;
+  color: var(--accent-contrast);
+  background: var(--accent);
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--control-radius);
   padding: 9px 18px;
   cursor: pointer;
 }
 
 button:hover:not(:disabled) {
-  background: var(--celadon);
+  background: var(--accent-soft);
 }
 
 button:disabled {
@@ -221,33 +86,34 @@ button:disabled {
 td button,
 th button {
   background: transparent;
-  border: 1px solid var(--border-strong);
-  color: var(--celadon-deep);
+  border: 1px solid var(--border);
+  color: var(--accent);
   padding: 4px 10px;
 }
 
 td button:hover:not(:disabled) {
-  border-color: var(--celadon);
-  background: var(--celadon-tint);
+  border-color: var(--accent-soft);
+  background: var(--surface);
 }
 
 .btn--ghost {
   background: transparent;
-  border: 1px solid var(--celadon);
-  color: var(--celadon-deep);
+  border: 1px solid var(--border);
+  color: var(--accent);
 }
 
 .btn--ghost:hover:not(:disabled) {
-  background: var(--celadon-tint);
+  background: var(--surface);
 }
 
-/* ---- 卡片/分区容器:界格框线,不用投影 ---- */
+/* ---- 卡片/分区容器(登录/注册/后台各分区,桌面版没有对应场景) ---- */
 
 .card {
   background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   padding: var(--space-lg);
+  box-shadow: var(--shadow-soft);
 }
 
 .authCard {
@@ -258,18 +124,6 @@ td button:hover:not(:disabled) {
 section.card {
   max-width: none;
   margin-bottom: var(--space-lg);
-}
-
-/* ---- 提示文案 ---- */
-
-.error {
-  color: var(--cinnabar);
-  font-size: var(--fs-small);
-}
-
-.hint {
-  color: var(--muted-fg);
-  font-size: var(--fs-small);
 }
 
 /* ---- 表格(后台/钱包流水):等宽数字对齐 ---- */
@@ -289,12 +143,10 @@ td {
 }
 
 th {
-  font-family: var(--font-sans);
-  color: var(--faint-fg);
+  font-family: var(--font-title);
+  color: var(--muted-fg);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  font-size: 11px;
-  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 td.num,
@@ -304,79 +156,85 @@ td.num,
 }
 
 .delta-pos {
-  color: var(--celadon-deep);
+  color: var(--accent);
 }
 
 .delta-neg {
-  color: var(--cinnabar);
+  color: var(--muted-fg);
 }
 
-/* ---- 书库:界格式书目网格(取代圆角卡片 + 投影) ---- */
+/* ---- 书库:桌面版册页式书卡(简化版——无封面上传/拖拽排序) ---- */
 
 .lib__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
   list-style: none;
   margin: 0;
   padding: 0;
-  border-top: 1px solid var(--border-strong);
-  border-left: 1px solid var(--border-strong);
 }
 
 .bookcard {
   position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 20px 16px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  min-height: 148px;
-  padding: 20px 18px;
-  border-right: 1px solid var(--border-strong);
-  border-bottom: 1px solid var(--border-strong);
+  justify-content: center;
+  align-items: center;
+  min-height: 140px;
+  aspect-ratio: 3 / 4;
+  box-shadow: var(--shadow-soft);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   text-decoration: none;
-  color: inherit;
-  transition: background 0.15s ease;
 }
 
 .bookcard:hover {
-  background: var(--celadon-tint);
+  border-color: var(--accent-soft);
+  box-shadow: 0 14px 28px rgba(67, 43, 24, 0.12);
 }
 
 .bookcard__category {
-  font-family: var(--font-mono);
-  font-size: 11px;
+  font-family: var(--font-title);
+  font-size: 12px;
   letter-spacing: 0.1em;
-  color: var(--bronze);
-  text-transform: uppercase;
+  color: var(--zheshi);
 }
 
 .bookcard__title {
   font-family: var(--font-title);
   font-weight: 700;
   font-size: var(--fs-h2);
-  color: var(--fg);
-  letter-spacing: 0.08em;
-  margin-top: 14px;
+  color: var(--accent);
+  letter-spacing: 0.1em;
+  text-align: center;
+  line-height: 1.4;
+  margin-top: 8px;
 }
 
 .bookcard__author {
   display: block;
-  margin-top: 16px;
+  margin-top: 6px;
   font-family: var(--font-sans);
-  font-size: 11px;
-  color: var(--faint-fg);
+  font-size: var(--fs-small);
+  color: var(--muted-fg);
   letter-spacing: 0.04em;
 }
 
-/* ---- 阅读:原文排版 + 难经问答体结构(见 lib/dialogue.ts) ---- */
+/* ---- 阅读:原文排版(宋体,与桌面版段落字体一致) + 难经问答体结构 ---- */
 
 .reader {
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
   margin-bottom: var(--space-lg);
+  overflow: hidden;
 }
 
 .reader__head {
   padding: 14px 22px;
-  border-bottom: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
   background: var(--surface);
   display: flex;
   align-items: baseline;
@@ -387,7 +245,7 @@ td.num,
 .reader__head h3,
 .reader__head h4 {
   margin: 0;
-  color: var(--celadon-deep);
+  color: var(--accent);
 }
 
 .chapter {
@@ -397,14 +255,14 @@ td.num,
 .chapter > h2,
 .chapter > h3,
 .chapter > h4 {
-  color: var(--celadon-deep);
+  color: var(--accent);
 }
 
 .paragraph {
   margin: 0 0 var(--space-sm);
   font-family: var(--font-serif);
   font-size: var(--fs-body);
-  line-height: var(--lh-read);
+  line-height: var(--lh-relax);
 }
 
 .dialogue__turn {
@@ -427,36 +285,38 @@ td.num,
 }
 
 .dialogue__turn--q .dialogue__label {
-  color: var(--bronze);
+  color: var(--zheshi);
 }
 
 .dialogue__turn--a .dialogue__label {
-  color: var(--celadon-deep);
+  color: var(--accent);
 }
 
 .dialogue__turn--a {
-  background: var(--celadon-tint);
+  background: var(--qianjiang);
 }
 
 .dialogue__text {
   font-family: var(--font-serif);
   font-size: var(--fs-body);
-  line-height: var(--lh-read);
+  line-height: var(--lh-relax);
   margin: 0;
   white-space: pre-wrap;
 }
 
-/* ---- AI 问答 ---- */
+/* ---- AI 问答(桌面版没有对应页面,这部分是在线版新增) ---- */
 
 .chatPage {
   display: grid;
   grid-template-columns: 1fr 220px;
   gap: 0;
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  overflow: hidden;
 }
 
 .chatPage__main {
-  border-right: 1px solid var(--border-strong);
+  border-right: 1px solid var(--border);
   min-width: 0;
 }
 
@@ -470,15 +330,15 @@ td.num,
 .chat-message {
   padding: 10px 16px;
   border: 1px solid var(--border);
+  border-radius: var(--control-radius);
   max-width: 80%;
-  line-height: var(--lh-read);
+  line-height: var(--lh-relax);
 }
 
 .chat-message.user {
   align-self: flex-end;
-  background: var(--celadon-tint);
-  border-color: var(--celadon);
-  color: var(--celadon-deep);
+  background: var(--qianjiang);
+  color: var(--fg);
 }
 
 .chat-message.assistant {
@@ -492,7 +352,7 @@ td.num,
   gap: 10px;
   max-width: none;
   padding: var(--space-sm) var(--space-md);
-  border-top: 1px solid var(--border-strong);
+  border-top: 1px solid var(--border);
   margin: 0;
 }
 
@@ -515,6 +375,6 @@ td.num,
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
   font-size: 24px;
-  color: var(--celadon-deep);
+  color: var(--accent);
   margin-top: 6px;
 }

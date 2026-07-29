@@ -13,9 +13,9 @@
     "resolveJsonModule": true,
     "isolatedModules": true,
     "baseUrl": ".",
-    "paths": { "@/*": ["web/src/*"] },
+    "paths": { "@/*": ["web/src/*"], "@shared/*": ["shared/*"] },
     "outDir": "./out/.tsbuild/webapp",
     "types": ["vite/client"]
   },
-  "include": ["web/src/**/*.ts", "web/src/**/*.tsx", "vite.web.config.ts"]
+  "include": ["web/src/**/*.ts", "web/src/**/*.tsx", "vite.web.config.ts", "shared/**/*.ts"]
 }
