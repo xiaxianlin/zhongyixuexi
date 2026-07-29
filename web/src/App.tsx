@@ -1,7 +1,6 @@
 import { type ReactNode } from 'react'
 import { BrowserRouter, Link, NavLink, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth'
-import { ThemeProvider, useTheme } from './lib/theme'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import LibraryPage from './pages/LibraryPage'
@@ -29,7 +28,6 @@ function navBtnClass({ isActive }: { isActive: boolean }): string {
 
 function Nav() {
   const { isLoggedIn, isAdmin, logout } = useAuth()
-  const { label, toggleTheme } = useTheme()
   return (
     <header className="app__header">
       <Link to="/" className="app__title">
@@ -59,15 +57,6 @@ function Nav() {
         )}
       </nav>
       <span className="app__spacer" />
-      <button
-        type="button"
-        className="app__themeBtn"
-        onClick={toggleTheme}
-        title="切换明暗"
-        aria-label="切换明暗"
-      >
-        {label}
-      </button>
       {isLoggedIn ? (
         <button onClick={logout}>退出登录</button>
       ) : (
@@ -86,47 +75,45 @@ function Nav() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <BrowserRouter>
-          <div className="app">
-            <Nav />
-            <main className="app__main">
-              <Routes>
-                <Route path="/" element={<LibraryPage />} />
-                <Route path="/books/:bookId" element={<BookDetailPage />} />
-                <Route path="/search" element={<SearchPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route
-                  path="/wallet"
-                  element={
-                    <RequireLogin>
-                      <WalletPage />
-                    </RequireLogin>
-                  }
-                />
-                <Route
-                  path="/chat"
-                  element={
-                    <RequireLogin>
-                      <ChatPage />
-                    </RequireLogin>
-                  }
-                />
-                <Route
-                  path="/admin"
-                  element={
-                    <RequireAdmin>
-                      <AdminPage />
-                    </RequireAdmin>
-                  }
-                />
-              </Routes>
-            </main>
-          </div>
-        </BrowserRouter>
-      </AuthProvider>
-    </ThemeProvider>
+    <AuthProvider>
+      <BrowserRouter>
+        <div className="app">
+          <Nav />
+          <main className="app__main">
+            <Routes>
+              <Route path="/" element={<LibraryPage />} />
+              <Route path="/books/:bookId" element={<BookDetailPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route
+                path="/wallet"
+                element={
+                  <RequireLogin>
+                    <WalletPage />
+                  </RequireLogin>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <RequireLogin>
+                    <ChatPage />
+                  </RequireLogin>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <RequireAdmin>
+                    <AdminPage />
+                  </RequireAdmin>
+                }
+              />
+            </Routes>
+          </main>
+        </div>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
